@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20260226-12">
-    <link rel="stylesheet" href="css/docs.css?v=20260226-5">
+    <link rel="stylesheet" href="css/style.css?v=20260226-17">
+    <link rel="stylesheet" href="css/docs.css?v=20260226-8">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -94,8 +94,8 @@
             <h2 class="doc-section-title">What is Zenith?</h2>
             <p class="lead">Zenith is an open-source algorithmic trading system built on ICT/Smart Money Concepts. It includes a Python-based strategy engine, MetaTrader 5 integration, a Flask REST API, and a real-time web dashboard.</p>
             <div class="features-bento" style="--cols:3;margin-top:2rem">
-                <div class="bento-item glass-card" style="padding:1.5rem"><div class="feature-icon" style="width:2.4rem;height:2.4rem;margin-bottom:1rem;font-size:1rem"><i class="fas fa-brain"></i></div><h4 style="margin:0 0 0.5rem;font-size:0.95rem">Strategy Engine</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">ICT/SMC signal detection — BOS, ObZone, FVG, kill zones, confluence scoring</p></div>
-                <div class="bento-item glass-card" style="padding:1.5rem"><div class="feature-icon" style="width:2.4rem;height:2.4rem;margin-bottom:1rem;font-size:1rem"><i class="fas fa-chart-line"></i></div><h4 style="margin:0 0 0.5rem;font-size:0.95rem">Backtesting</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Split, walk-forward, standard modes with real MT5 OHLCV data</p></div>
+                <div class="bento-item glass-card" style="padding:1.5rem"><div class="feature-icon" style="width:2.4rem;height:2.4rem;margin-bottom:1rem;font-size:1rem"><i class="fas fa-brain"></i></div><h4 style="margin:0 0 0.5rem;font-size:0.95rem">Strategy Engine</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">ICT/SMC signal detection — liquidity sweep, MSS, displacement, FVG, order block, regime &amp; confluence scoring</p></div>
+                <div class="bento-item glass-card" style="padding:1.5rem"><div class="feature-icon" style="width:2.4rem;height:2.4rem;margin-bottom:1rem;font-size:1rem"><i class="fas fa-chart-line"></i></div><h4 style="margin:0 0 0.5rem;font-size:0.95rem">Backtesting</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Calendar-walk, walk-forward 70/30, Monte Carlo &amp; stacked-portfolio modes on real MT5 OHLCV</p></div>
                 <div class="bento-item glass-card" style="padding:1.5rem"><div class="feature-icon" style="width:2.4rem;height:2.4rem;margin-bottom:1rem;font-size:1rem"><i class="fas fa-globe"></i></div><h4 style="margin:0 0 0.5rem;font-size:0.95rem">Web Dashboard</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Real-time metrics, equity curves, trade history, live control panel</p></div>
             </div>
         </section>
@@ -122,9 +122,10 @@ python alpha_api.py</code></pre></div>
             <p class="lead">All bot settings live in <code>mt5_bot/runtime_config.json</code>. Telegram credentials are stored in <code>mt5_bot/telegram_config.json</code>.</p>
             <h4 class="doc-step-label"><span class="doc-step-num">1</span> runtime_config.json — Key Fields</h4>
             <div class="code-block"><div class="code-header"><span class="code-lang">json</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)"><i class="fas fa-copy"></i></button></div><pre><code>{
-  "symbols": ["EURUSD","GBPUSD","GBPJPY","USDJPY","XAUUSD","NAS100","BTCUSD"],
-  "risk_percent": 2.0,
-  "daily_drawdown_limit": 5.0,
+  "symbols": ["EURUSD","NAS100","XAUUSD"],
+  "risk_percent": 1.0,
+  "per_symbol_kill_switch_pct": 5.0,
+  "max_trades_per_day": 3,
   "mt5_login": 12345678,
   "mt5_password": "your_password",
   "mt5_server": "BrokerName-Server"
@@ -149,30 +150,32 @@ cd mt5_bot && python main.py</code></pre></div>
         <section class="doc-section" id="strategy">
             <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Strategy</span>
             <h2 class="doc-section-title">Signal Logic</h2>
-            <p class="lead">Signals are identified using a state machine that processes M15 OHLCV candles in sequence. A trade requires a minimum confluence score of <strong>3</strong> from weighted sub-signals.</p>
+            <p class="lead">Signals are identified using a state machine that processes M15 OHLCV candles in sequence with strict no-lookahead enforcement. A trade requires a minimum confluence score of <strong>4 / 8</strong> from weighted sub-signals. EUR/USD &amp; NAS100 trade <strong>contrarian fades</strong> of the resulting setup; XAU/USD trades the continuation.</p>
             <div class="docs-metrics-grid">
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">BOS</div><div class="docs-metric-lbl">Break of Structure — mandatory trigger</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">OB</div><div class="docs-metric-lbl">Order Block confluence (+1)</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">FVG</div><div class="docs-metric-lbl">Fair Value Gap confluence (+1)</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">KZ</div><div class="docs-metric-lbl">Kill Zone active (+1)</div></div>
+                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">HTF Bias</div><div class="docs-metric-lbl">EMA 20/50/200 alignment on H1 (+2)</div></div>
+                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">Sweep + MSS</div><div class="docs-metric-lbl">Liquidity sweep + market structure shift (+2)</div></div>
+                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">Displacement</div><div class="docs-metric-lbl">Strong impulse candle out of zone (+1)</div></div>
+                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">FVG / OB</div><div class="docs-metric-lbl">Fair Value Gap or Order Block found (+1 each)</div></div>
+                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">Premium / Disc.</div><div class="docs-metric-lbl">Discount for longs / premium for shorts (+1)</div></div>
+                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">Vol Regime</div><div class="docs-metric-lbl">ATR healthy + directional body ratio (+1)</div></div>
             </div>
-            <div class="alert alert-warning" style="margin-top:1.75rem"><i class="fas fa-triangle-exclamation"></i><span>Signals with confluence &lt; 3 are logged but never executed. Adjust <code>min_confluence</code> in strategy.py to tune aggressiveness.</span></div>
+            <div class="alert alert-warning" style="margin-top:1.75rem"><i class="fas fa-triangle-exclamation"></i><span>Signals scoring &lt; 4 are skipped entirely. Adjust <code>min_score</code> per symbol inside <code>SYMBOL_RULES</code> in <code>smart_money_strategy.py</code>.</span></div>
         </section>
         <section class="doc-section" id="risk">
             <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Risk</span>
             <h2 class="doc-section-title">Risk Management</h2>
-            <p class="lead">Every trade is sized by ATR stop loss distance at 2% account risk per position.</p>
+            <p class="lead">Every trade is sized from its exact stop-loss distance at <strong>1% account risk</strong>, with multi-layer dynamic protection on top.</p>
             <div class="features-bento" style="--cols:2;margin-top:1.75rem">
-                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--z-text-2)">Position Sizing</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0"><code>lots = (balance × risk%) ÷ (stop_ticks × tick_value)</code></p></div>
-                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--z-text-2)">Break-Even</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">SL moved to entry +1 pip when price reaches 1R profit</p></div>
-                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--z-text-2)">Daily Drawdown</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Bot halts for the day if equity drops 5% from session open</p></div>
-                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--z-text-2)">Margin Guard</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">New orders blocked when margin usage exceeds 20%</p></div>
+                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--z-text-2)">Position Sizing</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0"><code>lots = (balance × 1% × dd_factor × vol_factor) ÷ (stop_ticks × tick_value)</code></p></div>
+                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--z-text-2)">DD Risk Halving</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Risk per trade is automatically halved when an instrument is more than 4% below its peak equity</p></div>
+                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--z-text-2)">Per-Symbol Kill Switch</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Any instrument that drops 5% in a window is paused for the rest of that window — the other instruments keep trading</p></div>
+                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--z-text-2)">Daily Cap + Trade Mgmt</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Max 3 trades per symbol per day. XAU/USD takes a 0.5R partial at +1R and trails the runner; EUR/USD &amp; NAS100 trade once and exit cleanly</p></div>
             </div>
         </section>
         <section class="doc-section" id="sessions">
             <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Sessions</span>
             <h2 class="doc-section-title">Trading Sessions</h2>
-            <p class="lead">The bot only trades within defined kill zone windows to capture high-probability institutional moves.</p>
+            <p class="lead">Each instrument trades only inside its own optimal session, configured per-symbol in <code>SYMBOL_RULES.sessions</code>. Outside these windows the engine ignores signals entirely.</p>
             <div class="perf-showcase" style="margin-top:1.5rem">
                 <div class="glass-card perf-card">
                     <table style="width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:0.86rem">
@@ -182,9 +185,9 @@ cd mt5_bot && python main.py</code></pre></div>
                             <th style="padding:9px 14px;text-align:left;color:var(--z-text-3);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.04)">Symbols</th>
                         </tr></thead>
                         <tbody>
-                            <tr><td style="padding:12px 14px;color:var(--z-text)">Asian Session</td><td style="padding:12px 14px;color:var(--z-cyan)">00:00 – 04:00</td><td style="padding:12px 14px;color:var(--z-text-3)">USDJPY, GBPJPY</td></tr>
-                            <tr style="background:rgba(255,255,255,0.01)"><td style="padding:12px 14px;color:var(--z-text)">London Open KZ</td><td style="padding:12px 14px;color:var(--z-cyan)">07:00 – 10:00</td><td style="padding:12px 14px;color:var(--z-text-3)">EURUSD, GBPUSD, GBPJPY, XAUUSD</td></tr>
-                            <tr><td style="padding:12px 14px;color:var(--z-text)">NY Open KZ</td><td style="padding:12px 14px;color:var(--z-cyan)">13:00 – 16:00</td><td style="padding:12px 14px;color:var(--z-text-3)">EURUSD, GBPUSD, NAS100, BTCUSD, XAUUSD</td></tr>
+                            <tr><td style="padding:12px 14px;color:var(--z-text)">London Session</td><td style="padding:12px 14px;color:var(--z-cyan)">07:00 – 11:00 UTC</td><td style="padding:12px 14px;color:var(--z-text-3)">EUR/USD</td></tr>
+                            <tr style="background:rgba(255,255,255,0.01)"><td style="padding:12px 14px;color:var(--z-text)">London / NY Overlap</td><td style="padding:12px 14px;color:var(--z-cyan)">12:00 – 17:00 UTC</td><td style="padding:12px 14px;color:var(--z-text-3)">XAU/USD</td></tr>
+                            <tr><td style="padding:12px 14px;color:var(--z-text)">NY Session</td><td style="padding:12px 14px;color:var(--z-cyan)">13:00 – 20:00 UTC</td><td style="padding:12px 14px;color:var(--z-text-3)">NAS100 + EUR/USD afternoon window</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -193,12 +196,14 @@ cd mt5_bot && python main.py</code></pre></div>
         <section class="doc-section" id="backtest">
             <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Backtesting</span>
             <h2 class="doc-section-title">Running Backtests</h2>
-            <p class="lead">Three modes available. All use real MT5 historical data downloaded via the Python MT5 API.</p>
+            <p class="lead">Four robustness modes available. All use real MT5 historical data downloaded via the Python MT5 API and run through the same lookahead-free engine that powers live execution.</p>
             <h4 class="doc-step-label"><span class="doc-step-num">1</span> Standard Backtest</h4>
             <div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)"><i class="fas fa-copy"></i></button></div><pre><code>cd mt5_bot
-python simple_backtest.py --symbol EURUSD --days 180</code></pre></div>
-            <h4 class="doc-step-label"><span class="doc-step-num">2</span> Improved / Walk-Forward</h4>
-            <div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)"><i class="fas fa-copy"></i></button></div><pre><code>python backtest_improved.py --mode walk_forward --symbol GBPJPY --days 180</code></pre></div>
+python -c "from backtest_improved import validate_live_smc_engine; validate_live_smc_engine(symbols=('EURUSD','NAS100','XAUUSD'), periods=30)"</code></pre></div>
+            <h4 class="doc-step-label"><span class="doc-step-num">2</span> Calendar-walk &amp; Portfolio</h4>
+            <div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)"><i class="fas fa-copy"></i></button></div><pre><code>python -c "from backtest_improved import calendar_walk_validate; calendar_walk_validate(windows=15)"
+python -c "from backtest_improved import portfolio_calendar_walk; portfolio_calendar_walk(windows=15)"
+python -c "from backtest_improved import monte_carlo_live_smc_engine; monte_carlo_live_smc_engine(simulations=500)"</code></pre></div>
             <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>Results are saved to <code>mt5_bot/backtest_results/</code> as JSON files. The dashboard reads these automatically.</span></div>
         </section>
         <section class="doc-section" id="results">
@@ -206,10 +211,10 @@ python simple_backtest.py --symbol EURUSD --days 180</code></pre></div>
             <h2 class="doc-section-title">Interpreting Results</h2>
             <p class="lead">Key metrics to assess strategy robustness — prioritise Profit Factor and Max Drawdown over raw return.</p>
             <div class="docs-metrics-grid">
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val" style="color:var(--z-green)">PF &gt; 1.5</div><div class="docs-metric-lbl">Acceptable Profit Factor</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val" style="color:var(--z-green)">&lt; 20%</div><div class="docs-metric-lbl">Max Drawdown Threshold</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val" style="color:var(--z-cyan)">&gt; 30</div><div class="docs-metric-lbl">Min Recommended Trades</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val" style="color:var(--z-cyan)">&gt; 35%</div><div class="docs-metric-lbl">Min Win Rate (2:1 RR)</div></div>
+                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val" style="color:var(--z-green)">R / trade &gt; +0.10</div><div class="docs-metric-lbl">Genuine per-trade edge over noise</div></div>
+                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val" style="color:var(--z-green)">&lt; 10% DD</div><div class="docs-metric-lbl">Worst-window drawdown ceiling</div></div>
+                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val" style="color:var(--z-cyan)">&gt; 60%</div><div class="docs-metric-lbl">Profitable months across calendar walk</div></div>
+                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val" style="color:var(--z-cyan)">&gt; 25 windows</div><div class="docs-metric-lbl">Min sample for robustness claims</div></div>
             </div>
         </section>
         <section class="doc-section" id="api">
@@ -247,7 +252,7 @@ Auth:     X-API-Key: &lt;your_api_key&gt;</code></pre></div>
             <h2 class="doc-section-title">Troubleshooting</h2>
             <div class="troubleshoot-list">
                 <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>MT5 connection fails</strong></div><p class="ts-a">Ensure MetaTrader 5 is open and logged in. Verify <code>mt5_login</code>, <code>mt5_password</code>, and <code>mt5_server</code> in <code>runtime_config.json</code> match your broker credentials exactly.</p></div>
-                <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>No signals generated</strong></div><p class="ts-a">Check that the current time falls within an active kill zone session. BOS detection requires a minimum displacement candle — low volatility periods will produce no signals.</p></div>
+                <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>No signals generated</strong></div><p class="ts-a">Check that the current time falls within the symbol&apos;s configured session window in <code>SYMBOL_RULES</code>. The regime filter also blocks setups during very low ATR or non-directional chop \u2014 low-volatility periods will produce no signals by design.</p></div>
                 <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>Dashboard shows no data</strong></div><p class="ts-a">Make sure <code>alpha_api.py</code> is running on port 5000. Check browser console for CORS errors — open directly via <code>http://localhost:5000</code>.</p></div>
                 <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>Telegram bot not responding</strong></div><p class="ts-a">Confirm bot token and chat ID in <code>telegram_config.json</code>. Run <code>python telegram_bot.py</code> directly to see error output.</p></div>
             </div>

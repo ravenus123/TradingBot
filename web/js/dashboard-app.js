@@ -686,7 +686,8 @@ async function runBacktest() {
     if (btAnimTimer) { clearTimeout(btAnimTimer); btAnimTimer = null; }
 
     const symbol = document.getElementById('btSymbol').value;
-    const days = parseInt(document.getElementById('btDays').value) || 60;
+    const startDate = document.getElementById('btStartDate')?.value;
+    const endDate = document.getElementById('btEndDate')?.value;
     const status = document.getElementById('btStatus');
     const runBtn = document.getElementById('runBacktestBtn');
     const pauseBtn = document.getElementById('btPauseBtn');
@@ -704,6 +705,15 @@ async function runBacktest() {
     }
 
     const riskPct = parseFloat(document.getElementById('btRiskPct')?.value) || 1.0;
+
+    // Build request payload - use date range if provided, otherwise days
+    const payload = { symbol, risk_pct: riskPct };
+    if (startDate && endDate) {
+        payload.start_date = startDate;
+        payload.end_date = endDate;
+    } else {
+        payload.days = 60; // Default to 60 days if no dates
+    }
 
     // Always enqueue a REAL persisted run via backtest_improved.py
     try {
@@ -726,7 +736,7 @@ async function runBacktest() {
     try {
         data = await apiFetch('/backtest/simulate', {
             method: 'POST',
-            body: JSON.stringify({ symbol, days, risk_pct: riskPct })
+            body: JSON.stringify(payload)
         });
         if (!data) {
             throw new Error('No response from server');
@@ -772,7 +782,7 @@ async function runBacktest() {
     btLiveEquityCurve = [10000];
     btPairAnalyticsRows = [];
     btReportSymbol = symbol;
-    btReportDays = days;
+    btReportDays = payload.days || 60;
     btGrossProfit = 0;
     btGrossLoss = 0;
     btEquitySampleCounter = 0;
@@ -1272,7 +1282,7 @@ function finishBacktest() {
 
 async function runSuite() {
     const s = document.getElementById('btStatus');
-    setStatusText(s, 'Starting full suite (7 symbols × 5 modes)...');
+    setStatusText(s, 'Starting full suite (3 instruments × 5 modes)...');
     const r = await apiFetch('/backtest/run-suite', { method: 'POST', body: JSON.stringify({ modes: ['standard', 'walk_forward', 'split', 'monte_carlo', 'robustness_20'], periods: 20 }) });
     if (r && r.success) { setStatusText(s, `Started ${r.count} runs`); setTimeout(async () => { await loadRuns(); await loadRobustness(); }, 1200); }
     else setStatusText(s, 'Failed to start suite', true);
@@ -2296,14 +2306,14 @@ async function loadBotMonitor() {
 
     // --- Market Overview (Overview section) ---
     // Populate from open positions / bridge data if available
-    const mktSymbols = { 'EURUSD': 'mktEURUSD', 'GBPUSD': 'mktGBPUSD', 'USDJPY': 'mktUSDJPY', 'XAUUSD': 'mktXAUUSD' };
+    const mktSymbols = { 'EURUSD': 'mktEURUSD', 'NAS100': 'mktNAS100', 'XAUUSD': 'mktXAUUSD' };
     if (positions.length) {
         for (const pos of positions) {
             const sym = (pos.symbol || '').replace(/[^A-Z]/g, '').substring(0, 6);
             const elId = mktSymbols[sym];
             if (elId) {
                 const priceEl = document.getElementById(elId);
-                if (priceEl) priceEl.textContent = Number(pos.current_price || pos.open_price || 0).toFixed(sym === 'XAUUSD' ? 2 : sym === 'USDJPY' ? 3 : 5);
+                if (priceEl) priceEl.textContent = Number(pos.current_price || pos.open_price || 0).toFixed(sym === 'XAUUSD' ? 2 : sym === 'NAS100' ? 1 : 5);
                 const chgEl = document.getElementById(elId + 'chg');
                 if (chgEl) {
                     const pnl = Number(pos.profit || 0);

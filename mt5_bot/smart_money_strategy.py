@@ -92,7 +92,7 @@ def get_session_filter() -> bool:
 
 
 def should_trade(symbol: str, daily_trades: int, consecutive_losses: int, dd_pct: float) -> bool:
-    max_daily_trades = int(os.getenv('SMC_MAX_DAILY_TRADES', '4'))
+    max_daily_trades = int(os.getenv('SMC_MAX_DAILY_TRADES', '3'))  # Match backtest: MAX_DAILY_TRADES = 3
     max_losses = int(os.getenv('SMC_MAX_CONSECUTIVE_LOSSES', '3'))
     max_dd = float(os.getenv('SMC_MAX_DAILY_DD', '3.0'))
     if symbol not in SYMBOL_RULES:
@@ -163,7 +163,16 @@ class SmartMoneyStrategy:
         score += 1 if ob is not None else 0
         score += self._volatility_score()
 
-        if score < self.rules['min_score']:
+        # STRICT CONFLUENCE: Require minimum 3 score points beyond base
+        if score < self.rules['min_score'] + 1:
+            return None
+            
+        # MOMENTUM CONFIRMATION: Price must move in trade direction recently
+        if not self._momentum_confirms(direction):
+            return None
+            
+        # AVOID CHOP: Require decent trend strength (ADX-style)
+        if not self._trend_strength_ok():
             return None
 
         rr = self.rules['rr']
@@ -243,9 +252,62 @@ class SmartMoneyStrategy:
         trendiness = directional_move / range_span
         if atr_now < atr_med * 0.6:
             return False
-        if body_ratio < 0.35 and trendiness < 0.20:
+        # STRICter: Avoid extreme volatility expansion (often news/chop)
+        if atr_now > atr_med * 2.5:
+            return False
+        if body_ratio < 0.35 and trendiness < 0.25:
+            return False
+        # NEW: Require minimum directional movement
+        if trendiness < 0.15:
             return False
         return True
+
+    def _momentum_confirms(self, direction: str) -> bool:
+        """Check recent price momentum confirms trade direction. NO LOOKAHEAD."""
+        df = self.df_5m
+        # Look at last 3 bars for momentum
+        recent = df.iloc[-4:-1]  # Excludes current forming bar
+        if len(recent) < 3:
+            return False
+        
+        # Count bullish vs bearish closes
+        bullish_bars = sum(1 for i in range(len(recent)) if recent['Close'].iloc[i] > recent['Open'].iloc[i])
+        bearish_bars = 3 - bullish_bars
+        
+        if direction == 'buy':
+            # Need at least 2 of 3 bars bullish
+            return bullish_bars >= 2
+        else:
+            # Need at least 2 of 3 bars bearish
+            return bearish_bars >= 2
+
+    def _trend_strength_ok(self) -> bool:
+        """ADX-style trend strength check. NO LOOKAHEAD."""
+        df = self.df_5m
+        if len(df) < 30:
+            return False
+            
+        # Calculate +DM and -DM (Directional Movement)
+        high_diff = df['High'].diff()
+        low_diff = -df['Low'].diff()
+        
+        plus_dm = ((high_diff > low_diff) & (high_diff > 0)) * high_diff
+        minus_dm = ((low_diff > high_diff) & (low_diff > 0)) * low_diff
+        
+        # Use 14-period sum (simplified ADX concept)
+        plus_di = plus_dm.iloc[-14:].sum()
+        minus_di = minus_dm.iloc[-14:].sum()
+        
+        # Strong trend when one direction dominates
+        total_dm = plus_di + minus_di
+        if total_dm <= 0:
+            return False
+            
+        # Trend strength = ratio of stronger direction to total
+        trend_ratio = max(plus_di, minus_di) / total_dm
+        
+        # Require 60% trend dominance
+        return trend_ratio >= 0.60
 
     def _htf_bias(self) -> str:
         close = self.df_1h['Close']

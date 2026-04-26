@@ -29,7 +29,7 @@ except ImportError:
     pass  # python-dotenv optional; falls back to json configs
 
 from strategy import get_instrument_settings
-from smart_money_strategy import SmartMoneyStrategy, should_trade
+from smart_money_strategy import SmartMoneyStrategy, should_trade, SYMBOL_RULES as SMC_SYMBOL_RULES
 from telegram_bot import send_telegram_message, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 # SQLite database (trades, order_blocks, logs)
@@ -548,11 +548,11 @@ def open_position_with_retry(signal: dict, sym_info: dict, risk_percent: float) 
     return False
 
 
-def close_position(position: dict) -> bool:
-    """Close an existing position."""
+def close_position(position: dict, volume: float | None = None) -> bool:
+    """Close an existing position (fully or partially)."""
     broker_sym = position['broker_symbol']
     ticket = position['ticket']
-    volume = position['volume']
+    close_volume = volume if volume is not None else position['volume']
     
     # Determine close direction (opposite of position)
     if position['direction'] == 'BUY':
@@ -565,7 +565,7 @@ def close_position(position: dict) -> bool:
     request = {
         'action': mt5.TRADE_ACTION_DEAL,
         'symbol': broker_sym,
-        'volume': volume,
+        'volume': close_volume,
         'type': order_type,
         'position': ticket,
         'price': price,
@@ -578,11 +578,21 @@ def close_position(position: dict) -> bool:
     
     result = mt5.order_send(request)
     if result and result.retcode == mt5.TRADE_RETCODE_DONE:
-        print(f"[✓] Position closed: {position['direction']} {volume} {position['symbol']}")
+        action = "partial" if volume and volume < position['volume'] else "closed"
+        print(f"[✓] Position {action}: {position['direction']} {close_volume} {position['symbol']}")
         return True
     
     print(f"[!] Close failed: {result.retcode if result else mt5.last_error()}")
     return False
+
+
+def close_partial_position(position: dict, fraction: float = 0.5) -> tuple[bool, float]:
+    """Close a fraction of position (e.g., 0.5 = 50%). Returns (success, closed_volume)."""
+    close_volume = round(position['volume'] * fraction, 2)
+    if close_volume <= 0:
+        return False, 0.0
+    success = close_position(position, close_volume)
+    return success, close_volume if success else 0.0
 
 
 def modify_position_sl_tp(position: dict, new_sl: float | None = None, new_tp: float | None = None) -> bool:
@@ -1602,60 +1612,89 @@ def process_single_symbol(symbol: str, enabled: set, risk: float) -> tuple:
             print(f"[!] Max hold time check error {symbol}: {e}")
         pl = existing_pos['profit']
         
-        # ── BREAK-EVEN & TRAILING STOP (per documentation) ──────────
-        # Rule 1: At 1R profit → SL moves to entry price (break-even)
-        # Rule 2: At 50 % of target profit → SL moves to 25 % profit level
+        # ── TRADE MANAGEMENT (1:1 BACKTEST PARITY) ────────────────────
+        # Matches run_live_smc_engine_backtest() logic exactly:
+        # - Partial TP at 1R (default 50% of position) if symbol permits
+        # - After partial: Trail stop using trail_mult from SYMBOL_RULES
         tracked = tracked_positions.get(symbol, {})
         entry_price = tracked.get('entry_price') or existing_pos.get('open_price', 0)
         original_sl = tracked.get('original_sl') or existing_pos.get('sl', 0)
         original_tp = tracked.get('original_tp') or existing_pos.get('tp', 0)
         current_sl = existing_pos.get('sl', original_sl)
-        be_stage = tracked.get('be_stage', 0)  # 0=none, 1=BE done, 2=trail done
+        digits = sym_info.get('digits', 5)
+        current_price = sym_info['bid'] if existing_pos['direction'] == 'BUY' else sym_info['ask']
 
-        if entry_price and original_sl and original_tp:
+        # Get symbol config from SMC_SYMBOL_RULES (same as backtest)
+        sym_rules = SMC_SYMBOL_RULES.get(symbol, {})
+        no_partial = sym_rules.get('no_partial', False)
+        tp1_r = sym_rules.get('tp1_r', 1.0)
+        tp1_fraction = sym_rules.get('tp1_fraction', 0.5)
+        trail_mult = sym_rules.get('trail_mult', 1.5)
+
+        if entry_price and original_sl:
             initial_risk = abs(entry_price - original_sl)
-            target_profit = abs(original_tp - entry_price)
-            current_price = sym_info['bid'] if existing_pos['direction'] == 'BUY' else sym_info['ask']
-            digits = sym_info.get('digits', 5)
+            stop_dist = initial_risk  # same as backtest
 
             if existing_pos['direction'] == 'BUY':
                 unrealized = current_price - entry_price
+                highest_price = tracked.get('highest_price', entry_price)
+                highest_price = max(highest_price, current_price)
+                lowest_price = tracked.get('lowest_price', entry_price)
             else:
                 unrealized = entry_price - current_price
+                lowest_price = tracked.get('lowest_price', entry_price)
+                lowest_price = min(lowest_price, current_price)
+                highest_price = tracked.get('highest_price', entry_price)
 
-            # Stage 1: At 0.8R profit → break-even (SL = entry) - MATCH BACKTEST
-            if be_stage < 1 and initial_risk > 0 and unrealized >= initial_risk * 0.8:
-                new_sl = round(entry_price, digits)
-                if (existing_pos['direction'] == 'BUY' and new_sl > current_sl) or \
-                   (existing_pos['direction'] == 'SELL' and new_sl < current_sl):
-                    if modify_position_sl_tp(existing_pos, new_sl=new_sl):
-                        tracked_positions.setdefault(symbol, {})['be_stage'] = 1
-                        tracked_positions[symbol]['sl'] = new_sl
-                        log_event(f"{symbol}: Break-even SL moved to {new_sl}", "INFO")
+            # Update tracked high/low for trailing
+            tracked_positions[symbol]['highest_price'] = highest_price
+            tracked_positions[symbol]['lowest_price'] = lowest_price
+
+            partial_taken = tracked.get('partial_taken', False)
+
+            # STAGE 1: PARTIAL TP at 1R (if symbol allows partial closes)
+            if not no_partial and not partial_taken and initial_risk > 0:
+                tp1_dist = initial_risk * tp1_r
+                hit_tp1 = unrealized >= tp1_dist
+                if hit_tp1:
+                    # Close partial (e.g., 50% default)
+                    success, closed_vol = close_partial_position(existing_pos, tp1_fraction)
+                    if success:
+                        banked_r = tp1_r * tp1_fraction
+                        tracked_positions[symbol]['partial_taken'] = True
+                        tracked_positions[symbol]['banked_r'] = banked_r
+                        tracked_positions[symbol]['remaining_fraction'] = 1.0 - tp1_fraction
+                        # Move SL to entry (break-even) after partial
+                        new_sl = round(entry_price, digits)
+                        if (existing_pos['direction'] == 'BUY' and new_sl > current_sl) or \
+                           (existing_pos['direction'] == 'SELL' and new_sl < current_sl):
+                            modify_position_sl_tp(existing_pos, new_sl=new_sl)
+                            tracked_positions[symbol]['sl'] = new_sl
+                        log_event(f"{symbol}: Partial TP at 1R closed {tp1_fraction*100:.0f}% ({closed_vol} lots)", "INFO")
                         send_telegram_message(
-                            f"🛡️ <b>Break-Even</b>\n"
-                            f"{symbol}: SL → {new_sl} (entry price)\n"
-                            f"Unrealized: ${unrealized:.2f}"
+                            f"� <b>Partial TP Hit</b>\n"
+                            f"{symbol}: Closed {tp1_fraction*100:.0f}% at 1R\n"
+                            f"Volume: {closed_vol} lots\n"
+                            f"Unrealized (remaining): ${unrealized:.2f}"
                         )
-                        be_stage = 1
 
-            # Stage 2: At 50% of target → SL moves to 40% profit level (MATCH BACKTEST)
-            if be_stage < 2 and target_profit > 0 and unrealized >= target_profit * 0.5:
+            # STAGE 2: TRAILING STOP (after partial, or directly if no_partial)
+            if trail_mult is not None:
+                trail_dist = stop_dist * trail_mult
                 if existing_pos['direction'] == 'BUY':
-                    new_sl = round(entry_price + target_profit * 0.4, digits)
+                    new_stop = highest_price - trail_dist
+                    if new_stop > current_sl:
+                        new_sl = round(new_stop, digits)
+                        if modify_position_sl_tp(existing_pos, new_sl=new_sl):
+                            tracked_positions[symbol]['sl'] = new_sl
+                            log_event(f"{symbol}: Trail SL → {new_sl}", "INFO")
                 else:
-                    new_sl = round(entry_price - target_profit * 0.4, digits)
-                if (existing_pos['direction'] == 'BUY' and new_sl > current_sl) or \
-                   (existing_pos['direction'] == 'SELL' and new_sl < current_sl):
-                    if modify_position_sl_tp(existing_pos, new_sl=new_sl):
-                        tracked_positions.setdefault(symbol, {})['be_stage'] = 2
-                        tracked_positions[symbol]['sl'] = new_sl
-                        log_event(f"{symbol}: Trailing SL moved to {new_sl} (40% profit)", "INFO")
-                        send_telegram_message(
-                            f"📈 <b>Trailing Stop</b>\n"
-                            f"{symbol}: SL → {new_sl} (40% profit lock)\n"
-                            f"Unrealized: ${unrealized:.2f}"
-                        )
+                    new_stop = lowest_price + trail_dist
+                    if new_stop < current_sl:
+                        new_sl = round(new_stop, digits)
+                        if modify_position_sl_tp(existing_pos, new_sl=new_sl):
+                            tracked_positions[symbol]['sl'] = new_sl
+                            log_event(f"{symbol}: Trail SL → {new_sl}", "INFO")
 
         # Supplementary position fields for downstream logic
         try:
@@ -1893,6 +1932,21 @@ def scan_markets(cfg: dict, verbose: bool = False):
         except Exception:
             pass
 
+        # ── SAFETY: Daily Profit Target (match backtest DAILY_TARGET_PCT = 3.0) ───
+        # Stop trading this symbol after 3% daily profit reached
+        DAILY_TARGET_PCT = 3.0
+        try:
+            day_start_bal = float(symbol_day_start_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
+            curr_bal = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
+            if day_start_bal > 0:
+                day_pnl_pct = (curr_bal - day_start_bal) / day_start_bal * 100.0
+                if day_pnl_pct >= DAILY_TARGET_PCT:
+                    print(f"🎯 {symbol}: Daily profit target reached ({day_pnl_pct:.2f}% >= {DAILY_TARGET_PCT}%) — pausing for today")
+                    status.append(f"{symbol}:DAILY_TARGET_HIT")
+                    continue
+        except Exception:
+            pass
+
         # ── SAFETY: Margin Protection (20 %) ────────────────────────
         # Doc: "ak je viac ako 20 % kapitálu viazaného v marži, nový príkaz sa zablokuje"
         # Margin limit check DISABLED - user wants maximum margin usage
@@ -1959,7 +2013,12 @@ def scan_markets(cfg: dict, verbose: bool = False):
                     'entry_regime': entry_regime,
                     'risk_percent': risk_used,
                     'htf_bias': htf_bias,
-                    'be_stage': 0,  # 0=none, 1=BE done, 2=trail done
+                    # Backtest-matching trade management fields
+                    'highest_price': signal['entry'],  # For trailing (tracks highest price for buys)
+                    'lowest_price': signal['entry'],   # For trailing (tracks lowest price for sells)
+                    'partial_taken': False,            # Whether partial TP was taken
+                    'banked_r': 0.0,                  # R-multiple banked from partial close
+                    'remaining_fraction': 1.0,        # Remaining position fraction (1.0 = 100%)
                 }
                 
                 # ── SQLite: record trade open ──

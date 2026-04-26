@@ -53,7 +53,7 @@ MT5_INSTALL_URL = "https://www.metatrader5.com/en/download"
 BACKTEST_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 DB_DIR.mkdir(parents=True, exist_ok=True)
 MT5_BRIDGE_DIR.mkdir(parents=True, exist_ok=True)
-SYMBOLS = ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD", "GBPJPY", "BTCUSD", "NAS100"]
+SYMBOLS = ["EURUSD", "NAS100", "XAUUSD"]
 MIN_BOT_RISK_PERCENT = 0.10
 MAX_BOT_RISK_PERCENT = 2.00
 
@@ -627,7 +627,7 @@ def _start_bot_engine(trigger: str = "api"):
     state["strategy"] = strategy
     save_telegram_state(state)
 
-    notify_telegram("🟢 <b>Bot Started</b>\nStrategy: ICT/SMC\nMonitoring: EURUSD, GBPUSD, GBPJPY, USDJPY, XAUUSD, NAS100, BTCUSD")
+    notify_telegram("🟢 <b>Bot Started</b>\nStrategy: ICT/SMC · Per-Symbol Logic\nMonitoring: EURUSD (fade) · NAS100 (fade) · XAUUSD (trend)")
     return {"success": True, "message": "Bot started", "pid": BOT_PROCESS.pid}, 200
 
 
@@ -1444,9 +1444,12 @@ def _ema(data, period):
     return out
 
 
-def generate_backtest_data(symbol, days, risk_pct=1.0):
-    """Use mt5_bot/backtest_improved.py with strict no-lookahead execution."""
-    from mt5_bot.backtest_improved import initialize_mt5, fetch_data, run_backtest_no_lookahead
+def generate_backtest_data(symbol, days=None, risk_pct=1.0, start_date=None, end_date=None):
+    """Use mt5_bot/backtest_improved.py with strict no-lookahead execution.
+    
+    Supports both 'days' (backward from now) or exact 'start_date' to 'end_date' range.
+    """
+    from mt5_bot.backtest_improved import initialize_mt5, fetch_data, run_live_smc_engine_backtest
 
     if not initialize_mt5():
         return {
@@ -1454,7 +1457,6 @@ def generate_backtest_data(symbol, days, risk_pct=1.0):
             "trades": [],
             "equity_curve": [],
             "symbol": symbol,
-            "days": days,
             "meta": {
                 "mode": "simple_backtest_engine",
                 "message": "MT5 initialization failed. Open MetaTrader 5 terminal and try again.",
@@ -1463,46 +1465,120 @@ def generate_backtest_data(symbol, days, risk_pct=1.0):
         }
 
     try:
-        bars = max(1800, int(days) * 320)
+        # Determine date range
+        if start_date and end_date:
+            # Exact date range specified
+            start_dt = pd.Timestamp(start_date)
+            end_dt = pd.Timestamp(end_date)
+            days = (end_dt - start_dt).days
+            # Fetch more bars to cover the range plus buffer
+            bars = max(2000, int(days) * 340)
+        else:
+            # Default: use days backward from now
+            days = int(days) if days else 60
+            bars = max(1800, int(days) * 320)
+
         df = fetch_data(symbol, bars=bars)
+        print(f"[DEBUG] Fetched {len(df) if df is not None else 0} bars for {symbol}")
+        if df is not None and len(df) > 0:
+            print(f"[DEBUG] Data range: {df.index[0]} to {df.index[-1]}")
         if df is None or df.empty or len(df) < 120:
             return {
                 "candles": [],
                 "trades": [],
                 "equity_curve": [],
                 "symbol": symbol,
-                "days": days,
                 "meta": {
                     "mode": "improved_backtest_engine",
-                    "message": "Not enough MT5 historical candles for selected symbol/days.",
+                    "message": "Not enough MT5 historical candles for selected symbol/date range.",
                 },
                 "metrics": {},
             }
 
-        if "Time" in df.columns:
-            df = df.sort_values("Time").reset_index(drop=True)
-            last_ts = pd.Timestamp(df["Time"].iloc[-1])
-            cutoff_ts = last_ts - timedelta(days=int(days))
-            df = df[df["Time"] >= cutoff_ts].reset_index(drop=True)
+        # Capture original date range BEFORE filtering (for diagnostics)
+        if isinstance(df.index, pd.DatetimeIndex) and len(df) > 0:
+            original_start = str(df.index[0])
+            original_end = str(df.index[-1])
+        else:
+            time_col_diag = "Time" if "Time" in df.columns else "time" if "time" in df.columns else None
+            if time_col_diag:
+                original_start = str(df[time_col_diag].iloc[0])
+                original_end = str(df[time_col_diag].iloc[-1])
+            else:
+                original_start = "unknown"
+                original_end = "unknown"
+
+        # Handle DataFrame with DatetimeIndex or Time column
+        if isinstance(df.index, pd.DatetimeIndex):
+            # DataFrame has DatetimeIndex (from fetch_data)
+            if start_date and end_date:
+                df = df[(df.index >= start_dt) & (df.index <= end_dt)].copy()
+            else:
+                cutoff_ts = df.index[-1] - timedelta(days=int(days))
+                df = df[df.index >= cutoff_ts].copy()
+        else:
+            # Handle both 'Time' and 'time' column names
+            time_col = "Time" if "Time" in df.columns else "time" if "time" in df.columns else None
+            if time_col:
+                df = df.sort_values(time_col).reset_index(drop=True)
+                
+                if start_date and end_date:
+                    # Filter to exact date range
+                    df = df[(df[time_col] >= start_dt) & (df[time_col] <= end_dt)].reset_index(drop=True)
+                else:
+                    # Backward from latest
+                    last_ts = pd.Timestamp(df[time_col].iloc[-1])
+                    cutoff_ts = last_ts - timedelta(days=int(days))
+                    df = df[df[time_col] >= cutoff_ts].reset_index(drop=True)
 
         if df is None or df.empty or len(df) < 120:
+            # Provide diagnostic info about available date range
+            requested_range = f"{start_date} to {end_date}" if start_date and end_date else f"last {days} days"
+
             return {
                 "candles": [],
                 "trades": [],
                 "equity_curve": [],
                 "symbol": symbol,
-                "days": days,
                 "meta": {
                     "mode": "improved_backtest_engine",
-                    "message": "Not enough candles after applying requested day window.",
+                    "message": f"Not enough candles for requested range ({requested_range}). "
+                               f"Available data: {original_start} to {original_end}. "
+                               f"Try a more recent date range or use 'last 60 days' option.",
+                    "requested_start": start_date,
+                    "requested_end": end_date,
+                    "available_start": original_start,
+                    "available_end": original_end,
                 },
                 "metrics": {},
             }
 
-        result = run_backtest_no_lookahead(df, symbol, risk_pct=risk_pct)
+        print(f"[DEBUG] Passing {len(df)} bars to engine, date range: {df.index[0]} to {df.index[-1]}")
+        # Use the live SMC engine backtest (same as robustness tests)
+        result = run_live_smc_engine_backtest(df, symbol, risk_pct=risk_pct)
         metrics = result.get("metrics", {})
         raw_trades = result.get("trades", [])
         equity_curve = result.get("equity_curve", []) or result.get("equity", [])
+        print(f"[DEBUG] Engine returned {len(raw_trades)} trades")
+
+        # Transform trades to frontend format (entryBar, type, entryPrice, etc.)
+        transformed_trades = []
+        for t in raw_trades:
+            # Map engine field names to frontend field names
+            transformed_trades.append({
+                'entryBar': t.get('entry_i', 0),
+                'type': 'BUY' if t.get('direction') == 'buy' else 'SELL',
+                'entryPrice': t.get('entry', 0),
+                'sl': t.get('stop', 0),
+                'tp': t.get('target', 0),
+                'entry_time': t.get('entry_time', ''),
+                'exit_time': t.get('exit_time', ''),
+                'exit_reason': t.get('exit_reason', ''),
+                'profit': t.get('profit', 0),
+                'profit_r': t.get('profit_r', 0),
+                'balance': t.get('balance', 0),
+            })
+        raw_trades = transformed_trades
 
         symbol_decimals = {
             "EURUSD": 5,
@@ -1517,9 +1593,18 @@ def generate_backtest_data(symbol, days, risk_pct=1.0):
 
         candles = []
         bar_index_by_time = {}
-        for idx, row in df.iterrows():
-            ts = int(pd.Timestamp(row["Time"]).timestamp())
-            bar_index_by_time[ts] = int(idx)
+
+        # Determine timestamp source (DatetimeIndex or Time column)
+        if isinstance(df.index, pd.DatetimeIndex):
+            # idx from iterrows() IS the timestamp when using DatetimeIndex
+            get_ts = lambda idx, row: int(pd.Timestamp(idx).timestamp())
+        else:
+            time_col_local = "Time" if "Time" in df.columns else "time" if "time" in df.columns else None
+            get_ts = lambda idx, row: int(pd.Timestamp(row[time_col_local]).timestamp())
+
+        for i, (idx, row) in enumerate(df.iterrows()):
+            ts = get_ts(idx, row)
+            bar_index_by_time[ts] = i
             candles.append({
                 "time": ts,
                 "open": round(float(row["Open"]), dec),
@@ -1530,12 +1615,14 @@ def generate_backtest_data(symbol, days, risk_pct=1.0):
 
         trades = []
         balance = 10000.0
+        skipped_timestamps = 0
         for trade in raw_trades:
             entry_ts = int(pd.Timestamp(trade.get("entry_time")).timestamp())
             exit_ts = int(pd.Timestamp(trade.get("exit_time")).timestamp())
             entry_bar = bar_index_by_time.get(entry_ts)
             exit_bar = bar_index_by_time.get(exit_ts)
             if entry_bar is None or exit_bar is None:
+                skipped_timestamps += 1
                 continue
 
             profit = float(trade.get("profit", 0.0) or 0.0)
@@ -1543,15 +1630,17 @@ def generate_backtest_data(symbol, days, risk_pct=1.0):
             trades.append({
                 "entryBar": int(entry_bar),
                 "exitBar": int(exit_bar),
-                "type": str(trade.get("direction", "BUY")),
-                "entryPrice": round(float(trade.get("entry_price", 0.0) or 0.0), dec),
-                "exitPrice": round(float(trade.get("exit_price", 0.0) or 0.0), dec),
-                "sl": round(float(trade.get("stop_loss", 0.0) or 0.0), dec),
-                "tp": round(float(trade.get("take_profit", 0.0) or 0.0), dec),
+                "type": str(trade.get("type", "BUY")),
+                "entryPrice": round(float(trade.get("entryPrice", 0.0) or 0.0), dec),
+                "exitPrice": round(float(trade.get("entryPrice", 0.0) or 0.0), dec),  # Use entry as fallback
+                "sl": round(float(trade.get("sl", 0.0) or 0.0), dec),
+                "tp": round(float(trade.get("tp", 0.0) or 0.0), dec),
                 "profit": round(profit, 2),
                 "reason": str(trade.get("exit_reason", "")),
                 "balance": round(balance, 2),
             })
+
+        print(f"[DEBUG] Final trades: {len(trades)}, skipped due to timestamp mismatch: {skipped_timestamps}")
 
         interval_minutes = None
         actual_days_covered = None
@@ -1630,7 +1719,7 @@ def _extract_metrics_from_payload(payload: dict) -> dict:
 def api_symbols():
     """Return all tradeable symbols with recommendation status."""
     cfg_path = BASE_DIR / "mt5_bot" / "runtime_config.json"
-    recommended = ["XAUUSD", "GBPUSD", "USDJPY", "BTCUSD", "GBPJPY", "EURUSD", "NAS100"]
+    recommended = ["EURUSD", "NAS100", "XAUUSD"]
     not_rec = []
     try:
         if cfg_path.exists():
@@ -1671,14 +1760,25 @@ def backtest_save():
 def backtest_simulate():
     data = request.json or {}
     symbol = data.get("symbol", "EURUSD")
-    days = min(365, max(7, int(data.get("days", 60))))
+
+    # Support both 'days' (backward) and exact date range
+    start_date = data.get("start_date")  # Format: YYYY-MM-DD
+    end_date = data.get("end_date")      # Format: YYYY-MM-DD
+    days = data.get("days", 60)
+
     try:
         risk_pct = float(data.get("risk_pct", 1.0))
     except Exception:
         risk_pct = 1.0
     risk_pct = max(0.1, min(10.0, risk_pct))
 
-    result = generate_backtest_data(symbol, days, risk_pct=risk_pct)
+    # Use date range if provided, otherwise fall back to days
+    if start_date and end_date:
+        result = generate_backtest_data(symbol, days=None, risk_pct=risk_pct, start_date=start_date, end_date=end_date)
+    else:
+        days = min(365, max(7, int(days)))
+        result = generate_backtest_data(symbol, days=days, risk_pct=risk_pct)
+
     return json_response(result)
 
 
@@ -2185,13 +2285,14 @@ void OnTick() {
 
 
 def _build_bot_package_zip() -> io.BytesIO:
-    """Create in-memory zip package without source code (EA + runtime config templates)."""
+    """Create in-memory zip package with Python bot + MT5 EA + configs."""
 
     zip_buf = io.BytesIO()
     with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("ZenithEA.mq5", _mt5_ea_template_mq5())
+        # MT5 EA files
+        zf.writestr("mt5/ZenithEA.mq5", _mt5_ea_template_mq5())
         zf.writestr(
-            "EA_Config_Template.set",
+            "mt5/EA_Config_Template.set",
             "RiskPerTradePct=0.70\n"
             "MaxDailyDrawdownPct=3.0\n"
             "MaxOpenPositions=3\n"
@@ -2202,17 +2303,47 @@ def _build_bot_package_zip() -> io.BytesIO:
             "StrategyName=zenith_ea\n",
         )
 
+        # Python bot files - CORE STRATEGY
+        bot_dir = BASE_DIR / "mt5_bot"
+        key_files = [
+            "main.py",
+            "smart_money_strategy.py",
+            "backtest_improved.py",
+            "requirements.txt",
+            "runtime_config.json",
+        ]
+
+        for fname in key_files:
+            fpath = bot_dir / fname
+            if fpath.exists():
+                zf.write(fpath, f"bot/{fname}")
+
+        # Main README
         zf.writestr(
-            "README_DOWNLOAD.txt",
-            "Zenith Trading Bot package\n"
-            "========================\n\n"
-            "1) Open ZenithEA.mq5 in MetaEditor and compile to .ex5\n"
-            "2) Attach compiled EA to any chart in MT5\n"
-            "3) In EA settings (Inputs tab), paste your Dashboard URL and API Key\n"
-            "   - Get these from the 'My Credentials' button on your dashboard\n"
-            "4) In MT5: Tools -> Options -> Expert Advisors -> tick 'Allow WebRequest'\n"
-            "   and add your dashboard URL to the allowed list\n"
-            "5) Enable Auto Trading - the EA will connect to your dashboard automatically\n",
+            "README.txt",
+            "ZENITH TRADING BOT - Complete Package\n"
+            "=====================================\n\n"
+            "This package contains:\n\n"
+            "[mt5/] MetaTrader 5 EA (for live trading via MT5)\n"
+            "  - ZenithEA.mq5: Compile in MetaEditor to .ex5\n"
+            "  - EA_Config_Template.set: Input settings template\n\n"
+            "[bot/] Python Trading Bot (standalone version)\n"
+            "  - main.py: Live trading bot entry point\n"
+            "  - smart_money_strategy.py: Strategy logic (Smart Money Concepts)\n"
+            "  - backtest_improved.py: Backtesting engine\n"
+            "  - requirements.txt: Python dependencies\n"
+            "  - runtime_config.json: Bot configuration\n\n"
+            "SETUP OPTIONS:\n\n"
+            "Option A - MT5 EA (Recommended for most users):\n"
+            "  1. Open mt5/ZenithEA.mq5 in MetaEditor, compile to .ex5\n"
+            "  2. Attach EA to any chart in MT5\n"
+            "  3. In EA Inputs, paste Dashboard URL and API Key\n"
+            "  4. Tools -> Options -> Expert Advisors -> Allow WebRequest\n\n"
+            "Option B - Python Bot (Advanced users):\n"
+            "  1. pip install -r bot/requirements.txt\n"
+            "  2. Edit bot/runtime_config.json with your settings\n"
+            "  3. python bot/main.py\n\n"
+            "API credentials available in dashboard 'My Credentials'\n",
         )
 
     zip_buf.seek(0)

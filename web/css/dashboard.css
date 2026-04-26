@@ -105,7 +105,7 @@
     justify-content: center;
     gap: 8px;
     padding: 10px 18px;
-    border: none;
+    border: 1px solid rgba(255,255,255,0.05);
     border-radius: var(--radius-md);
     font-family: var(--font-sans);
     font-weight: 600;
@@ -118,17 +118,15 @@
 }
 
 .btn-outline {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255,255,255,0.06);
     color: var(--z-text-2);
-    backdrop-filter: blur(8px);
 }
 
 .btn-outline:hover {
-    border-color: var(--z-green);
+    border-color: rgba(0, 255, 135, 0.4);
     color: var(--z-green);
-    background: rgba(0, 255, 135, 0.08);
-    box-shadow: 0 0 20px rgba(0, 255, 135, 0.15);
+    background: rgba(0, 255, 135, 0.05);
 }
 
 .btn-outline:disabled {
@@ -138,7 +136,7 @@
 
 
 .dashboard-body {
-    --dash-sidebar-w: clamp(280px, 17vw, 360px);
+    --dash-sidebar-w: clamp(300px, 19vw, 400px);
     --z-text-1: var(--z-text);
     --z-text-2: #cfd6e0;
     --z-text-3: var(--z-text-2);
@@ -146,7 +144,8 @@
     font-size: 14px;
     display: grid;
     grid-template-columns: var(--dash-sidebar-w) 1fr;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     background:
         radial-gradient(ellipse 40% 30% at 50% 5%, rgba(0,255,135,0.06) 0%, transparent 50%),
         radial-gradient(ellipse 60% 40% at 70% 20%, rgba(0,255,135,0.028) 0%, transparent 50%),
@@ -321,7 +320,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: clamp(16px, 1.3vw, 28px) clamp(18px, 1.5vw, 34px);
+    padding: 12px 20px;
     background: linear-gradient(165deg, rgba(14,22,34,0.72) 0%, rgba(8,14,22,0.58) 100%);
     backdrop-filter: blur(50px);
     border: 1px solid rgba(255,255,255,0.03);
@@ -356,27 +355,27 @@
 }
 
 .top-bar-left h1 {
-    font-size: clamp(1.5rem, 1.4vw, 2.3rem);
-    font-weight: 700;
+    font-size: 1.4rem;
+    font-weight: 600;
     color: var(--z-text-1);
     font-family: var(--font-display);
-    text-shadow: 0 0 30px rgba(0,255,135,0.08);
+    margin: 0;
 }
 
 .bot-status {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: clamp(0.86rem, 0.58vw, 1.05rem);
+    gap: 10px;
+    font-size: clamp(0.9rem, 0.65vw, 1.1rem);
     color: var(--z-text-3);
 }
 
 .status-indicator {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     animation: dotPulse 2s ease-in-out infinite;
-    box-shadow: 0 0 8px currentColor;
+    box-shadow: 0 0 10px currentColor;
 }
 
 .status-inactive {
@@ -385,7 +384,7 @@
 
 .status-active {
     background: var(--z-green);
-    box-shadow: 0 0 12px var(--z-green), 0 0 24px rgba(0,255,135,0.3);
+    box-shadow: 0 0 14px var(--z-green), 0 0 32px rgba(0,255,135,0.45), 0 0 48px rgba(0,255,135,0.18);
 }
 
 @keyframes dotPulse {
@@ -395,24 +394,32 @@
 
 .top-bar-right {
     display: flex;
-    gap: 12px;
+    gap: 10px;
+    flex-wrap: nowrap;
+    align-items: center;
 }
 
 .btn-sm {
-    padding: 8px 12px !important;
+    padding: 8px 14px !important;
     font-size: 0.85rem !important;
+    white-space: nowrap;
 }
 
-/* Restore glow button visuals — aligned with homepage */
+/* Glow button — toned down for top bar */
 .btn.btn-glow {
-    background: var(--z-green);
+    background: rgba(0, 255, 135, 0.9);
     color: #04120a;
-    font-weight: 700;
+    font-weight: 600;
     position: relative;
     overflow: hidden;
-    border: none;
+    border: 1px solid rgba(0,255,135,0.3);
     cursor: pointer;
-    box-shadow: 0 8px 28px rgba(0,255,135,0.25);
+    box-shadow: 0 4px 15px rgba(0,255,135,0.2);
+}
+
+.btn.btn-glow:hover {
+    background: var(--z-green);
+    box-shadow: 0 6px 20px rgba(0,255,135,0.35);
 }
 .btn.btn-glow::after {
     content: '';
@@ -517,7 +524,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    text-shadow: 0 0 30px rgba(0,255,135,0.1);
+    text-shadow: 0 0 40px rgba(0,255,135,0.22), 0 2px 4px rgba(0,0,0,0.3);
+    letter-spacing: -0.01em;
 }
 
 .section-header-dash h2 i {
@@ -555,20 +563,20 @@
 
 .stat-card {
     padding: 22px;
-    background: linear-gradient(165deg, rgba(14,22,34,0.65) 0%, rgba(8,14,22,0.5) 100%);
+    background: linear-gradient(165deg, rgba(14,22,34,0.68) 0%, rgba(8,14,22,0.52) 100%);
     backdrop-filter: blur(40px);
-    border: 1px solid rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.055);
     border-radius: 18px;
     position: relative;
     overflow: hidden;
     transition: all 0.5s cubic-bezier(0.23,1,0.32,1);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.02) inset;
+    box-shadow: 0 4px 28px rgba(0,0,0,0.28), 0 1px 0 rgba(255,255,255,0.03) inset;
 }
 .stat-card::before {
     content: '';
     position: absolute; top: 0; left: 5%; right: 5%; height: 1px;
-    background: linear-gradient(90deg, transparent 5%, rgba(0,255,135,0.18) 35%, rgba(96,239,255,0.12) 65%, transparent 95%);
-    opacity: 0;
+    background: linear-gradient(90deg, transparent 5%, rgba(0,255,135,0.22) 35%, rgba(96,239,255,0.14) 65%, transparent 95%);
+    opacity: 0.25;
     transition: opacity 0.5s ease;
 }
 
@@ -632,8 +640,8 @@
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 25px rgba(0,255,135,0.25));
-    text-shadow: 0 0 40px rgba(0,255,135,0.15);
+    filter: drop-shadow(0 0 35px rgba(0,255,135,0.38)) drop-shadow(0 0 16px rgba(0,255,135,0.18));
+    letter-spacing: -0.02em;
 }
 
 .stat-value.negative {
@@ -664,6 +672,7 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    border: 1px solid rgba(255,255,255,0.045);
 }
 
 .activity-header {
@@ -1134,8 +1143,8 @@
     border-radius: 50%;
     background: var(--z-green);
     cursor: pointer;
-    border: none;
-    box-shadow: 0 0 8px rgba(0, 255, 135, 0.4);
+    border: 2px solid rgba(0, 255, 135, 0.55);
+    box-shadow: 0 0 14px rgba(0, 255, 135, 0.55), 0 0 28px rgba(0, 255, 135, 0.18);
 }
 
 .bt-control-action {
@@ -1231,11 +1240,11 @@
 }
 
 .top-bar {
-    padding: clamp(12px, 1.05vw, 20px) clamp(14px, 1.2vw, 24px);
+    padding: 12px 20px;
 }
 
 .top-bar-left h1 {
-    font-size: clamp(1.2rem, 1.15vw, 1.8rem);
+    font-size: 1.4rem;
 }
 
 .section-header-dash h2 {
@@ -3292,6 +3301,10 @@
         inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
+.dashboard-body .glass-card:hover {
+    transform: none;
+}
+
     .dashboard-body .sidebar.glass-card:hover {
         transform: none;
         border-color: rgba(255,255,255,0.045);
@@ -3360,8 +3373,8 @@
 }
 
 .dashboard-body .sidebar-link:hover {
-    padding-left: 24px;
-    border-left: none;
+    padding-left: 28px;
+    border-left: 2px solid rgba(0,255,135,0.35);
     color: #fff;
     background: linear-gradient(90deg, rgba(0,255,135,0.11), rgba(0,255,135,0.025));
     box-shadow: inset 0 0 18px rgba(0,255,135,0.08);
@@ -3369,14 +3382,14 @@
 }
 
 .dashboard-body .sidebar-link.active {
-    padding-left: 24px;
-    border-left: none;
+    padding-left: 28px;
+    border-left: 2px solid rgba(0,255,135,0.7);
     color: #fff;
-    background: linear-gradient(90deg, rgba(0,255,135,0.2), rgba(0,255,135,0.06));
+    background: linear-gradient(90deg, rgba(0,255,135,0.18), rgba(0,255,135,0.04));
     box-shadow:
-        inset 0 0 24px rgba(0,255,135,0.14),
-        0 0 22px rgba(0,255,135,0.14);
-    text-shadow: 0 0 20px rgba(0,255,135,0.35);
+        inset 0 0 28px rgba(0,255,135,0.16),
+        0 0 28px rgba(0,255,135,0.16);
+    text-shadow: 0 0 24px rgba(0,255,135,0.5);
 }
 
 .dashboard-body .sidebar-footer {
@@ -3408,7 +3421,7 @@
 .dashboard-body .robust-card,
 .dashboard-body .profile-card,
 .dashboard-body .stat-card {
-    border-color: rgba(255,255,255,0.055);
+    border-color: rgba(255,255,255,0.07);
     box-shadow:
         0 16px 56px rgba(0,0,0,0.5),
         0 0 72px rgba(0,255,135,0.13),
@@ -4239,7 +4252,19 @@
         gap: 14px;
     }
     .dashboard-section { gap: 14px; }
-    .top-bar { padding: 12px 14px; }
+    .top-bar {
+        padding: 12px 14px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .top-bar-right {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .btn-sm {
+        padding: 6px 10px !important;
+        font-size: 0.8rem !important;
+    }
     .profile-grid { grid-template-columns: 1fr; }
     .profile-hero { flex-direction: column; text-align: center; }
     .profile-hero-stats { flex-wrap: wrap; justify-content: center; }

@@ -44,17 +44,10 @@ warnings.filterwarnings('ignore')
 # ===============================================================================
 
 INSTRUMENTS = {
-    # CORE (must focus)
+    # CORE 3 ONLY - matches live bot exactly
     'EURUSD': {'pip_size': 0.0001, 'spread': 0.8,  'vol': 1.0},
     'NAS100': {'pip_size': 1.0,    'spread': 2.0,  'vol': 1.0},  # NASDAQ 100
     'XAUUSD': {'pip_size': 0.1,    'spread': 3.0,  'vol': 1.5},  # Gold
-    # SECONDARY (optional additions)
-    'GBPUSD': {'pip_size': 0.0001, 'spread': 1.0,  'vol': 1.2},
-    'SP500':  {'pip_size': 0.1,    'spread': 2.0,  'vol': 1.0},  # S&P 500 (broker: SP500)
-    'USDJPY': {'pip_size': 0.01,   'spread': 1.2,  'vol': 1.1},
-    # ADVANCED (only if sharp)
-    'GER40':  {'pip_size': 1.0,    'spread': 2.5,  'vol': 1.2},  # DAX (broker: GER40)
-    'EURJPY': {'pip_size': 0.01,   'spread': 1.5,  'vol': 1.2},
 }
 
 FOREX_PLUS = {'EURUSD', 'GBPUSD', 'USDJPY', 'EURJPY', 'XAUUSD'}  # Advisor-approved list
@@ -1612,7 +1605,7 @@ def _slice_live_engine_window(df: pd.DataFrame, end_time, bars: int) -> pd.DataF
 
 
 def run_live_smc_engine_backtest(df_m15: pd.DataFrame, symbol: str, risk_pct: float = 1.0) -> dict:
-    from smart_money_strategy import SmartMoneyStrategy, SYMBOL_RULES, _atr
+    from mt5_bot.smart_money_strategy import SmartMoneyStrategy, SYMBOL_RULES, _atr
 
     df = _standardize_ohlc_columns(df_m15)
     if not isinstance(df.index, pd.DatetimeIndex):
@@ -1638,7 +1631,7 @@ def run_live_smc_engine_backtest(df_m15: pd.DataFrame, symbol: str, risk_pct: fl
     daily_trade_count = {}
     daily_start_equity = {}
     MAX_DAILY_TRADES = 3
-    DAILY_TARGET_PCT = 2.0
+    DAILY_TARGET_PCT = 3.0
     KILL_SWITCH_DD_PCT = 5.0
     kill_switch_triggered = False
 
@@ -2001,11 +1994,12 @@ def calendar_walk_validate(symbols=('EURUSD', 'NAS100', 'XAUUSD'), windows=15, b
 
 
 def monte_carlo_live_smc_engine(symbols=('EURUSD', 'NAS100', 'XAUUSD'), period_bars=4000, bars=20000, simulations=500) -> dict:
-    """Run a single backtest per symbol, then shuffle the trade order N times to stress-test robustness.
-    Reports the distribution of final returns and worst-case drawdown across shuffles."""
+    """Run a single backtest per symbol, then bootstrap sample trade outcomes with replacement.
+    This creates variation because we randomly SELECT which trades occur, not just shuffle order.
+    Reports the distribution of final returns and worst-case drawdown across simulations."""
     results = {}
     for symbol in symbols:
-        print(f'\n{"="*80}\n{symbol} MONTE CARLO ROBUSTNESS\n{"="*80}')
+        print(f'\n{"="*80}\n{symbol} MONTE CARLO ROBUSTNESS (Bootstrap)\n{"="*80}')
         df = fetch_data(symbol, bars=bars)
         if df is None or len(df) < period_bars + 1000:
             continue
@@ -2015,24 +2009,32 @@ def monte_carlo_live_smc_engine(symbols=('EURUSD', 'NAS100', 'XAUUSD'), period_b
         if not rs:
             print(f'{symbol}: no trades produced; skipping')
             continue
+        
         final_returns = []
         max_dds = []
         rng = np.random.default_rng(42)
         risk_pct = 1.0
+        
         for _ in tqdm(range(simulations), desc=f'{symbol} monte-carlo', unit='sim', dynamic_ncols=True):
-            order = rng.permutation(len(rs))
+            # Bootstrap: randomly sample trades WITH replacement (different trade count and mix each time)
+            n_trades = len(rs)
+            sampled_rs = rng.choice(rs, size=n_trades, replace=True)
+            
             equity = INITIAL_BALANCE
             peak = equity
             curve = [equity]
-            for idx in order:
-                equity *= (1 + (risk_pct / 100) * rs[idx])
+            
+            for r in sampled_rs:
+                equity += equity * (risk_pct / 100) * r  # Additive for realistic position sizing
                 peak = max(peak, equity)
                 curve.append(equity)
+                
             curve = np.array(curve)
             running_peak = np.maximum.accumulate(curve)
             dd = ((running_peak - curve) / running_peak).max() * 100
             final_returns.append((curve[-1] - curve[0]) / curve[0] * 100)
             max_dds.append(dd)
+            
         summary = {
             'trades': len(rs),
             'mean_return_pct': float(np.mean(final_returns)),

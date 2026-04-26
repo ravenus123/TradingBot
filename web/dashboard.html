@@ -9,8 +9,8 @@
     <link rel="apple-touch-icon" href="/favicon.svg?v=20260225-2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="css/style.css?v=20260226-12">
-    <link rel="stylesheet" href="css/dashboard.css?v=20260226-15">
+    <link rel="stylesheet" href="css/style.css?v=20260226-17">
+    <link rel="stylesheet" href="css/dashboard.css?v=20260226-19">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -46,7 +46,7 @@
         <nav class="sidebar-nav">
             <a href="#overview" class="sidebar-link active" data-section="overview"><i class="fas fa-chart-bar"></i><span>Overview</span></a>
             <a href="#backtest" class="sidebar-link" data-section="backtest"><i class="fas fa-flask"></i><span>Backtest</span></a>
-            <a href="#botcontrol" class="sidebar-link" data-section="botcontrol"><i class="fas fa-robot"></i><span>Bot</span></a>
+            <a href="#botcontrol" class="sidebar-link" data-section="botcontrol"><i class="fas fa-robot"></i><span>Bot Control</span></a>
             <a href="#runs" class="sidebar-link" data-section="runs"><i class="fas fa-list"></i><span>Runs</span></a>
             <a href="#history" class="sidebar-link" data-section="history"><i class="fas fa-history"></i><span>Trades</span></a>
             <a href="#robustness" class="sidebar-link" data-section="robustness"><i class="fas fa-shield-alt"></i><span>Robustness</span></a>
@@ -520,17 +520,10 @@
                     </div>
                     <div class="market-pair">
                         <div class="pair-info">
-                            <span class="pair-name">GBP/USD</span>
-                            <span class="pair-price" id="mktGBPUSD">—</span>
+                            <span class="pair-name">NAS100</span>
+                            <span class="pair-price" id="mktNAS100">—</span>
                         </div>
-                        <span class="pair-change" id="mktGBPUSDchg">—</span>
-                    </div>
-                    <div class="market-pair">
-                        <div class="pair-info">
-                            <span class="pair-name">USD/JPY</span>
-                            <span class="pair-price" id="mktUSDJPY">—</span>
-                        </div>
-                        <span class="pair-change" id="mktUSDJPYchg">—</span>
+                        <span class="pair-change" id="mktNAS100chg">—</span>
                     </div>
                     <div class="market-pair">
                         <div class="pair-info">
@@ -575,21 +568,19 @@
                     <div class="bt-control">
                         <label>Symbol</label>
                         <select id="btSymbol" class="select-input">
-                            <option value="XAUUSD">XAUUSD ★</option>
-                            <option value="GBPUSD">GBPUSD ★</option>
-                            <option value="USDJPY">USDJPY ★</option>
-                            <option value="BTCUSD">BTCUSD ★</option>
-                            <option value="GBPJPY">GBPJPY ★</option>
-                            <option value="EURUSD">EURUSD ★</option>
-                            <option value="NAS100">NAS100 ★</option>
+                            <option value="XAUUSD">XAUUSD ★ trend</option>
+                            <option value="NAS100">NAS100 ★ fade</option>
+                            <option value="EURUSD">EURUSD ★ fade</option>
                         </select>
                     </div>
                     <div class="bt-control">
-                        <label>Period</label>
-                        <div class="bt-days-wrap">
-                            <input type="number" id="btDays" min="7" max="365" value="60" class="text-input" />
-                            <span class="bt-days-unit">days</span>
+                        <label>Date Range</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="date" id="btStartDate" class="text-input" style="width:130px" />
+                            <span style="color:var(--z-muted)">to</span>
+                            <input type="date" id="btEndDate" class="text-input" style="width:130px" />
                         </div>
+                        <span class="form-hint" style="font-size:0.7rem; margin-top:4px;">Leave empty for last 60 days</span>
                     </div>
                     <div class="bt-control">
                         <label>Risk %</label>
@@ -727,7 +718,7 @@
                         <div class="tip-number">02</div>
                         <div class="tip-content">
                             <div class="tip-title">Test Multiple Pairs</div>
-                            <div class="tip-desc">A robust strategy performs well across correlated and uncorrelated instruments. Try EURUSD, XAUUSD, and NAS100.</div>
+                            <div class="tip-desc">A robust strategy performs well across correlated and uncorrelated instruments. The bot is tuned for EUR/USD (fade), NAS100 (fade), and XAU/USD (trend) — try the calendar-walk + portfolio modes to see all 3 stacked.</div>
                         </div>
                     </div>
                     <div class="tip-item">
