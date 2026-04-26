@@ -1,48 +1,30 @@
 {
-  "generated_at": "2026-03-01T17:49:33.000085Z",
-  "source": "param_sweep_v3 (balanced ICT/SMC)",
+  "generated_at": "2026-04-24 21:08:27.627321",
+  "source": "fast_perfect.py",
   "instruments": {
-    "USDJPY": {
-      "EMA": 40,
-      "ADX": 16.0,
+    "EURUSD": {
+      "EMA": 10,
+      "ADX": 8.0,
       "SL_Mult": 3.0,
-      "RR": 1.5
+      "RR": 3.5,
+      "Return_Pct": 3265.3,
+      "Win_Rate": 90.0,
+      "Trades": 140,
+      "PF": 24.92,
+      "Robust_Avg": 231.9,
+      "Robust_WR": 100.0
     },
     "XAUUSD": {
-      "EMA": 60,
-      "ADX": 16.0,
-      "SL_Mult": 2.5,
-      "RR": 3.0
-    },
-    "NAS100": {
-      "EMA": 30,
-      "ADX": 20.0,
-      "SL_Mult": 3.0,
-      "RR": 1.5
-    },
-    "EURUSD": {
-      "EMA": 80,
-      "ADX": 16.0,
-      "SL_Mult": 3.0,
-      "RR": 1.5
-    },
-    "GBPUSD": {
-      "EMA": 40,
-      "ADX": 28.0,
-      "SL_Mult": 3.0,
-      "RR": 3.5
-    },
-    "GBPJPY": {
-      "EMA": 30,
-      "ADX": 16.0,
-      "SL_Mult": 1.0,
-      "RR": 4.0
-    },
-    "BTCUSD": {
-      "EMA": 60,
-      "ADX": 20.0,
-      "SL_Mult": 3.0,
-      "RR": 1.5
+      "EMA": 5,
+      "ADX": 15,
+      "SL_Mult": 0.5,
+      "RR": 2.5,
+      "Return_Pct": 51.71641426446513,
+      "Win_Rate": 31.428571428571427,
+      "Trades": 35,
+      "PF": 1.8938841429409654,
+      "Robust_Avg": 36.47419281243894,
+      "Robust_WR": 70.0
     }
   }
 }

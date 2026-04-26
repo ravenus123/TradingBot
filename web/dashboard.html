@@ -294,6 +294,9 @@
                         <span class="table-subtitle">Signals, opened/failed orders, open positions, and engine log</span>
                     </div>
                     <div class="table-toolbar-right">
+                        <button class="btn btn-outline btn-sm" id="toggleLiveMonitorAutoBtn" title="Toggle auto updates">
+                            <i class="fas fa-bolt"></i> Auto: <span id="liveMonitorAutoState">On</span>
+                        </button>
                         <button class="btn btn-outline btn-sm" id="refreshLiveMonitorBtn"><i class="fas fa-rotate"></i> Refresh Monitor</button>
                     </div>
                 </div>
@@ -336,25 +339,30 @@
                     </table>
                 </div>
 
-                <div class="table-scroll-wrap" style="margin-top:16px;">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Symbol</th>
-                                <th>Message</th>
-                            </tr>
-                        </thead>
-                        <tbody id="botActivityTable">
-                            <tr class="empty-state-row"><td colspan="3">No activity events yet</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <details class="dash-details" style="margin-top:16px;" open>
+                    <summary class="dash-details-summary"><i class="fas fa-scroll"></i> Activity Feed</summary>
+                    <div class="table-scroll-wrap" style="margin-top:12px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Symbol</th>
+                                    <th>Message</th>
+                                </tr>
+                            </thead>
+                            <tbody id="botActivityTable">
+                                <tr class="empty-state-row"><td colspan="3">No activity events yet</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
 
-                <div class="form-group" style="margin-top:16px;">
-                    <label><i class="fas fa-file-lines" style="color:var(--z-green);margin-right:6px;font-size:0.75rem;"></i>Raw Engine Log</label>
-                    <pre id="botRawLog" class="bot-raw-log">No logs yet.</pre>
-                </div>
+                <details class="dash-details" style="margin-top:14px;">
+                    <summary class="dash-details-summary"><i class="fas fa-file-lines"></i> Raw Engine Log</summary>
+                    <div class="form-group" style="margin-top:12px;">
+                        <pre id="botRawLog" class="bot-raw-log">No logs yet.</pre>
+                    </div>
+                </details>
             </div>
 
             <!-- Trading Activity Timeline -->

@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-04-24 22:17:03.658124",
+  "source": "smc_optimize_all.py - SMART MONEY STRATEGY",
+  "instruments": {
+    "EURUSD": {
+      "Pullback_Pct": 0.3,
+      "RR_Ratio": 2.0,
+      "Risk_Pct": 5.0,
+      "Return_Pct": 120.76873196507081,
+      "Win_Rate": 68.75,
+      "Trades": 16,
+      "PF": 4.014847777935823,
+      "Robust_Avg_Return": 64.50259927887501,
+      "Robust_Win_Rate": 100.0
+    },
+    "NAS100": {
+      "Pullback_Pct": 0.3,
+      "RR_Ratio": 3.0,
+      "Risk_Pct": 5.0,
+      "Return_Pct": 105.82726768777474,
+      "Win_Rate": 58.333333333333336,
+      "Trades": 12,
+      "PF": 3.381145106764647,
+      "Robust_Avg_Return": 89.30340509274025,
+      "Robust_Win_Rate": 100.0
+    },
+    "XAUUSD": {
+      "Pullback_Pct": 0.3,
+      "RR_Ratio": 2.0,
+      "Risk_Pct": 5.0,
+      "Return_Pct": 132.3881389106008,
+      "Win_Rate": 73.33333333333333,
+      "Trades": 15,
+      "PF": 4.833162241861998,
+      "Robust_Avg_Return": 69.71873215000001,
+      "Robust_Win_Rate": 100.0
+    }
+  }
+}

@@ -882,7 +882,7 @@ def resolve_bot_python() -> str:
     return sys.executable
 
 
-def load_trades(user_id: int = None):
+def load_trades(user_id: int = None, include_open: bool = False):
     # Try CSV first (live_trades.csv from bot — same-machine)
     if TRADES_FILE.exists():
         try:
@@ -897,11 +897,12 @@ def load_trades(user_id: int = None):
             import sqlite3
             conn = sqlite3.connect(str(TRADES_DB_FILE))
             conn.row_factory = sqlite3.Row
+            where = "WHERE close_price IS NOT NULL" if not include_open else ""
             rows = conn.execute(
                 "SELECT symbol, type as direction, open_price as entry_price, "
                 "close_price as exit_price, lot_size as quantity, profit, "
                 "close_time as timestamp, exit_reason "
-                "FROM trades WHERE close_price IS NOT NULL "
+                f"FROM trades {where} "
                 "ORDER BY id DESC LIMIT 200"
             ).fetchall()
             conn.close()
@@ -915,11 +916,12 @@ def load_trades(user_id: int = None):
         try:
             conn = get_db()
             cur = conn.cursor()
+            where = "AND close_price IS NOT NULL" if not include_open else ""
             cur.execute(
                 "SELECT symbol, trade_type as direction, open_price as entry_price, "
                 "close_price as exit_price, lot_size as quantity, profit, "
                 "close_time as timestamp, exit_reason "
-                "FROM bot_trades WHERE user_id = ? AND close_price IS NOT NULL "
+                f"FROM bot_trades WHERE user_id = ? {where} "
                 "ORDER BY id DESC LIMIT 200",
                 (user_id,)
             )
@@ -3094,14 +3096,25 @@ def get_bot_activity():
 def get_bot_positions():
     # 1) Read from bot heartbeat (runtime_status.json) — no MT5 conflict
     runtime = load_bot_runtime_state(request.user["id"])
+    runtime_pos_count = int(runtime.get("open_positions", 0) or 0)
     heartbeat_positions = runtime.get("position_details")
     if isinstance(heartbeat_positions, list) and heartbeat_positions:
-        return json_response({"positions": heartbeat_positions, "source": "bot_heartbeat"})
+        return json_response({
+            "positions": heartbeat_positions,
+            "open_positions_count": len(heartbeat_positions),
+            "source": "bot_heartbeat"
+        })
 
     # 2) Fallback: MT5 bridge push
     bridge = load_mt5_runtime_snapshot(request.user["id"])
     if bridge and isinstance(bridge.get("positions"), list):
-        return json_response({"positions": bridge.get("positions", []), "source": "mt5_bridge_push"})
+        bridge_positions = bridge.get("positions", []) or []
+        bridge_pos_count = int(bridge.get("open_positions", 0) or 0)
+        return json_response({
+            "positions": bridge_positions,
+            "open_positions_count": len(bridge_positions) if bridge_positions else bridge_pos_count,
+            "source": "mt5_bridge_push"
+        })
 
     # 3) Fallback: open trades from SQLite
     if TRADES_DB_FILE.exists():
@@ -3129,7 +3142,11 @@ def get_bot_positions():
                         "profit": 0.0,
                         "open_time": r["open_time"] or "",
                     })
-                return json_response({"positions": positions, "source": "sqlite_open_trades"})
+                return json_response({
+                    "positions": positions,
+                    "open_positions_count": len(positions),
+                    "source": "sqlite_open_trades"
+                })
         except Exception:
             pass
 
@@ -3160,16 +3177,27 @@ def get_bot_positions():
                     "profit": 0.0,
                     "open_time": r["open_time"] or "",
                 })
-            return json_response({"positions": positions, "source": "remote_push_trades"})
+            return json_response({
+                "positions": positions,
+                "open_positions_count": len(positions),
+                "source": "remote_push_trades"
+            })
     except Exception:
         pass
 
     # 4) Check heartbeat count — bot reports positions but details not yet available
-    pos_count = runtime.get("open_positions", 0)
-    if pos_count and int(pos_count) > 0:
-        return json_response({"positions": [], "message": f"Bot reports {pos_count} open position(s) — details loading next scan cycle"})
+    if runtime_pos_count > 0:
+        return json_response({
+            "positions": [],
+            "open_positions_count": runtime_pos_count,
+            "message": f"Bot reports {runtime_pos_count} open position(s) — details loading next scan cycle"
+        })
 
-    return json_response({"positions": [], "message": "No open positions"})
+    return json_response({
+        "positions": [],
+        "open_positions_count": 0,
+        "message": "No open positions"
+    })
 
 
 @app.route("/api/bot/insights", methods=["GET"])
@@ -3194,8 +3222,9 @@ def get_bot_insights():
 @app.route("/api/metrics", methods=["GET"])
 @require_auth
 def get_metrics():
-    trades_df = load_trades(user_id=request.user["id"])
-    metrics = calculate_metrics(trades_df)
+    closed_df = load_trades(user_id=request.user["id"], include_open=False)
+    all_df = load_trades(user_id=request.user["id"], include_open=True)
+    metrics = calculate_metrics(closed_df)
     runtime = load_bot_runtime_state(request.user["id"])
 
     # Read live account data from bot heartbeat (runtime_status.json)
@@ -3228,7 +3257,9 @@ def get_metrics():
         "realized_pnl": round(metrics["total_pnl"], 2),
         "pnl_percentage": round(pnl_pct, 2),
         "win_rate": metrics["win_rate"],
-        "total_trades": metrics["total_trades"],
+        # Show total trades as all trades (open + closed), but keep winrate/PF from closed trades only.
+        "total_trades": int(len(all_df)) if all_df is not None else metrics["total_trades"],
+        "closed_trades": metrics["total_trades"],
         "sharpe_ratio": metrics["sharpe_ratio"],
         "profit_factor": metrics["profit_factor"],
         "max_drawdown": metrics["max_drawdown"],
@@ -3317,7 +3348,7 @@ def get_equity():
 @require_auth
 def get_trades():
     limit = request.args.get("limit", 50, type=int)
-    trades_df = load_trades(user_id=request.user["id"])
+    trades_df = load_trades(user_id=request.user["id"], include_open=True)
 
     if trades_df.empty:
         return json_response([])
@@ -3337,14 +3368,18 @@ def get_trades():
 
     trades = []
     for _, row in trades_df.iterrows():
+        exit_price = row.get("exit_price", row.get("Exit_Price", None))
+        pnl = row.get("pnl", row.get("profit", row.get("PnL", None)))
+        status = "open" if (exit_price is None or (isinstance(exit_price, float) and np.isnan(exit_price))) else "closed"
         trade = {
             "symbol": str(row.get("symbol", row.get("Symbol", "N/A"))),
             "type": str(row.get("type", row.get("Type", row.get("direction", "N/A")))),
             "entry_price": float(row.get("entry_price", row.get("Entry_Price", 0))),
-            "exit_price": float(row.get("exit_price", row.get("Exit_Price", 0))),
+            "exit_price": None if status == "open" else float(exit_price or 0),
             "quantity": float(row.get("quantity", row.get("Quantity", 0))),
-            "pnl": float(row.get("pnl", row.get("profit", row.get("PnL", 0)))),
-            "timestamp": str(row.get("timestamp", row.get("exit_time", row.get("time", "N/A"))))
+            "pnl": None if status == "open" else float(pnl or 0),
+            "timestamp": str(row.get("timestamp", row.get("exit_time", row.get("time", "N/A")))),
+            "status": status,
         }
         trades.append(trade)
 

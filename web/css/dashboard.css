@@ -433,7 +433,7 @@
     pointer-events: none;
 }
 .btn.btn-glow:hover {
-    transform: translateY(-2px);
+    transform: none;
     background: #2bff9f;
     color: #04120a;
     box-shadow: 0 10px 34px rgba(0,255,135,0.3);
@@ -574,7 +574,7 @@
 
 .stat-card:hover {
     box-shadow: 0 16px 50px rgba(0,0,0,0.4), 0 0 50px rgba(0,255,135,0.06);
-    transform: translateY(-6px);
+    transform: none;
     border-color: rgba(0,255,135,0.08);
 }
 .stat-card:hover::before {
@@ -797,7 +797,48 @@
 .profile-card:hover {
     border-color: rgba(0, 255, 135, 0.08);
     box-shadow: 0 16px 60px rgba(0, 0, 0, 0.45), 0 0 70px rgba(0,255,135,0.05);
-    transform: translateY(-3px);
+    transform: none;
+}
+
+/* Hover "glint" (no movement) */
+.stat-card::after,
+.chart-card::after,
+.metrics-card::after,
+.form-card::after,
+.table-card::after,
+.robust-card::after,
+.profile-card::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+        110deg,
+        transparent 0%,
+        rgba(255,255,255,0.00) 42%,
+        rgba(255,255,255,0.10) 50%,
+        rgba(0,255,135,0.08) 55%,
+        rgba(96,239,255,0.06) 60%,
+        transparent 70%
+    );
+    transform: translateX(-140%) skewX(-14deg);
+    opacity: 0;
+}
+.stat-card:hover::after,
+.chart-card:hover::after,
+.metrics-card:hover::after,
+.form-card:hover::after,
+.table-card:hover::after,
+.robust-card:hover::after,
+.profile-card:hover::after {
+    opacity: 1;
+    animation: dashGlintSweep 900ms ease-out both;
+}
+@keyframes dashGlintSweep {
+    from { transform: translateX(-140%) skewX(-14deg); opacity: 0; }
+    10%  { opacity: 0.85; }
+    to   { transform: translateX(140%) skewX(-14deg); opacity: 0; }
 }
 
 .card-glow {
@@ -1778,7 +1819,7 @@
 .btn-danger:hover {
     background: rgba(255, 107, 107, 0.2) !important;
     box-shadow: 0 0 16px rgba(255, 107, 107, 0.3) !important;
-    transform: translateY(-1px);
+    transform: none;
 }
 
 .btn-danger:active {
@@ -2131,7 +2172,7 @@
 .market-pair:hover {
     background: rgba(0,255,135,0.05);
     border-color: rgba(0,255,135,0.1);
-    transform: translateY(-2px);
+    transform: none;
 }
 
 .pair-info {
@@ -2285,7 +2326,7 @@
 .strategy-detail-item:hover {
     background: rgba(0,255,135,0.05);
     border-color: rgba(0,255,135,0.08);
-    transform: translateY(-2px);
+    transform: none;
     box-shadow: 0 8px 24px rgba(0,0,0,0.3);
 }
 
@@ -2352,7 +2393,7 @@
 .tip-item:hover {
     background: rgba(0,0,0,0.3);
     border-color: rgba(0,255,135,0.08);
-    transform: translateY(-2px);
+    transform: none;
 }
 
 .tip-number {
@@ -2479,7 +2520,7 @@
 }
 
 .mt5-feature-card:hover {
-    transform: translateY(-4px);
+    transform: none;
     border-color: rgba(0,255,135,0.1);
     box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 40px rgba(0,255,135,0.06);
 }
@@ -2971,7 +3012,7 @@
     white-space: nowrap;
 }
 .mc-run-btn:hover {
-    transform: translateY(-2px);
+    transform: none;
 }
 .mc-run-btn.is-loading {
     opacity: 0.7;
@@ -3003,7 +3044,7 @@
 .mc-explainer-item:hover {
     background: rgba(0,0,0,0.3);
     border-color: rgba(0,255,135,0.08);
-    transform: translateY(-2px);
+    transform: none;
 }
 .mc-explainer-icon {
     width: 42px;
@@ -3218,11 +3259,13 @@
    HOMEPAGE PARITY OVERRIDES (GREEN-ONLY + STRONGER GLOW)
    ═══════════════════════════════════════════════ */
 .dashboard-body {
-    --z-cyan: #00ff87;
     --z-text-1: var(--z-text);
     --z-text-2: #c6d0dc;
     --z-text-3: #8b97a8;
     --z-text-4: #687586;
+    --z-cyan: #66ffb7;
+    --z-cyan-2: #60efff;
+    --z-red: #ff4757;
     background:
         radial-gradient(ellipse 52% 34% at 50% 4%, rgba(0,255,135,0.09) 0%, transparent 54%),
         radial-gradient(ellipse 66% 44% at 72% 18%, rgba(0,255,135,0.045) 0%, transparent 58%),
@@ -3695,7 +3738,7 @@
 
 .bot-symbol-chip:hover {
     border-color: rgba(0, 255, 135, 0.5);
-    transform: translateY(-2px);
+    transform: none;
     box-shadow: 0 10px 24px rgba(0,0,0,0.28), 0 0 24px rgba(0,255,135,0.08);
 }
 
@@ -3752,6 +3795,28 @@
     line-height: 1.35;
     white-space: pre-wrap;
 }
+
+/* Collapsible sections (reduce visual noise) */
+.dash-details {
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.02);
+    padding: 12px 14px;
+}
+.dash-details[open] { background: rgba(255,255,255,0.022); }
+.dash-details-summary {
+    list-style: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--z-text-2);
+    font-weight: 700;
+    font-family: var(--font-display);
+    user-select: none;
+}
+.dash-details-summary::-webkit-details-marker { display: none; }
+.dash-details-summary i { color: var(--z-green); }
 
 .telegram-config-card .telegram-grid {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

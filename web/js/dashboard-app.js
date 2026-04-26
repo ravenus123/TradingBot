@@ -346,19 +346,23 @@ async function loadTrades() {
     table.innerHTML = trades.map(t => `<tr>
         <td>${t.timestamp}</td><td><strong>${t.symbol}</strong></td>
         <td><span class="badge badge-${t.type === 'BUY' ? 'success' : 'danger'}">${t.type}</span></td>
-        <td>${t.quantity}</td><td>${t.entry_price}</td><td>${t.exit_price}</td>
-        <td class="${t.pnl >= 0 ? 'positive' : 'negative'}">${t.pnl.toFixed(2)}</td>
-        <td>${t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)}</td>
+        <td>${t.quantity}</td>
+        <td>${Number(t.entry_price || 0).toFixed(5)}</td>
+        <td>${(t.exit_price == null) ? '—' : Number(t.exit_price || 0).toFixed(5)} ${(t.status === 'open' || t.exit_price == null) ? '<span class="badge badge-neutral" style="margin-left:8px">OPEN</span>' : ''}</td>
+        <td class="${(t.pnl == null) ? '' : (t.pnl >= 0 ? 'positive' : 'negative')}">${(t.pnl == null) ? '—' : Number(t.pnl || 0).toFixed(2)}</td>
+        <td>${(t.pnl == null) ? '—' : ((t.pnl >= 0 ? '+' : '') + Number(t.pnl || 0).toFixed(2))}</td>
     </tr>`).join('');
 
     // Populate history summary stats
+    const closedTrades = trades.filter(t => t.pnl != null);
     const total = trades.length;
-    const wins = trades.filter(t => t.pnl > 0).length;
+    const wins = closedTrades.filter(t => t.pnl > 0).length;
+    const closedTotal = closedTrades.length;
     const wr = total > 0 ? (wins / total * 100).toFixed(1) : '0.0';
-    const totalPnl = trades.reduce((s, t) => s + (t.pnl || 0), 0);
-    const avgReturn = total > 0 ? (totalPnl / total).toFixed(2) : '0.00';
+    const totalPnl = closedTrades.reduce((s, t) => s + (t.pnl || 0), 0);
+    const avgReturn = closedTotal > 0 ? (totalPnl / closedTotal).toFixed(2) : '0.00';
     if ($('histTotalTrades')) $('histTotalTrades').textContent = total;
-    if ($('histWinRate')) $('histWinRate').textContent = wr + '%';
+    if ($('histWinRate')) $('histWinRate').textContent = (closedTotal > 0 ? (wins / closedTotal * 100).toFixed(1) : '0.0') + '%';
     if ($('histTotalPnl')) $('histTotalPnl').textContent = (totalPnl >= 0 ? '+' : '') + '$' + totalPnl.toFixed(2);
     if ($('histAvgReturn')) $('histAvgReturn').textContent = (avgReturn >= 0 ? '+' : '') + '$' + avgReturn;
 
@@ -372,7 +376,7 @@ async function loadTrades() {
             preview.innerHTML = recent.map(t => `<div class="recent-trade-row">
                 <span class="rt-symbol"><strong>${t.symbol}</strong></span>
                 <span class="badge badge-${t.type === 'BUY' ? 'success' : 'danger'}" style="font-size:0.65rem;padding:2px 6px;">${t.type}</span>
-                <span class="rt-pnl ${t.pnl >= 0 ? 'positive' : 'negative'}">${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}</span>
+                <span class="rt-pnl ${(t.pnl == null) ? '' : (t.pnl >= 0 ? 'positive' : 'negative')}">${(t.pnl == null) ? 'OPEN' : ((t.pnl >= 0 ? '+' : '') + '$' + Number(t.pnl || 0).toFixed(2))}</span>
                 <span class="rt-time" style="color:var(--z-text-3);font-size:0.7rem;">${t.timestamp || ''}</span>
             </div>`).join('');
         }
@@ -2192,6 +2196,10 @@ async function setAllSymbols(enabled) {
 }
 
 async function loadBotMonitor() {
+    if (typeof window.__liveMonitorAuto === 'boolean' && window.__liveMonitorAuto === false) {
+        return;
+    }
+
     const [activity, positionsRes, logsRes] = await Promise.all([
         apiFetch('/bot/activity?lines=220'),
         apiFetch('/bot/positions'),
@@ -2210,7 +2218,10 @@ async function loadBotMonitor() {
 
     const positions = positionsRes?.positions || [];
     const posMsg = positionsRes?.message || '';
-    setText('liveOpenPositionsCount', positions.length);
+    const openPosCount = (typeof positionsRes?.open_positions_count === 'number')
+        ? positionsRes.open_positions_count
+        : positions.length;
+    setText('liveOpenPositionsCount', openPosCount);
 
     const posTable = document.getElementById('liveOpenPositionsTable');
     if (posTable) {
@@ -2249,7 +2260,13 @@ async function loadBotMonitor() {
     }
 
     const rawEl = document.getElementById('botRawLog');
-    if (rawEl) rawEl.textContent = logsRes?.logs || 'No logs yet.';
+    if (rawEl) {
+        const next = logsRes?.logs || 'No logs yet.';
+        if (window.__lastBotRawLog !== next) {
+            rawEl.textContent = next;
+            window.__lastBotRawLog = next;
+        }
+    }
 
     // --- Trading Activity Timeline (Overview section) ---
     const timeline = document.getElementById('tradingTimeline');
@@ -2346,6 +2363,11 @@ function initEvents() {
     bind('disableAllSymbolsBtn', () => setAllSymbols(false));
     bind('reloadBotConfigBtn', loadBotConfig);
     bind('refreshLiveMonitorBtn', loadBotMonitor);
+    bind('toggleLiveMonitorAutoBtn', () => {
+        window.__liveMonitorAuto = !(window.__liveMonitorAuto ?? true);
+        const stateEl = document.getElementById('liveMonitorAutoState');
+        if (stateEl) stateEl.textContent = (window.__liveMonitorAuto ? 'On' : 'Off');
+    });
     bind('startStopBtn', handleStartStop);
     bind('saveTelegramConfigBtn', saveTelegramConfig);
     bind('generateBotApiKeyBtn', generateBotApiKey);
@@ -2643,6 +2665,7 @@ function initDashGhostPairs() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    window.__liveMonitorAuto = true;
     requireAuth();
     initSidebarNav();
     initEvents();

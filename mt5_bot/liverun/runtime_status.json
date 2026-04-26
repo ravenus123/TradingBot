@@ -1,23 +1,5 @@
 {
-  "timestamp": "2026-03-01T20:51:46.788242+00:00",
-  "state": "running",
-  "message": "Scan cycle completed",
-  "enabled_symbols": [
-    "BTCUSD",
-    "EURUSD",
-    "GBPJPY",
-    "GBPUSD",
-    "NAS100",
-    "USDJPY",
-    "XAUUSD"
-  ],
-  "open_positions": 0,
-  "position_details": [],
-  "signals_detected": 0,
-  "positions_opened": 0,
-  "failed_orders": 0,
-  "status_line": "EURUSD:- | GBPUSD:- | USDJPY:- | XAUUSD:- | GBPJPY:- | BTCUSD:- | NAS100:-",
-  "balance": 993.82,
-  "equity": 993.82,
-  "floating_pnl": 0.0
+  "timestamp": "2026-04-24T17:06:30.366087+00:00",
+  "state": "stopped",
+  "message": "MT5 disconnected"
 }
