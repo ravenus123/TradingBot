@@ -1,0 +1,66 @@
+{
+  "symbol": "XAUUSD",
+  "trades": [
+    {
+      "entry_time": "65",
+      "exit_time": "70",
+      "direction": "BUY",
+      "entry_price": 4052.2,
+      "exit_price": 4052.2,
+      "stop_loss": 4052.2,
+      "take_profit": 4073.629964285714,
+      "profit": -4.619699719518234,
+      "exit_reason": "SL",
+      "bars_held": 5
+    },
+    {
+      "entry_time": "76",
+      "exit_time": "81",
+      "direction": "SELL",
+      "entry_price": 4033.47,
+      "exit_price": 4048.486071428571,
+      "stop_loss": 4048.486071428571,
+      "take_profit": 4005.3148660714282,
+      "profit": -203.90147897611064,
+      "exit_reason": "SL",
+      "bars_held": 5
+    },
+    {
+      "entry_time": "85",
+      "exit_time": "86",
+      "direction": "BUY",
+      "entry_price": 4050.62,
+      "exit_price": 4035.4839285714284,
+      "stop_loss": 4035.4839285714284,
+      "take_profit": 4075.594517857143,
+      "profit": -199.71095827639562,
+      "exit_reason": "SL",
+      "bars_held": 1
+    }
+  ],
+  "metrics": {
+    "total_trades": 3,
+    "wins": 0,
+    "losses": 3,
+    "win_rate": 0.0,
+    "total_profit": -408.2321369720245,
+    "avg_profit": -136.07737899067482,
+    "avg_win": 0,
+    "avg_loss": -136.07737899067482,
+    "best_trade": -4.619699719518234,
+    "worst_trade": -203.90147897611064,
+    "profit_factor": 0.0,
+    "max_drawdown": 408.2321369720248,
+    "final_balance": 9591.767863027975,
+    "return_pct": -4.082321369720248
+  },
+  "equity_curve": [
+    10000.0,
+    9995.380300280482,
+    9791.47882130437,
+    9591.767863027975
+  ],
+  "lookahead_safe": true,
+  "mode": "standard",
+  "run_id": "bdb640e6df1579646eec3256"
+}

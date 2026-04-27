@@ -186,50 +186,71 @@ function startHeartbeatTicker() {
 
 // render backtest results
 function renderRunResult(result) {
-    if (!result) return 'No result data yet.';
+    if (!result) return '<p style="color:var(--z-text-3);">No result data yet.</p>';
 
-    if (result.mode === 'walk_forward') {
+    const mode = result.mode || 'backtest';
+
+    if (mode === 'walk_forward') {
         return `<div class="result-grid">
-            <div class="result-item"><span class="label">Mode</span><span class="value">Walk-Forward</span></div>
+            <div class="result-item"><span class="label">Type</span><span class="value">Walk-Forward</span></div>
             <div class="result-item"><span class="label">Periods</span><span class="value">${result.total_periods || 0}</span></div>
             <div class="result-item"><span class="label">Profitable</span><span class="value">${result.profitable_periods || 0}</span></div>
             <div class="result-item"><span class="label">Consistency</span><span class="value">${num(result.consistency)}%</span></div>
-            <div class="result-item"><span class="label">Avg Profit / Period</span><span class="value">$${num(result.average_profit_per_period)}</span></div>
+            <div class="result-item"><span class="label">Avg Profit/Period</span><span class="value">$${num(result.average_profit_per_period)}</span></div>
         </div>`;
     }
 
-    if (result.mode === 'split') {
-        const m = result.test?.metrics || {};
+    if (mode === 'split') {
+        const tr = result.train?.metrics || {};
+        const te = result.test?.metrics || {};
         return `<div class="result-grid">
-            <div class="result-item"><span class="label">Mode</span><span class="value">Split (${num(result.split_ratio, 2)})</span></div>
-            <div class="result-item"><span class="label">Test Trades</span><span class="value">${m.total_trades || 0}</span></div>
-            <div class="result-item"><span class="label">Test Win Rate</span><span class="value">${num(m.win_rate)}%</span></div>
-            <div class="result-item"><span class="label">Test Profit</span><span class="value">$${num(m.total_profit)}</span></div>
-            <div class="result-item"><span class="label">Profit Factor</span><span class="value">${num(m.profit_factor)}</span></div>
+            <div class="result-item"><span class="label">Type</span><span class="value">Split Test</span></div>
+            <div class="result-item"><span class="label">Test Trades</span><span class="value">${te.total_trades || 0}</span></div>
+            <div class="result-item"><span class="label">Test Win Rate</span><span class="value">${num(te.win_rate)}%</span></div>
+            <div class="result-item"><span class="label">Test Profit</span><span class="value">$${num(te.total_profit)}</span></div>
+            <div class="result-item"><span class="label">Profit Factor</span><span class="value">${num(te.profit_factor)}</span></div>
+            <div class="result-item"><span class="label">Max Drawdown</span><span class="value">${num(te.max_drawdown_pct || te.max_drawdown)}%</span></div>
+            <div class="result-item"><span class="label">Return</span><span class="value">${num(te.return_pct)}%</span></div>
+            <div class="result-item"><span class="label">Final Balance</span><span class="value">$${num(te.final_balance)}</span></div>
         </div>`;
     }
 
-    if (result.mode === 'monte_carlo') {
+    if (mode === 'monte_carlo') {
         const mc = result.monte_carlo || {};
-        const sm = result.standard?.metrics || {};
+        const sm = result.standard?.metrics || result.metrics || {};
         return `<div class="result-grid">
-            <div class="result-item"><span class="label">Mode</span><span class="value">Monte Carlo</span></div>
-            <div class="result-item"><span class="label">Iterations</span><span class="value">${mc.iterations || 0}</span></div>
+            <div class="result-item"><span class="label">Type</span><span class="value">Monte Carlo</span></div>
+            <div class="result-item"><span class="label">Iterations</span><span class="value">${mc.iterations || 200}</span></div>
             <div class="result-item"><span class="label">P10 Balance</span><span class="value">$${num(mc.p10)}</span></div>
             <div class="result-item"><span class="label">P50 Balance</span><span class="value">$${num(mc.p50)}</span></div>
             <div class="result-item"><span class="label">P90 Balance</span><span class="value">$${num(mc.p90)}</span></div>
+            <div class="result-item"><span class="label">Base Trades</span><span class="value">${sm.total_trades || 0}</span></div>
             <div class="result-item"><span class="label">Base Profit</span><span class="value">$${num(sm.total_profit)}</span></div>
+            <div class="result-item"><span class="label">Win Rate</span><span class="value">${num(sm.win_rate)}%</span></div>
         </div>`;
     }
 
+    if (mode === 'robustness_20') {
+        return `<div class="result-grid">
+            <div class="result-item"><span class="label">Type</span><span class="value">20-Period Robustness</span></div>
+            <div class="result-item"><span class="label">Periods</span><span class="value">${result.total_periods || 20}</span></div>
+            <div class="result-item"><span class="label">Profitable</span><span class="value">${result.profitable_periods || 0}</span></div>
+            <div class="result-item"><span class="label">Consistency</span><span class="value">${num(result.consistency)}%</span></div>
+            <div class="result-item"><span class="label">Avg Profit/Period</span><span class="value">$${num(result.average_profit_per_period)}</span></div>
+        </div>`;
+    }
+
+    // Standard / default
     const m = result.metrics || {};
     return `<div class="result-grid">
-        <div class="result-item"><span class="label">Mode</span><span class="value">Standard</span></div>
         <div class="result-item"><span class="label">Trades</span><span class="value">${m.total_trades || 0}</span></div>
         <div class="result-item"><span class="label">Win Rate</span><span class="value">${num(m.win_rate)}%</span></div>
         <div class="result-item"><span class="label">Total Profit</span><span class="value">$${num(m.total_profit)}</span></div>
         <div class="result-item"><span class="label">Profit Factor</span><span class="value">${num(m.profit_factor)}</span></div>
-        <div class="result-item"><span class="label">Max Drawdown</span><span class="value">$${num(m.max_drawdown)}</span></div>
+        <div class="result-item"><span class="label">Max Drawdown</span><span class="value">${num(m.max_drawdown_pct ?? m.max_drawdown)}%</span></div>
+        <div class="result-item"><span class="label">Return</span><span class="value">${num(m.return_pct)}%</span></div>
+        <div class="result-item"><span class="label">Final Balance</span><span class="value">$${num(m.final_balance)}</span></div>
+        <div class="result-item"><span class="label">Sharpe</span><span class="value">${num(m.sharpe_ratio ?? m.sharpe, 2)}</span></div>
     </div>`;
 }
 
@@ -250,13 +271,22 @@ async function loadStatus() {
     const lastUpdate = document.getElementById('lastUpdate');
 
     const isRunning = status.status === 'running';
+    const engineSt = status.engine_status || 'stopped';
 
-    if (isRunning) {
+    if (isRunning && engineSt === 'running') {
         indicator?.classList.add('status-active');
-        indicator?.classList.remove('status-inactive');
+        indicator?.classList.remove('status-inactive', 'status-stale');
         if (statusText) statusText.textContent = 'Bot Running';
+    } else if (isRunning && engineSt === 'running_stale') {
+        indicator?.classList.add('status-stale');
+        indicator?.classList.remove('status-active', 'status-inactive');
+        if (statusText) statusText.textContent = 'Bot Running (stale)';
+    } else if (engineSt === 'process_only') {
+        indicator?.classList.add('status-stale');
+        indicator?.classList.remove('status-active', 'status-inactive');
+        if (statusText) statusText.textContent = 'Process alive';
     } else {
-        indicator?.classList.remove('status-active');
+        indicator?.classList.remove('status-active', 'status-stale');
         indicator?.classList.add('status-inactive');
         if (statusText) statusText.textContent = 'Bot Stopped';
     }
@@ -289,9 +319,18 @@ async function loadStatus() {
             processStatus.textContent = 'Active';
         }
     }
-    if (strategy) strategy.textContent = status.active_strategy || '—';
+    if (strategy) strategy.textContent = status.active_strategy || 'Smart Money';
     if (pid) pid.textContent = status.pid ? String(status.pid) : (isRunning ? 'External' : '—');
     if (lastUpdate) lastUpdate.textContent = formatTime(new Date().toISOString());
+    const botLastUpdateEl = document.getElementById('botLastUpdate');
+    if (botLastUpdateEl) {
+        if (status.last_scan_age_s != null) {
+            const secs = Math.round(status.last_scan_age_s);
+            botLastUpdateEl.textContent = secs < 60 ? `${secs}s ago` : `${Math.round(secs/60)}m ago`;
+        } else {
+            botLastUpdateEl.textContent = isRunning ? 'Active' : 'Not running';
+        }
+    }
 
     // Show enabled symbols in status line area
     const symbolsEl = document.getElementById('botSymbols');
@@ -320,20 +359,35 @@ async function loadMetrics() {
     const m = await apiFetch('/metrics');
     if (!m) return;
     const $ = id => document.getElementById(id);
-    if ($('balance')) $('balance').textContent = Number(m.balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    if ($('balanceChange')) $('balanceChange').textContent = `${Number(m.pnl_percentage || 0).toFixed(2)}%`;
+    // Balance: prefer live account balance, fallback to 10000
+    const liveAcc = m.live_account || {};
+    const bal = Number(liveAcc.balance || m.balance || 10000);
+    const totalReturn = Number(m.total_return || 0);
+    if ($('balance')) $('balance').textContent = bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // balanceChange shows total return %
+    const balChgEl = $('balanceChange');
+    if (balChgEl) {
+        balChgEl.textContent = `${totalReturn >= 0 ? '+' : ''}${totalReturn.toFixed(2)}%`;
+        const parentEl = balChgEl.closest('.stat-change');
+        if (parentEl) {
+            parentEl.style.color = totalReturn >= 0 ? 'var(--z-green)' : '#ff4d6d';
+            const icon = parentEl.querySelector('i');
+            if (icon) icon.className = totalReturn >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down';
+        }
+    }
     if ($('totalTrades')) $('totalTrades').textContent = Number(m.total_trades || 0);
     if ($('winRate')) $('winRate').textContent = Number(m.win_rate || 0).toFixed(1);
-    if ($('pnl')) $('pnl').textContent = Number(m.profit_factor || 0).toFixed(2);
     if ($('sharpeRatio')) $('sharpeRatio').textContent = Number(m.sharpe_ratio || 0).toFixed(2);
     if ($('profitFactor')) $('profitFactor').textContent = Number(m.profit_factor || 0).toFixed(2);
-    if ($('maxDrawdown')) $('maxDrawdown').textContent = `${Number(m.max_drawdown_pct ?? m.max_drawdown ?? 0).toFixed(2)}`;
+    if ($('maxDrawdown')) $('maxDrawdown').textContent = Number(m.max_drawdown_pct ?? m.max_drawdown ?? 0).toFixed(2);
+    // Performance Metrics panel
     if ($('avgWin')) $('avgWin').textContent = `+$${Number(m.average_win || 0).toFixed(2)}`;
     if ($('avgLoss')) $('avgLoss').textContent = `-$${Number(m.average_loss || 0).toFixed(2)}`;
-    if ($('largestWin')) $('largestWin').textContent = `+$${Number(m.largest_win || m.best_trade || 0).toFixed(2)}`;
-    const wins = Number(m.wins || 0);
-    const losses = Number(m.losses || (m.total_trades || 0) - wins);
-    if ($('winLossRatio')) $('winLossRatio').textContent = losses > 0 ? (wins / losses).toFixed(2) : wins > 0 ? '∞' : '0.00';
+    // Largest win from trades if available
+    if ($('largestWin')) $('largestWin').textContent = `+$${Number(m.largest_win || m.best_trade || m.average_win || 0).toFixed(2)}`;
+    const winCount = Number(m.winning_trades || m.wins || 0);
+    const lossCount = Number(m.losing_trades || m.losses || Math.max(0, (m.closed_trades || m.total_trades || 0) - winCount));
+    if ($('winLossRatio')) $('winLossRatio').textContent = lossCount > 0 ? (winCount / lossCount).toFixed(2) : winCount > 0 ? '∞' : '0.00';
     refreshStatCardColors();
 }
 
@@ -384,8 +438,45 @@ async function loadTrades() {
 }
 
 async function loadEquity() {
-    const data = await apiFetch('/equity');
-    if (!data) return;
+    const tfSel = document.getElementById('equityTimeframe');
+    const tf = tfSel ? tfSel.value : 'all';
+    const data = await apiFetch('/equity?timeframe=' + tf);
+    if (!data || !data.data || !data.data.length) {
+        const ctx = document.getElementById('equityChart');
+        if (ctx && !equityChart) {
+            const noDataLabel = document.createElement('div');
+            noDataLabel.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--z-text-3);font-size:0.9rem;text-align:center;';
+            noDataLabel.innerHTML = '<i class="fas fa-chart-area" style="font-size:2rem;display:block;margin-bottom:8px;opacity:0.3"></i>No equity data yet<br><small>Start trading to see your curve</small>';
+            ctx.parentElement.style.position = 'relative';
+            ctx.parentElement.appendChild(noDataLabel);
+        }
+        return;
+    }
+
+    // Filter by timeframe client-side if server doesn't support it
+    let labels = data.labels || [];
+    let values = data.data || [];
+    if (tf !== 'all' && labels.length > 0) {
+        const now = new Date();
+        const cutoff = new Date(now);
+        if (tf === '1d') cutoff.setDate(cutoff.getDate() - 1);
+        else if (tf === '7d') cutoff.setDate(cutoff.getDate() - 7);
+        else if (tf === '30d') cutoff.setDate(cutoff.getDate() - 30);
+        const filtered = labels.map((l, i) => ({ l, v: values[i] })).filter(p => {
+            const d = new Date(p.l);
+            return !isNaN(d) ? d >= cutoff : true;
+        });
+        if (filtered.length > 0) {
+            labels = filtered.map(p => p.l);
+            values = filtered.map(p => p.v);
+        }
+    }
+
+    // Detect positive/negative trend for color
+    const isProfit = values.length >= 2 ? values[values.length - 1] >= values[0] : true;
+    const lineColor = isProfit ? '#00ff87' : '#ff4d6d';
+    const fillColor0 = isProfit ? 'rgba(0,255,135,0.15)' : 'rgba(255,77,109,0.12)';
+
     const ctx = document.getElementById('equityChart');
     if (!ctx) return;
 
@@ -393,35 +484,52 @@ async function loadEquity() {
         equityChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.labels,
+                labels,
                 datasets: [{
                     label: 'Equity',
-                    data: data.data,
-                    borderColor: '#00ff87',
+                    data: values,
+                    borderColor: lineColor,
                     backgroundColor: (context) => {
                         const chart = context.chart;
                         const { ctx: c, chartArea } = chart;
                         if (!chartArea) return 'transparent';
                         const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-                        g.addColorStop(0, 'rgba(0, 255, 135, 0.12)');
-                        g.addColorStop(1, 'rgba(0, 255, 135, 0)');
+                        g.addColorStop(0, fillColor0);
+                        g.addColorStop(1, 'rgba(0,0,0,0)');
                         return g;
                     },
-                    tension: 0.3, fill: true, pointRadius: 0, borderWidth: 2
+                    tension: 0.35, fill: true, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2
                 }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(10,20,15,0.92)',
+                        borderColor: lineColor,
+                        borderWidth: 1,
+                        titleColor: '#9ca3af',
+                        bodyColor: lineColor,
+                        callbacks: {
+                            label: (ctx) => ' $' + Number(ctx.parsed.y).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        }
+                    }
+                },
                 scales: {
                     x: { ticks: { color: '#4a5568', maxTicksLimit: 8, font: { family: "'JetBrains Mono'", size: 10 } }, grid: { color: 'rgba(255,255,255,0.03)' } },
-                    y: { ticks: { color: '#4a5568', font: { family: "'JetBrains Mono'", size: 10 } }, grid: { color: 'rgba(255,255,255,0.03)' } }
+                    y: {
+                        ticks: { color: '#4a5568', font: { family: "'JetBrains Mono'", size: 10 }, callback: (v) => '$' + Number(v).toFixed(0) },
+                        grid: { color: 'rgba(255,255,255,0.04)' }
+                    }
                 }
             }
         });
     } else {
-        equityChart.data.labels = data.labels;
-        equityChart.data.datasets[0].data = data.data;
+        equityChart.data.labels = labels;
+        equityChart.data.datasets[0].data = values;
+        equityChart.data.datasets[0].borderColor = lineColor;
         equityChart.update('none');
     }
 }
@@ -770,6 +878,7 @@ async function runBacktest() {
 
     btCandles = data.candles;
     btTrades = data.trades || [];
+    window.btSignalMarkers = data.signal_markers || [];
     btMarkers = [];
     btIdx = 0;
     btPaused = false;
@@ -1093,17 +1202,37 @@ function animateNextCandle() {
 }
 
 function checkTradeMarkers(barIdx) {
+    // Render signal detection markers (SMC scan results, not necessarily traded)
+    if (window.btSignalMarkers) {
+        for (const sm of window.btSignalMarkers) {
+            if (sm.bar === barIdx) {
+                const isBuy = sm.direction === 'buy';
+                btMarkers.push({
+                    time: btCandles[barIdx].time,
+                    position: isBuy ? 'belowBar' : 'aboveBar',
+                    color: isBuy ? 'rgba(0,255,135,0.45)' : 'rgba(96,239,255,0.45)',
+                    shape: 'circle',
+                    size: 0.5,
+                    text: '',
+                });
+                btSeries.setMarkers(btMarkers.slice());
+            }
+        }
+    }
     for (const t of btTrades) {
         if (t.entryBar === barIdx) {
             // entry arrow marker
+            const rrLabel = t.profit_r != null ? ` R:${Number(t.profit_r).toFixed(1)}` : '';
+            const scoreLabel = t.score && t.score > 0 ? ` S:${Number(t.score).toFixed(1)}` : '';
             btMarkers.push({
                 time: btCandles[barIdx].time,
                 position: t.type === 'BUY' ? 'belowBar' : 'aboveBar',
                 color: t.type === 'BUY' ? '#00ff87' : '#ff6b6b',
                 shape: t.type === 'BUY' ? 'arrowUp' : 'arrowDown',
-                text: t.type
+                text: t.type + rrLabel + scoreLabel
             });
             btSeries.setMarkers(btMarkers.slice());
+            showEntryInfoPanel(t);
 
             // draw SL / TP / Entry price lines
             try {
@@ -1137,12 +1266,14 @@ function checkTradeMarkers(barIdx) {
         if (t.exitBar === barIdx) {
             // exit marker
             const isWin = t.profit > 0;
+            const rawReason = (t.reason || 'exit').toUpperCase();
+            const niceReason = rawReason === 'SL_AMBIGUOUS' ? 'SL' : rawReason === 'TIMEOUT' ? 'Max Hold' : rawReason === 'SL_BE' ? 'BE' : rawReason === 'TP' ? 'TP' : rawReason === 'SL' ? 'SL' : rawReason;
             btMarkers.push({
                 time: btCandles[barIdx].time,
                 position: isWin ? 'aboveBar' : 'belowBar',
                 color: isWin ? '#00ff87' : '#ff6b6b',
                 shape: 'circle',
-                text: t.reason + (isWin ? ' ✓' : ' ✗')
+                text: niceReason + (isWin ? ' ✓' : ' ✗')
             });
             btSeries.setMarkers(btMarkers.slice());
 
@@ -1197,15 +1328,58 @@ function showTradePopup(profit, isWin, reason) {
 
     const sign = profit >= 0 ? '+' : '';
     const icon = isWin ? '💰' : '🔻';
-    el.innerHTML = `<span>${icon} ${sign}$${Math.abs(profit).toFixed(2)}</span>`;
+    const rawReason = (reason || '').toUpperCase();
+    const niceReason = rawReason === 'SL_AMBIGUOUS' ? 'SL' : rawReason === 'TIMEOUT' ? 'Max Hold' : rawReason === 'SL_BE' ? 'BE' : rawReason === 'TP' ? 'TP' : rawReason === 'SL' ? 'SL' : rawReason;
+    el.innerHTML = `<span>${icon} ${sign}$${Math.abs(profit).toFixed(2)}</span><span style="font-size:0.7em;opacity:0.75;display:block;">${niceReason}</span>`;
 
-    // position randomly in the right half of the chart
     el.style.right = (20 + Math.random() * 80) + 'px';
     el.style.top = (30 + Math.random() * 50) + '%';
     container.style.position = 'relative';
     container.appendChild(el);
 
     setTimeout(() => { if (el.parentNode) el.remove(); }, 2200);
+}
+
+function showEntryInfoPanel(trade) {
+    const container = document.getElementById('btChartContainer');
+    if (!container) return;
+    const existing = container.querySelector('.bt-entry-info');
+    if (existing) existing.remove();
+
+    const dir = trade.type === 'BUY' ? '🟢 LONG' : '🔴 SHORT';
+    const rr = trade.profit_r != null ? Number(trade.profit_r).toFixed(2) + 'R' : '—';
+    const score = trade.score != null && trade.score > 0 ? Number(trade.score).toFixed(1) : '—';
+
+    const el = document.createElement('div');
+    el.className = 'bt-entry-info';
+    el.style.cssText = `
+        position:absolute; top:10px; left:10px; z-index:20;
+        background:rgba(4,8,14,0.88); border:1px solid rgba(0,255,135,0.25);
+        border-radius:10px; padding:8px 14px; font-family:'JetBrains Mono',monospace;
+        font-size:0.72rem; color:#c8d8e8; backdrop-filter:blur(8px);
+        animation:btEntryInfoIn 0.35s cubic-bezier(0.22,1,0.36,1) forwards;
+        pointer-events:none;
+    `;
+    el.innerHTML = `
+        <div style="color:#00ff87;font-weight:700;margin-bottom:4px;">${dir} — ICT/SMC Signal</div>
+        <div>Entry: <b style="color:#e8ecf1;">${Number(trade.entryPrice).toFixed(5)}</b></div>
+        <div>SL: <b style="color:#ff6b6b;">${Number(trade.sl).toFixed(5)}</b> &nbsp; TP: <b style="color:#00ff87;">${Number(trade.tp).toFixed(5)}</b></div>
+        <div>R:R target: <b style="color:#60efff;">${rr}</b> &nbsp; Score: <b style="color:#ffc107;">${score}</b></div>
+    `;
+    container.appendChild(el);
+
+    if (!document.getElementById('btEntryInfoKf')) {
+        const s = document.createElement('style');
+        s.id = 'btEntryInfoKf';
+        s.textContent = `
+        @keyframes btEntryInfoIn {
+            from { opacity:0; transform:translateY(-6px); }
+            to   { opacity:1; transform:translateY(0);    }
+        }`;
+        document.head.appendChild(s);
+    }
+
+    setTimeout(() => { if (el.parentNode) el.remove(); }, 4000);
 }
 
 function updateBtLiveStats() {
@@ -1289,7 +1463,7 @@ async function runSuite() {
 }
 
 async function runRobustness20() {
-    const status = document.getElementById('btStatus');
+    const status = document.getElementById('robustnessStatus') || document.getElementById('btStatus');
     const symbolSel = document.getElementById('btSymbol');
     const symbol = symbolSel ? symbolSel.value : 'EURUSD';
 
@@ -1300,10 +1474,34 @@ async function runRobustness20() {
     });
 
     if (res && res.success) {
-        setStatusText(status, `Robustness run queued: ${res.run_id}`);
+        setStatusText(status, `✅ Robustness run queued — ID: ${res.run_id}`);
         setTimeout(async () => { await loadRuns(); await loadRobustness(); }, 1500);
     } else {
-        setStatusText(status, 'Failed to start 20-period robustness run.', true);
+        setStatusText(status, '❌ Failed to start robustness run. Make sure MT5 is connected.', true);
+    }
+}
+
+// NEW: Extreme Robustness Test - 50 periods across all symbols
+async function runExtremeRobustness() {
+    const status = document.getElementById('robustnessStatus') || document.getElementById('btStatus');
+    const symbols = ['XAUUSD', 'NAS100', 'EURUSD'];
+    
+    setStatusText(status, '🚀 Starting EXTREME robustness: 50 periods × 3 symbols...');
+    
+    let started = 0;
+    for (const symbol of symbols) {
+        const res = await apiFetch('/backtest/run-robustness-20', {
+            method: 'POST',
+            body: JSON.stringify({ symbol, periods: 50, extreme: true })
+        });
+        if (res && res.success) started++;
+    }
+
+    if (started === symbols.length) {
+        setStatusText(status, `✅ Extreme robustness queued: ${started} symbols × 50 periods`);
+        setTimeout(async () => { await loadRuns(); await loadRobustness(); }, 2000);
+    } else {
+        setStatusText(status, `⚠️ Started ${started}/${symbols.length} — check MT5 connection`, true);
     }
 }
 
@@ -1708,7 +1906,7 @@ async function loadRuns() {
         const ta = new Date(a.created_at || 0).getTime() || 0;
         const tb = new Date(b.created_at || 0).getTime() || 0;
         return tb - ta;
-    });
+    }).slice(0, 50); // show max 50 most recent
 
     const totalRunsCountEl = document.getElementById('totalRunsCount');
     const completedRunsCountEl = document.getElementById('completedRunsCount');
@@ -1728,22 +1926,33 @@ async function loadRuns() {
     if (bestRunPFEl) bestRunPFEl.textContent = bestPf > 0 ? num(bestPf, 2) : '—';
 
     if (!allRuns.length) {
-        table.innerHTML = '<tr class="empty-state-row"><td colspan="7">No runs yet</td></tr>';
+        table.innerHTML = '<tr class="empty-state-row"><td colspan="6" style="text-align:center;padding:24px;color:var(--z-text-3);">No backtest runs yet. Run a backtest first.</td></tr>';
         return;
     }
+
+    const modeDisplay = m => ({
+        walk_forward: 'Walk-Forward', split: 'Split Test', monte_carlo: 'Monte Carlo',
+        standard: 'Backtest', robustness_20: '20-Period Robust', unknown: 'Backtest'
+    }[m] || String(m || 'Backtest').replace(/_/g, ' '));
+
+    const statusDisplay = s => ({
+        done: 'Done', completed: 'Done', stored: 'Done',
+        running: 'Running', queued: 'Queued', pending: 'Pending',
+        failed: 'Failed', error: 'Error'
+    }[String(s).toLowerCase()] || s);
 
     table.innerHTML = allRuns.map(r => {
         const prettyDate = formatRunDate(r.created_at);
         const statusClass = getRunStatusClass(r.status);
         const safeId = String(r.id).replace(/"/g, '&quot;');
+        const shortId = String(r.id).substring(0, 12) + (String(r.id).length > 12 ? '…' : '');
         return `<tr>
-            <td>${r.id}</td>
-            <td><span class="run-source-badge ${r.sourceClass}">${r.source}</span></td>
-            <td>${r.symbol}</td>
-            <td>${String(r.mode || '').replace(/_/g, ' ')}</td>
-            <td><span class="run-status-badge ${statusClass}">${r.status}</span></td>
-            <td>${prettyDate}</td>
-            <td><button class="btn btn-sm btn-outline" data-runid="${safeId}" data-stored="${r.isStored ? '1' : '0'}">View</button></td>
+            <td style="font-family:var(--font-mono);font-size:0.78rem;color:var(--z-text-3);" title="${r.id}">${shortId}</td>
+            <td><strong>${r.symbol}</strong></td>
+            <td><span class="run-mode-label">${modeDisplay(r.mode)}</span></td>
+            <td><span class="run-status-badge ${statusClass}">${statusDisplay(r.status)}</span></td>
+            <td style="font-size:0.82rem;color:var(--z-text-3);">${prettyDate}</td>
+            <td><button class="btn btn-sm btn-outline" data-runid="${safeId}" data-stored="${r.isStored ? '1' : '0'}"><i class="fas fa-eye"></i> View</button></td>
         </tr>`;
     }).join('');
 
@@ -1771,6 +1980,53 @@ function getRunStatusClass(status) {
     if (val === 'running' || val === 'pending' || val === 'queued') return 'status-running';
     if (val === 'failed' || val === 'error') return 'status-fail';
     return 'status-neutral';
+}
+
+function renderTradeList(trades, totalCount) {
+    if (!trades || !trades.length) {
+        return '<p style="color:var(--z-text-3);margin-top:12px;">No individual trade data available.</p>';
+    }
+    const shown = trades.length;
+    const moreNote = (totalCount > shown) ? `<div style="font-size:0.78rem;color:var(--z-text-3);margin-top:6px;">Showing ${shown} of ${totalCount} trades</div>` : '';
+    const hasSym = trades.some(t => t.symbol);
+    const rows = trades.map((t, i) => {
+        const dir = (t.direction || t.type || t.side || '').toUpperCase();
+        const dirColor = (dir === 'BUY' || dir === 'LONG') ? '#00ff87' : (dir === 'SELL' || dir === 'SHORT') ? '#ff6b6b' : 'var(--z-text-2)';
+        const pnl = Number(t.profit ?? t.pnl ?? t.net_profit ?? 0);
+        const pnlColor = pnl >= 0 ? '#00ff87' : '#ff6b6b';
+        const entryT = t.entry_time ? String(t.entry_time).substring(0, 16) : '—';
+        const exitT  = t.exit_time  ? String(t.exit_time).substring(0, 16)  : '—';
+        const entryP = t.entry_price ?? t.open_price ?? '—';
+        const exitP  = t.exit_price  ?? t.close_price ?? '—';
+        const lot    = t.lot ?? t.volume ?? t.size ?? '—';
+        return `<tr>
+            <td style="color:var(--z-text-3);font-size:0.75rem;">${i + 1}</td>
+            <td style="color:${dirColor};font-weight:600;">${dir || '—'}</td>
+            ${hasSym ? `<td>${t.symbol || '—'}</td>` : ''}
+            <td style="font-family:var(--font-mono);font-size:0.8rem;">${entryT}</td>
+            <td style="font-family:var(--font-mono);font-size:0.8rem;">${exitT}</td>
+            <td>${typeof entryP === 'number' ? num(entryP, 5) : entryP}</td>
+            <td>${typeof exitP === 'number' ? num(exitP, 5) : exitP}</td>
+            <td>${lot}</td>
+            <td style="color:${pnlColor};font-weight:600;">${pnl >= 0 ? '+' : ''}$${num(pnl)}</td>
+        </tr>`;
+    }).join('');
+    return `<div style="margin-top:18px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <h4 style="margin:0;font-size:0.95rem;color:var(--z-text-1);"><i class="fas fa-list-ul" style="color:var(--z-green);"></i> Trade History</h4>
+            <span style="font-size:0.78rem;color:var(--z-text-3);">${totalCount ?? shown} trades</span>
+        </div>
+        <div style="max-height:340px;overflow-y:auto;border-radius:8px;scrollbar-width:thin;scrollbar-color:rgba(0,255,135,0.2) transparent;">
+        <table class="data-table" style="font-size:0.82rem;">
+            <thead><tr>
+                <th>#</th><th>Dir</th>${hasSym ? '<th>Symbol</th>' : ''}
+                <th>Entry Time</th><th>Exit Time</th><th>Entry</th><th>Exit</th><th>Lots</th><th>P&L</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+        </table>
+        </div>
+        ${moreNote}
+    </div>`;
 }
 
 function extractPeriodRows(result) {
@@ -1839,6 +2095,7 @@ async function loadRunResult(runId, isStored = false) {
     if (!panel || !el) return;
 
     panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
     el.innerHTML = '<div class="empty-state-block"><div class="empty-state-title">Loading result...</div></div>';
 
     if (isStored) {
@@ -1848,19 +2105,21 @@ async function loadRunResult(runId, isStored = false) {
             return;
         }
 
-        const metricsPayload = {
-            mode: data.mode || 'standard',
-            metrics: data.metrics || {}
+        const modeLabels = {
+            walk_forward:'Walk-Forward', split:'Split Test', monte_carlo:'Monte Carlo',
+            standard:'Backtest', robustness_20:'20-Period Robustness', unknown:'Backtest'
         };
-        const periodsHtml = renderPeriodBreakdown(data);
+        const modeLabel = modeLabels[data.mode] || String(data.mode || 'Backtest').replace(/_/g,' ');
+        const metricsPayload = { mode: data.mode || 'standard', metrics: data.metrics || {} };
+        const tradesHtml = renderTradeList(data.trades_sample || [], data.trades_count || 0);
 
         el.innerHTML = `
             <div class="run-detail-head">
-                <div><strong>${data.symbol || 'Stored Result'}</strong> · ${String(data.mode || 'unknown').replace(/_/g, ' ')}</div>
-                <div class="run-detail-sub">${formatRunDate(data.timestamp)} · file: ${data.file}</div>
+                <div><strong>${data.symbol || 'Result'}</strong> &nbsp;<span class="run-mode-label">${modeLabel}</span></div>
+                <div class="run-detail-sub">${formatRunDate(data.timestamp)}</div>
             </div>
             ${renderRunResult(metricsPayload)}
-            ${periodsHtml}
+            ${tradesHtml}
             <div class="run-detail-actions">
                 <button class="btn btn-outline btn-sm" id="downloadRunDetailBtn"><i class="fas fa-download"></i> Download JSON</button>
             </div>
@@ -1898,21 +2157,53 @@ async function loadRunResult(runId, isStored = false) {
         return;
     }
 
-    el.innerHTML = `${renderRunResult(data.result)}${renderPeriodBreakdown(data.result)}`;
+    const allTrades = data.result.trades || [];
+    el.innerHTML =
+        `<div class="run-detail-head">
+            <div><strong>${data.result.symbol || runId}</strong></div>
+            <div class="run-detail-sub">Status: ${data.status || '—'}</div>
+        </div>` +
+        renderRunResult(data.result) +
+        renderTradeList(allTrades.slice(0, 200), allTrades.length);
 }
 
 async function loadRobustness() {
     const el = document.getElementById('robustnessResult');
     if (!el) return;
     const data = await apiFetch('/backtest/robustness');
-    if (!data || !data.summary) { el.textContent = 'Robustness: no data yet'; return; }
+    if (!data || !data.summary) {
+        el.innerHTML = '<div class="empty-state-block"><div class="empty-state-icon"><i class="fas fa-shield-halved"></i></div><div class="empty-state-title">No Robustness Data Yet</div><div class="empty-state-desc">Click <b>Run 20-Period Robustness</b> above to start.</div></div>';
+        return;
+    }
     const s = data.summary;
-    const rows = (data.details || []).slice(0, 28).map(d =>
-        `<tr><td>${d.symbol}</td><td>${d.mode}</td><td>${num(d.value)}</td><td class="${d.passed ? 'positive' : 'negative'}">${d.passed ? 'PASS' : 'FAIL'}</td></tr>`
-    ).join('');
-    el.innerHTML = `<div><strong>Robustness Score:</strong> ${s.score}% | <strong>Passed:</strong> ${s.passed}/${s.checks} | <strong>Verdict:</strong> ${s.verdict}</div>
-        <table class="robust-table"><thead><tr><th>Symbol</th><th>Mode</th><th>Value</th><th>Status</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="4">No checks yet</td></tr>'}</tbody></table>`;
+    const modeLabel = m => ({
+        walk_forward: 'Walk-Forward', split: 'Split Test', monte_carlo: 'Monte Carlo',
+        standard: 'Standard', robustness_20: '20-Period'
+    }[m] || m.replace(/_/g,' '));
+    const rows = (data.details || []).slice(0, 30).map(d => {
+        const statusHtml = d.passed
+            ? '<span style="color:#00ff87;font-weight:600;">✓ Pass</span>'
+            : '<span style="color:#ff6b6b;font-weight:600;">✗ Fail</span>';
+        return `<tr><td>${d.symbol}</td><td>${modeLabel(d.mode)}</td><td>${num(d.value,2)}</td><td>${statusHtml}</td></tr>`;
+    }).join('');
+    const scoreColor = s.score >= 60 ? '#00ff87' : s.score >= 40 ? '#ffc107' : '#ff6b6b';
+    const verdictText = s.verdict === 'robust' ? '✓ Robust' : '⚠ Needs Work';
+    el.innerHTML = `
+        <div style="display:flex;gap:24px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+            <div style="text-align:center;">
+                <div style="font-size:2rem;font-weight:700;color:${scoreColor};">${s.score}%</div>
+                <div style="font-size:0.75rem;color:var(--z-text-3);text-transform:uppercase;letter-spacing:.05em;">Score</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:1.4rem;font-weight:600;color:var(--z-text-1);">${s.passed}/${s.checks}</div>
+                <div style="font-size:0.75rem;color:var(--z-text-3);text-transform:uppercase;letter-spacing:.05em;">Checks Passed</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:1.1rem;font-weight:600;color:${scoreColor};">${verdictText}</div>
+                <div style="font-size:0.75rem;color:var(--z-text-3);text-transform:uppercase;letter-spacing:.05em;">Verdict</div>
+            </div>
+        </div>
+        ${rows ? `<table class="robust-table"><thead><tr><th>Symbol</th><th>Mode</th><th>Value</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>` : '<p style="color:var(--z-text-3);">No checks completed yet.</p>'}`;
 }
 
 async function exportReportPdf() {
@@ -1944,6 +2235,7 @@ async function loadMt5Status() {
     const status = statusSnapshot || await apiFetch('/status');
     if (!status) return;
 
+    const eaAlive = status.ea_alive === true;
     const isRunning = status.status === 'running';
     const iconEl = document.getElementById('mt5StatusIcon');
     const titleEl = document.getElementById('mt5StatusTitle');
@@ -1952,17 +2244,27 @@ async function loadMt5Status() {
     const healthIcon = document.getElementById('mt5HealthIcon');
     const healthStatus = document.getElementById('mt5HealthStatus');
 
-    if (isRunning) {
+    if (eaAlive) {
+        // EA is actively pushing — gold standard
         if (iconEl) { iconEl.classList.remove('disconnected'); iconEl.classList.add('connected'); iconEl.innerHTML = '<i class="fas fa-robot"></i>'; }
-        if (titleEl) titleEl.textContent = 'Bot Running';
-        if (subEl) subEl.textContent = status.runtime_message || 'Scanning markets...';
+        if (titleEl) titleEl.textContent = 'EA Active in MT5';
+        const age = status.bridge_age_s != null ? `${status.bridge_age_s}s ago` : '';
+        if (subEl) subEl.textContent = `Expert Advisor running · Last ping ${age}`;
+        if (badgeEl) { badgeEl.classList.remove('disconnected'); badgeEl.classList.add('connected'); badgeEl.innerHTML = '<span class="status-dot"></span> EA Online'; }
+        if (healthIcon) { healthIcon.classList.remove('warning'); healthIcon.classList.add('success'); healthIcon.innerHTML = '<i class="fas fa-check-circle"></i>'; }
+        if (healthStatus) healthStatus.textContent = 'EA Running';
+    } else if (isRunning) {
+        // Python bot or server process active, no EA push
+        if (iconEl) { iconEl.classList.remove('disconnected'); iconEl.classList.add('connected'); iconEl.innerHTML = '<i class="fas fa-robot"></i>'; }
+        if (titleEl) titleEl.textContent = 'Bot Running (No EA)';
+        if (subEl) subEl.textContent = status.runtime_message || 'Python bot active · EA not detected';
         if (badgeEl) { badgeEl.classList.remove('disconnected'); badgeEl.classList.add('connected'); badgeEl.innerHTML = '<span class="status-dot"></span> Online'; }
         if (healthIcon) { healthIcon.classList.remove('warning'); healthIcon.classList.add('success'); healthIcon.innerHTML = '<i class="fas fa-check-circle"></i>'; }
         if (healthStatus) healthStatus.textContent = 'Running';
     } else {
         if (iconEl) { iconEl.classList.remove('connected'); iconEl.classList.add('disconnected'); iconEl.innerHTML = '<i class="fas fa-robot"></i>'; }
         if (titleEl) titleEl.textContent = 'Bot Stopped';
-        if (subEl) subEl.textContent = 'Use the Start Bot button above to begin trading';
+        if (subEl) subEl.textContent = 'Start the bot or attach EA in MetaTrader 5';
         if (badgeEl) { badgeEl.classList.remove('connected'); badgeEl.classList.add('disconnected'); badgeEl.innerHTML = '<span class="status-dot"></span> Offline'; }
         if (healthIcon) { healthIcon.classList.remove('success'); healthIcon.classList.add('warning'); healthIcon.innerHTML = '<i class="fas fa-times-circle"></i>'; }
         if (healthStatus) healthStatus.textContent = 'Stopped';
@@ -2254,18 +2556,28 @@ async function loadBotMonitor() {
     }
 
     const events = activity?.events || [];
+    // Filter noise: skip raw SCAN events and NOCFG messages
+    const meaningfulEvents = events.filter(ev => {
+        const t = (ev.type || '').toLowerCase();
+        const msg = (ev.message || '');
+        if (t === 'scan' || t === 'tick' || t === 'heartbeat') return false;
+        if (msg.includes('NOCFG') || msg.includes(':NOCFG')) return false;
+        return true;
+    });
     const eventTable = document.getElementById('botActivityTable');
     if (eventTable) {
-        if (!events.length) {
-            eventTable.innerHTML = '<tr class="empty-state-row"><td colspan="3">No activity events yet</td></tr>';
+        if (!meaningfulEvents.length) {
+            eventTable.innerHTML = '<tr class="empty-state-row"><td colspan="3">No trade events yet — bot is scanning markets</td></tr>';
         } else {
-            eventTable.innerHTML = events.slice(-70).reverse().map((ev) => `
-                <tr>
-                    <td><span class="badge badge-${ev.type === 'opened' ? 'success' : (ev.type === 'failed' ? 'danger' : 'neutral')}">${ev.type}</span></td>
-                    <td>${ev.symbol || '—'}</td>
-                    <td>${ev.message || ''}</td>
-                </tr>
-            `).join('');
+            eventTable.innerHTML = meaningfulEvents.slice(-70).reverse().map((ev) => {
+                const badgeCls = ev.type === 'opened' ? 'success' : ev.type === 'failed' ? 'danger' : ev.type === 'closed' ? 'neutral' : 'neutral';
+                const sym = ev.symbol && !ev.symbol.includes('NOCFG') ? ev.symbol : '—';
+                return `<tr>
+                    <td><span class="badge badge-${badgeCls}">${ev.type}</span></td>
+                    <td><strong>${sym}</strong></td>
+                    <td style="color:var(--z-text-3);font-size:0.82rem;">${ev.message || ''}</td>
+                </tr>`;
+            }).join('');
         }
     }
 
@@ -2281,23 +2593,28 @@ async function loadBotMonitor() {
     // --- Trading Activity Timeline (Overview section) ---
     const timeline = document.getElementById('tradingTimeline');
     if (timeline) {
-        if (!events.length) {
+        if (!meaningfulEvents.length) {
             timeline.innerHTML = `<div class="timeline-item">
-                <div class="timeline-icon"><i class="fas fa-clock"></i></div>
+                <div class="timeline-marker" style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.12);"><i class="fas fa-clock" style="color:var(--z-text-3);font-size:0.75rem;"></i></div>
                 <div class="timeline-content">
-                    <h4>Waiting for Bot</h4>
-                    <p>Start the bot to see live trading events</p>
+                    <div class="timeline-title" style="color:var(--z-text-2);">Waiting for Bot Activity</div>
+                    <div class="timeline-time" style="color:var(--z-text-3);font-size:0.75rem;">Bot is scanning markets — no trade events yet</div>
                 </div>
             </div>`;
         } else {
-            timeline.innerHTML = events.slice(-5).reverse().map(ev => {
-                const iconClass = ev.type === 'opened' ? 'fa-arrow-up' : ev.type === 'closed' ? 'fa-arrow-down' : ev.type === 'signal' ? 'fa-search' : ev.type === 'failed' ? 'fa-exclamation-triangle' : 'fa-info-circle';
-                const colorCls = ev.type === 'opened' ? 'success' : ev.type === 'failed' ? 'warning' : '';
+            timeline.innerHTML = meaningfulEvents.slice(-8).reverse().map(ev => {
+                const isOpen = ev.type === 'opened';
+                const isFail = ev.type === 'failed';
+                const isClose = ev.type === 'closed';
+                const isSig = ev.type === 'signal';
+                const iconCls = isOpen ? 'fa-circle-check' : isFail ? 'fa-circle-xmark' : isClose ? 'fa-circle-minus' : isSig ? 'fa-satellite-dish' : 'fa-circle-info';
+                const color = isOpen ? '#00ff87' : isFail ? '#ff4d6d' : isClose ? '#60efff' : 'rgba(255,255,255,0.3)';
+                const pnlStr = (ev.pnl != null) ? ` &nbsp;<span style="color:${Number(ev.pnl)>=0?'#00ff87':'#ff4d6d'}">${Number(ev.pnl)>=0?'+':''}$${Number(ev.pnl).toFixed(2)}</span>` : '';
                 return `<div class="timeline-item">
-                    <div class="timeline-icon ${colorCls}"><i class="fas ${iconClass}"></i></div>
+                    <div class="timeline-marker" style="background:${color}20;border-color:${color}50;"><i class="fas ${iconCls}" style="color:${color};font-size:0.8rem;"></i></div>
                     <div class="timeline-content">
-                        <h4>${ev.symbol || ev.type}</h4>
-                        <p>${ev.message || ev.type}</p>
+                        <div class="timeline-title"><strong>${ev.symbol || '—'}</strong> <span style="text-transform:uppercase;font-size:0.7rem;color:${color};">${ev.type}</span>${pnlStr}</div>
+                        <div class="timeline-time">${ev.message || ''}</div>
                     </div>
                 </div>`;
             }).join('');
@@ -2362,6 +2679,7 @@ function initEvents() {
     bind('mt5DisconnectBtn', disconnectMt5);
     bind('runMonteCarloBtn', runMonteCarlo);
     bind('runRobustness20Btn', runRobustness20);
+    bind('runExtremeRobustnessBtn', runExtremeRobustness);  // NEW extreme test
     bind('downloadPresentationBtn', downloadPresentationPackage);
     bind('downloadOverfitProofBtn', downloadOverfitProofPackage);
     bind('downloadBotPackageBtn', downloadBotPackage);
@@ -2387,6 +2705,29 @@ function initEvents() {
     bind('mt5HelpCloseBtn', closeMt5HelpPopup);
     bind('mt5HelpOkBtn', closeMt5HelpPopup);
     bind('mt5HelpBackdrop', closeMt5HelpPopup);
+
+    bind('clearRunsBtn', async () => {
+        if (!confirm('Delete ALL backtest runs and stored results? This cannot be undone.')) return;
+        const btn = document.getElementById('clearRunsBtn');
+        if (btn) btn.disabled = true;
+        const res = await apiFetch('/backtest/runs', { method: 'DELETE' });
+        if (btn) btn.disabled = false;
+        if (res && res.success) {
+            await loadRuns();
+            await loadRobustness();
+        } else {
+            alert('Clear failed. Check server logs.');
+        }
+    });
+
+    // Equity timeframe filter — reload chart on change
+    const tfSel = document.getElementById('equityTimeframe');
+    if (tfSel) {
+        tfSel.addEventListener('change', () => {
+            if (equityChart) { equityChart.destroy(); equityChart = null; }
+            loadEquity();
+        });
+    }
 }
 
 // ─── Monte Carlo Simulation ───
@@ -2415,23 +2756,38 @@ async function runMonteCarlo() {
     const ITERATIONS = 200;
     const INITIAL = 10000;
     const profits = btTrades.map(t => t.profit || 0);
+
+    // Validate: need at least 2 trades with different profits for meaningful MC
+    if (profits.length < 2) {
+        showToast('Monte Carlo needs at least 2 trades to shuffle', 'error');
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (btn) { btn.classList.remove('is-loading'); btn.disabled = false; }
+        return;
+    }
+    const uniqueProfits = [...new Set(profits.map(p => p.toFixed(2)))];
+    if (uniqueProfits.length < 2) {
+        showToast('All trades have identical profit - no variance to simulate', 'error');
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (btn) { btn.classList.remove('is-loading'); btn.disabled = false; }
+        return;
+    }
+
+    console.log('MC Debug:', profits.length, 'trades, profits:', profits.slice(0, 5), '...');
+
     const endingBalances = [];
     const drawdowns = [];
 
     await new Promise(resolve => setTimeout(resolve, 50)); // let UI update
 
     for (let i = 0; i < ITERATIONS; i++) {
-        // fisher-yates shuffle
-        const shuffled = profits.slice();
-        for (let j = shuffled.length - 1; j > 0; j--) {
-            const k = Math.floor(Math.random() * (j + 1));
-            [shuffled[j], shuffled[k]] = [shuffled[k], shuffled[j]];
-        }
-
+        // Bootstrap sampling: randomly select trades WITH replacement
+        // This creates variance in ending balances (unlike shuffle which keeps same sum)
         let balance = INITIAL;
         let peak = INITIAL;
         let maxDD = 0;
-        for (const p of shuffled) {
+        for (let j = 0; j < profits.length; j++) {
+            const randomIdx = Math.floor(Math.random() * profits.length);
+            const p = profits[randomIdx];
             balance += p;
             if (balance > peak) peak = balance;
             const dd = (peak - balance) / peak;
@@ -2447,6 +2803,24 @@ async function runMonteCarlo() {
     const p90 = endingBalances[Math.floor(ITERATIONS * 0.90)];
     const avgDD = drawdowns.reduce((a, b) => a + b, 0) / drawdowns.length;
     const baseProfit = btStats.pnl;
+
+    const minProfit = Math.min(...profits);
+    const maxProfit = Math.max(...profits);
+    const profitRange = maxProfit - minProfit;
+
+    // Update debug info in UI
+    const debugTrades = document.getElementById('mcDebugTrades');
+    const debugRange = document.getElementById('mcDebugRange');
+    const debugMin = document.getElementById('mcDebugMin');
+    const debugMax = document.getElementById('mcDebugMax');
+    const debugBalRange = document.getElementById('mcDebugBalRange');
+    if (debugTrades) debugTrades.textContent = profits.length;
+    if (debugRange) debugRange.textContent = '$' + profitRange.toFixed(2);
+    if (debugMin) debugMin.textContent = '$' + minProfit.toFixed(2);
+    if (debugMax) debugMax.textContent = '$' + maxProfit.toFixed(2);
+    if (debugBalRange) debugBalRange.textContent = '$' + (endingBalances[endingBalances.length-1] - endingBalances[0]).toFixed(2);
+
+    console.log('MC Results:', { p10, p50, p90, range: endingBalances[endingBalances.length-1] - endingBalances[0], min: endingBalances[0], max: endingBalances[endingBalances.length-1] });
 
     // hide loading, show results
     if (loadingEl) loadingEl.style.display = 'none';
@@ -2489,24 +2863,36 @@ async function runMonteCarlo() {
     setEl('mcHistMin', '$' + num(minBal));
     setEl('mcHistMax', '$' + num(maxBal));
 
+    // show/hide low variance warning
+    const lowVarWarning = document.getElementById('mcLowVarianceWarning');
+    if (lowVarWarning) {
+        lowVarWarning.style.display = (range < 0.01) ? 'block' : 'none';
+    }
+
     // build histogram
     const histEl = document.getElementById('mcHistogram');
     if (histEl) {
-        const BINS = 25;
-        const binSize = range / BINS;
-        const bins = new Array(BINS).fill(0);
-        for (const b of endingBalances) {
-            let idx = Math.floor((b - minBal) / binSize);
-            if (idx >= BINS) idx = BINS - 1;
-            bins[idx]++;
+        if (range === 0) {
+            // All values are identical - show single full bar
+            histEl.innerHTML = `<div class="mc-hist-bar mc-hist-green" style="height: 100%; width: 4%; margin: 0 auto;" title="All ${ITERATIONS} outcomes: $${num(minBal)}"></div>`;
+        } else {
+            const BINS = 25;
+            const binSize = range / BINS;
+            const bins = new Array(BINS).fill(0);
+            for (const b of endingBalances) {
+                let idx = Math.floor((b - minBal) / binSize);
+                if (idx >= BINS) idx = BINS - 1;
+                if (idx < 0) idx = 0;
+                bins[idx]++;
+            }
+            const maxBin = Math.max(...bins);
+            histEl.innerHTML = bins.map((count, i) => {
+                const pct = maxBin > 0 ? (count / maxBin) * 100 : 0;
+                const binVal = minBal + (i + 0.5) * binSize;
+                const colorClass = binVal < INITIAL ? 'mc-hist-red' : binVal < INITIAL * 1.05 ? 'mc-hist-yellow' : 'mc-hist-green';
+                return `<div class="mc-hist-bar ${colorClass}" style="height: ${Math.max(2, pct)}%;" title="${count} outcomes around $${num(binVal)}"></div>`;
+            }).join('');
         }
-        const maxBin = Math.max(...bins);
-        histEl.innerHTML = bins.map((count, i) => {
-            const pct = maxBin > 0 ? (count / maxBin) * 100 : 0;
-            const binVal = minBal + (i + 0.5) * binSize;
-            const colorClass = binVal < INITIAL ? 'mc-hist-red' : binVal < INITIAL * 1.05 ? 'mc-hist-yellow' : 'mc-hist-green';
-            return `<div class="mc-hist-bar ${colorClass}" style="height: ${Math.max(2, pct)}%;" title="${count} outcomes around $${num(binVal)}"></div>`;
-        }).join('');
     }
 }
 
@@ -2674,15 +3060,294 @@ function initDashGhostPairs() {
     setInterval(spawn, 4000);
 }
 
+/* ════════════════════════════════════════════════════
+   CUSTOM DATE RANGE PICKER
+   ════════════════════════════════════════════════════ */
+function initDateRangePicker() {
+    const trigger = document.getElementById('drpTrigger');
+    const popup   = document.getElementById('drpPopup');
+    const label   = document.getElementById('drpLabel');
+    const selLabel= document.getElementById('drpSelectedLabel');
+    const applyBtn= document.getElementById('drpApply');
+    const clearBtn= document.getElementById('drpClear');
+    const calLeft = document.getElementById('drpCalLeft');
+    const calRight= document.getElementById('drpCalRight');
+    const hidStart= document.getElementById('btStartDate');
+    const hidEnd  = document.getElementById('btEndDate');
+    if (!trigger || !popup) return;
+
+    // Portal: move popup to body so overflow:hidden parents can't clip it
+    document.body.appendChild(popup);
+
+    function positionPopup() {
+        const rect = trigger.getBoundingClientRect();
+        const pw = popup.offsetWidth || 540;
+        const ph = popup.offsetHeight || 360;
+        // If trigger has no size (section hidden), fall back to center of screen
+        if (rect.width === 0 && rect.height === 0) {
+            popup.style.top  = Math.max(10, (window.innerHeight - ph) / 2) + 'px';
+            popup.style.left = Math.max(10, (window.innerWidth  - pw) / 2) + 'px';
+            return;
+        }
+        popup.style.top  = (rect.bottom + 6) + 'px';
+        popup.style.left = rect.left + 'px';
+        if (rect.left + pw > window.innerWidth - 10) {
+            popup.style.left = Math.max(10, window.innerWidth - pw - 10) + 'px';
+        }
+        // keep within viewport vertically
+        const bottom = rect.bottom + 6 + ph;
+        if (bottom > window.innerHeight - 10) {
+            popup.style.top = Math.max(10, rect.top - ph - 6) + 'px';
+        }
+    }
+
+    const MONTHS = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    const DAYS   = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+
+    let startDate = null; // Date obj
+    let endDate   = null;
+    let hoverDate = null;
+    let selecting = false; // true = waiting for end date
+
+    // View months: left and right calendar
+    const today = new Date();
+    let leftYear  = today.getFullYear();
+    let leftMonth = today.getMonth() - 1;
+    if (leftMonth < 0) { leftMonth = 11; leftYear--; }
+    let rightYear  = today.getFullYear();
+    let rightMonth = today.getMonth();
+
+    function fmtDate(d) {
+        if (!d) return '';
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+    function fmtDisplay(d) {
+        if (!d) return '';
+        return `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()].slice(0,3)} ${d.getFullYear()}`;
+    }
+    function sameDay(a, b) {
+        return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+    }
+    function isBetween(d, s, e) {
+        if (!s || !e) return false;
+        const t = d.getTime();
+        return t > s.getTime() && t < e.getTime();
+    }
+
+    function buildCalendar(container, year, month, onPrev, onNext) {
+        const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+        // Convert to Mon-first: Sun=6, Mon=0 ...
+        const startOffset = (firstDay === 0) ? 6 : firstDay - 1;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        let html = `<div class="drp-cal-header">
+            <button class="drp-nav drp-prev" data-action="prev"><i class="fas fa-chevron-left"></i></button>
+            <span class="drp-cal-title">${MONTHS[month]} ${year}</span>
+            <button class="drp-nav drp-next" data-action="next"><i class="fas fa-chevron-right"></i></button>
+        </div><div class="drp-grid">`;
+        DAYS.forEach(d => { html += `<div class="drp-dow">${d}</div>`; });
+        for (let i = 0; i < startOffset; i++) html += `<div class="drp-day drp-empty"></div>`;
+        for (let d = 1; d <= daysInMonth; d++) {
+            const cur = new Date(year, month, d);
+            const isFuture = cur > today;
+            let cls = 'drp-day';
+            if (isFuture) { cls += ' drp-disabled'; }
+            else {
+                if (sameDay(cur, today)) cls += ' drp-today';
+                if (sameDay(cur, startDate)) cls += ' drp-start';
+                if (sameDay(cur, endDate)) cls += ' drp-end';
+                // hover range preview
+                const effEnd = endDate || hoverDate;
+                if (startDate && effEnd && isBetween(cur, startDate, effEnd)) cls += ' drp-in-range';
+            }
+            html += `<div class="${cls}" data-date="${fmtDate(cur)}">${d}</div>`;
+        }
+        html += '</div>';
+        container.innerHTML = html;
+
+        container.querySelector('[data-action="prev"]').addEventListener('click', onPrev);
+        container.querySelector('[data-action="next"]').addEventListener('click', onNext);
+        container.querySelectorAll('.drp-day:not(.drp-empty):not(.drp-disabled)').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                if (selecting && startDate) {
+                    hoverDate = new Date(el.dataset.date + 'T00:00:00');
+                    renderCals();
+                }
+            });
+            el.addEventListener('click', () => {
+                const clicked = new Date(el.dataset.date + 'T00:00:00');
+                if (!selecting || !startDate) {
+                    startDate = clicked; endDate = null; selecting = true;
+                } else {
+                    if (clicked < startDate) { endDate = startDate; startDate = clicked; }
+                    else endDate = clicked;
+                    selecting = false; hoverDate = null;
+                }
+                updateFooter();
+                renderCals();
+            });
+        });
+    }
+
+    function renderCals() {
+        buildCalendar(calLeft, leftYear, leftMonth,
+            () => { leftMonth--; if (leftMonth<0){leftMonth=11;leftYear--;} syncRight(); renderCals(); },
+            () => { leftMonth++; if (leftMonth>11){leftMonth=0;leftYear++;} syncRight(); renderCals(); }
+        );
+        buildCalendar(calRight, rightYear, rightMonth,
+            () => { rightMonth--; if (rightMonth<0){rightMonth=11;rightYear--;} syncLeft(); renderCals(); },
+            () => { rightMonth++; if (rightMonth>11){rightMonth=0;rightYear++;} syncLeft(); renderCals(); }
+        );
+    }
+    function syncRight() {
+        // Right = left + 1 month
+        rightMonth = leftMonth + 1; rightYear = leftYear;
+        if (rightMonth > 11) { rightMonth = 0; rightYear++; }
+    }
+    function syncLeft() {
+        leftMonth = rightMonth - 1; leftYear = rightYear;
+        if (leftMonth < 0) { leftMonth = 11; leftYear--; }
+    }
+    // init: left = prev month, right = current
+    syncRight();
+
+    function updateFooter() {
+        if (startDate && endDate) {
+            selLabel.textContent = `${fmtDisplay(startDate)}  →  ${fmtDisplay(endDate)}`;
+        } else if (startDate) {
+            selLabel.textContent = `${fmtDisplay(startDate)}  →  Pick end date`;
+        } else {
+            selLabel.textContent = 'Pick start date';
+        }
+    }
+
+    function applyRange() {
+        if (!startDate || !endDate) return;
+        hidStart.value = fmtDate(startDate);
+        hidEnd.value   = fmtDate(endDate);
+        label.textContent = `${fmtDisplay(startDate)} – ${fmtDisplay(endDate)}`;
+        closePopup();
+        // clear preset active
+        document.querySelectorAll('.drp-preset').forEach(b => b.classList.remove('is-active'));
+    }
+
+    function clearRange() {
+        startDate = null; endDate = null; hoverDate = null; selecting = false;
+        hidStart.value = ''; hidEnd.value = '';
+        label.textContent = 'Select range';
+        selLabel.textContent = 'Pick start date';
+        renderCals();
+        document.querySelectorAll('.drp-preset').forEach(b => b.classList.remove('is-active'));
+    }
+
+    function openPopup() {
+        popup.style.display = 'block';
+        trigger.classList.add('is-active');
+        positionPopup();
+        renderCals();
+        updateFooter();
+    }
+    function closePopup() {
+        popup.style.display = 'none';
+        trigger.classList.remove('is-active');
+    }
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        popup.style.display === 'none' ? openPopup() : closePopup();
+    });
+    popup.addEventListener('click', e => e.stopPropagation());
+    document.addEventListener('click', closePopup);
+    window.addEventListener('resize', () => { if (popup.style.display !== 'none') positionPopup(); });
+    document.querySelector('.dashboard-main')?.addEventListener('scroll', () => { if (popup.style.display !== 'none') positionPopup(); });
+
+    applyBtn.addEventListener('click', applyRange);
+    clearBtn.addEventListener('click', clearRange);
+
+    // Preset buttons
+    document.querySelectorAll('.drp-preset').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const days = parseInt(btn.dataset.days);
+            endDate = new Date(today); endDate.setHours(0,0,0,0);
+            startDate = new Date(today);
+            startDate.setDate(startDate.getDate() - days + 1);
+            startDate.setHours(0,0,0,0);
+            selecting = false; hoverDate = null;
+            document.querySelectorAll('.drp-preset').forEach(b => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            updateFooter();
+            renderCals();
+        });
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     window.__liveMonitorAuto = true;
     requireAuth();
     initSidebarNav();
     initEvents();
+    // Date picker: init now (element is in DOM even if section hidden)
+    // Retry once after short delay in case DOM not fully settled
+    if (document.getElementById('drpTrigger')) {
+        initDateRangePicker();
+    } else {
+        setTimeout(() => { if (document.getElementById('drpTrigger')) initDateRangePicker(); }, 500);
+    }
     startHeartbeatTicker();
     renderStartStopButton({ isRunning: false, loading: false });
     Promise.all([loadStatus(), loadMetrics(), loadTrades(), loadEquity(), loadRuns(), loadRobustness(), loadMt5Status(), loadBotConfig(), loadBotMonitor(), loadTelegramConfig(), loadBotApiKey()]);
+    initProfileSection();
     setInterval(loadRuns, 5000);
     setInterval(loadStatus, 5000);
     setInterval(loadBotMonitor, 7000);
+    setInterval(() => { loadMetrics(); loadTrades(); }, 30000);
+    setInterval(loadEquity, 60000);
 });
+
+function initProfileSection() {
+    // Use raw fetch so a 401 does NOT trigger the global redirect-to-login
+    const token = getToken();
+    const authHeaders = { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
+
+    fetch(`${API_BASE_URL}/auth/me`, { headers: authHeaders })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (!data) return;
+            const nameEl = document.getElementById('profileName');
+            const emailEl = document.getElementById('profileEmail');
+            if (nameEl) nameEl.value = data.name || '';
+            if (emailEl) emailEl.value = data.email || '';
+        }).catch(() => {});
+
+    const msg = (text, ok) => {
+        const el = document.getElementById('profileMsg');
+        if (el) { el.textContent = text; el.style.color = ok ? 'var(--z-green)' : 'var(--z-red)'; }
+    };
+
+    const safePost = async (path, body) => {
+        try {
+            const r = await fetch(`${API_BASE_URL}${path}`, { method: 'POST', headers: authHeaders, body: JSON.stringify(body) });
+            return r.ok ? r.json() : null;
+        } catch { return null; }
+    };
+
+    document.getElementById('saveProfileBtn')?.addEventListener('click', async () => {
+        const name = document.getElementById('profileName')?.value?.trim();
+        if (!name) return msg('Name cannot be empty.', false);
+        const res = await safePost('/auth/profile', { name });
+        msg(res?.success ? 'Profile updated.' : (res?.message || 'Error saving.'), !!res?.success);
+    });
+
+    document.getElementById('changePasswordBtn')?.addEventListener('click', async () => {
+        const cur = document.getElementById('currentPassword')?.value;
+        const nw  = document.getElementById('newPassword')?.value;
+        const cnf = document.getElementById('confirmPassword')?.value;
+        if (!cur || !nw) return msg('Fill in all fields.', false);
+        if (nw !== cnf) return msg('Passwords do not match.', false);
+        if (nw.length < 6) return msg('Min 6 characters.', false);
+        const res = await safePost('/auth/change-password', { current_password: cur, new_password: nw });
+        msg(res?.success ? 'Password changed.' : (res?.message || 'Error.'), !!res?.success);
+        if (res?.success) { ['currentPassword','newPassword','confirmPassword'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); }
+    });
+}

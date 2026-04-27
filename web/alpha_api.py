@@ -655,6 +655,19 @@ def _stop_bot_engine(trigger: str = "api"):
     state["is_running"] = False
     save_telegram_state(state)
 
+    # Clear runtime_status.json so dashboard shows stopped immediately
+    try:
+        stopped_payload = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "state": "stopped",
+            "message": "Bot stopped",
+            "enabled_symbols": [],
+            "open_positions": 0,
+        }
+        BOT_RUNTIME_FILE.write_text(json.dumps(stopped_payload, indent=2))
+    except Exception:
+        pass
+
     notify_telegram("🔴 <b>Bot Stopped</b>\nAll monitoring halted. Use the dashboard to restart.")
     return {"success": True, "message": "Bot stopped"}, 200
 
@@ -790,6 +803,7 @@ def parse_bot_activity(lines: int = 140, user_id: int = None):
         return []
 
     events = []
+    scan_count = 0
     for line in raw.splitlines():
         line = line.strip()
         if not line:
@@ -797,31 +811,54 @@ def parse_bot_activity(lines: int = 140, user_id: int = None):
 
         event_type = None
         symbol = None
+        message = None
 
         if "NEW SIGNAL:" in line:
             event_type = "signal"
-            m = re.search(r"NEW SIGNAL:\s+[▲▼]\s+(BUY|SELL)\s+([A-Z0-9]+)", line)
+            m = re.search(r"NEW SIGNAL:\s+[▲▼]?\s*(BUY|SELL)\s+([A-Z0-9]+)\s*@\s*([\d.]+)", line)
             if m:
                 symbol = m.group(2)
-        elif "[✓] Order filled:" in line:
+                message = f"{m.group(1)} {symbol} @ {m.group(3)}"
+            else:
+                m2 = re.search(r"([A-Z0-9]{3,10})", line)
+                if m2:
+                    symbol = m2.group(1)
+                message = re.sub(r">>>.*?SIGNAL:\s*", "", line).strip()
+        elif "[✓] Order filled:" in line or "Position opened" in line or "position_opened" in line:
             event_type = "opened"
-            m = re.search(r"Order filled:\s+(BUY|SELL)\s+([A-Z0-9]+)", line)
+            m = re.search(r"(BUY|SELL)\s+([A-Z0-9]+)", line)
             if m:
                 symbol = m.group(2)
-        elif "[!] Order failed:" in line:
+                message = f"Opened {m.group(1)} {symbol}"
+            else:
+                message = "Order filled"
+        elif "[!] Order failed:" in line or "failed" in line.lower() and "OPEN" in line:
             event_type = "failed"
-        elif "Trade Closed" in line:
+            m = re.search(r"([A-Z0-9]{3,10})", line)
+            if m:
+                symbol = m.group(1)
+            message = re.sub(r"\[\d{2}:\d{2}:\d{2}\]\s*", "", line).strip()[:80]
+        elif "Trade Closed" in line or "position closed" in line.lower() or "SL hit" in line or "TP hit" in line:
             event_type = "closed"
+            m = re.search(r"([A-Z0-9]{3,10}).*?([\+\-]?\$?[\d,]+\.?\d*)", line)
+            if m:
+                symbol = m.group(1)
+                message = f"Closed {symbol} {m.group(2)}"
+            else:
+                message = re.sub(r"\[\d{2}:\d{2}:\d{2}\]\s*", "", line).strip()[:80]
         elif re.match(r"^\[\d{2}:\d{2}:\d{2}\]", line):
-            event_type = "scan"
+            # Raw scan line — only count it, don't send to frontend
+            scan_count += 1
+            continue
 
         if event_type:
             events.append({
                 "type": event_type,
                 "symbol": symbol,
-                "message": line,
+                "message": message or "",
             })
 
+    # Attach scan_count as metadata via a synthetic summary event (not displayed)
     return events[-120:]
 
 
@@ -1558,8 +1595,9 @@ def generate_backtest_data(symbol, days=None, risk_pct=1.0, start_date=None, end
         result = run_live_smc_engine_backtest(df, symbol, risk_pct=risk_pct)
         metrics = result.get("metrics", {})
         raw_trades = result.get("trades", [])
+        raw_signal_markers = result.get("signal_markers", [])
         equity_curve = result.get("equity_curve", []) or result.get("equity", [])
-        print(f"[DEBUG] Engine returned {len(raw_trades)} trades")
+        print(f"[DEBUG] Engine returned {len(raw_trades)} trades, {len(raw_signal_markers)} signal markers")
 
         # Transform trades to frontend format (entryBar, type, entryPrice, etc.)
         transformed_trades = []
@@ -1627,15 +1665,20 @@ def generate_backtest_data(symbol, days=None, risk_pct=1.0, start_date=None, end
 
             profit = float(trade.get("profit", 0.0) or 0.0)
             balance += profit
+            entry_price = round(float(trade.get("entryPrice", 0.0) or 0.0), dec)
+            exit_price_raw = trade.get("exitPrice") or trade.get("exit_price")
+            exit_price = round(float(exit_price_raw), dec) if exit_price_raw is not None else entry_price
             trades.append({
                 "entryBar": int(entry_bar),
                 "exitBar": int(exit_bar),
                 "type": str(trade.get("type", "BUY")),
-                "entryPrice": round(float(trade.get("entryPrice", 0.0) or 0.0), dec),
-                "exitPrice": round(float(trade.get("entryPrice", 0.0) or 0.0), dec),  # Use entry as fallback
+                "entryPrice": entry_price,
+                "exitPrice": exit_price,
                 "sl": round(float(trade.get("sl", 0.0) or 0.0), dec),
                 "tp": round(float(trade.get("tp", 0.0) or 0.0), dec),
                 "profit": round(profit, 2),
+                "profit_r": round(float(trade.get("profit_r", 0.0) or 0.0), 2),
+                "score": round(float(trade.get("score", 0.0) or 0.0), 1),
                 "reason": str(trade.get("exit_reason", "")),
                 "balance": round(balance, 2),
             })
@@ -1656,9 +1699,28 @@ def generate_backtest_data(symbol, days=None, risk_pct=1.0, start_date=None, end
             except Exception:
                 pass
 
+        # Map signal_markers timestamps to bar indices
+        signal_markers_out = []
+        for sm in raw_signal_markers:
+            try:
+                sm_ts = int(pd.Timestamp(sm['time']).timestamp())
+                sm_bar = bar_index_by_time.get(sm_ts)
+                if sm_bar is not None:
+                    signal_markers_out.append({
+                        'bar': int(sm_bar),
+                        'direction': sm.get('direction', 'buy'),
+                        'entry': round(float(sm.get('entry', 0)), dec),
+                        'stop': round(float(sm.get('stop', 0)), dec),
+                        'rr': round(float(sm.get('rr', 2.0)), 2),
+                        'score': round(float(sm.get('score', 0)), 1),
+                    })
+            except Exception:
+                pass
+
         return {
             "candles": candles,
             "trades": trades,
+            "signal_markers": signal_markers_out,
             "equity_curve": [float(v) for v in equity_curve],
             "symbol": symbol,
             "days": days,
@@ -1901,7 +1963,7 @@ def backtest_stored_result_detail(filename):
         "equity_curve": eq,
         "labels": labels,
         "trades_count": len(trades),
-        "trades_sample": trades[:20],  # first 20 for table preview
+        "trades_sample": trades[:200],
     })
 
 
@@ -2010,6 +2072,48 @@ def backtest_runs():
 
     runs = [dict(row) for row in rows]
     return json_response({"runs": runs})
+
+
+@app.route("/api/backtest/runs", methods=["DELETE"])
+@require_auth
+def clear_backtest_runs():
+    """Delete all backtest runs for the current user from DB and disk."""
+    conn = get_db()
+    cur = conn.cursor()
+    # Get result files before deleting rows so we can remove them from disk
+    cur.execute("SELECT result_file FROM backtest_runs WHERE user_id = ?", (request.user["id"],))
+    file_rows = cur.fetchall()
+    cur.execute("DELETE FROM backtest_runs WHERE user_id = ?", (request.user["id"],))
+    deleted_db = cur.rowcount
+    conn.commit()
+    conn.close()
+
+    # Delete result JSON files referenced from DB
+    deleted_files = 0
+    for row in file_rows:
+        rf = row["result_file"]
+        if rf and os.path.exists(rf):
+            try:
+                os.remove(rf)
+                deleted_files += 1
+            except Exception:
+                pass
+
+    # Also wipe all *.json files from BACKTEST_RESULTS_DIR (stored results)
+    deleted_stored = 0
+    if BACKTEST_RESULTS_DIR.exists():
+        for f in list(BACKTEST_RESULTS_DIR.glob("*.json")):
+            try:
+                f.unlink()
+                deleted_stored += 1
+            except Exception:
+                pass
+
+    return json_response({
+        "success": True,
+        "deleted_db": deleted_db,
+        "deleted_files": deleted_files + deleted_stored
+    })
 
 
 @app.route("/api/backtest/results/<run_id>", methods=["GET"])
@@ -2162,125 +2266,963 @@ def _mt5_ea_architecture_markdown() -> str:
 
 
 def _mt5_ea_template_mq5() -> str:
-     return """#property strict
-#property version   \"1.20\"
-#property description \"Zenith EA: risk guards + dashboard runtime push\"
+    return r"""//+------------------------------------------------------------------+
+//|  ZenithEA v3.0  —  Full SMC Strategy Engine                    |
+//|  1:1 port of mt5_bot/main.py + smart_money_strategy.py         |
+//|  Standalone — no Python required. Runs on VPS 24/7.            |
+//|  Compile in MetaEditor (F7), attach to M15 chart.              |
+//+------------------------------------------------------------------+
+#property strict
+#property version   "3.00"
+#property description "Zenith SMC EA v3.0 — Full 1:1 port of main.py + smart_money_strategy.py"
 
 #include <Trade/Trade.mqh>
-CTrade trade;
+CTrade Trade;
 
-input double RiskPerTradePct = 0.70;
-input double MaxDailyDrawdownPct = 3.00;
-input int    MaxOpenPositions = 3;
+//=== SECTION 1: MODE ================================================
+input group            "=== 1. MODE ==="
+input bool     ForceTrade          = false;       // TRUE = fire one real order per symbol NOW (demo account testing/presentation)
+input bool     LiveTrading         = true;        // TRUE = real strategy orders. Set ForceTrade=false for normal operation.
 
-input bool   PushRuntimeToDashboard = true;
-input string DashboardURL = \"\";
-input string DashboardAPIKey = \"\";
-input int    PushIntervalSeconds = 10;
-input string StrategyName = \"zenith_ea\";
+//=== SECTION 2: SYMBOLS ==============================================
+input group            "=== 2. SYMBOLS ==="
+input string   ExtraSymbol1        = "EURUSD";   // Symbol #1
+input string   ExtraSymbol2        = "XAUUSD";   // Symbol #2
+input string   ExtraSymbol3        = "NAS100";   // Symbol #3
 
-double g_dayStartEquity = 0.0;
-datetime g_dayStamp = 0;
+//=== SECTION 3: RISK MANAGEMENT (matches backtest constants) =========
+input group            "=== 3. RISK MANAGEMENT ==="
+input double   RiskPerTradePct     = 1.0;         // Risk per trade % of equity (backtest base = 1.0)
+input double   MaxDailyDrawdownPct = 3.0;         // Daily DD block threshold (backtest: 3.0%)
+input double   KillSwitchDDPct     = 5.0;         // Peak-to-trough kill switch (backtest: 5.0%)
+input double   DailyTargetPct      = 3.0;         // Daily profit target stop (backtest: 3.0%)
+input int      MaxDailyTrades      = 3;           // Max trades/day per symbol (backtest: 3)
+input int      MaxConsecLosses     = 2;           // Consecutive losses before cooldown (backtest: 2)
+input int      CooldownMinutes     = 60;          // Cooldown after consec losses in min (backtest: 60)
 
-bool IsAlgoTradingEnabled() {
-    return (bool)TerminalInfoInteger(TERMINAL_TRADE_ALLOWED);
+//=== SECTION 4: DASHBOARD CONNECTION =================================
+input group            "=== 4. DASHBOARD CONNECTION ==="
+input string   DashboardURL        = "";          // Dashboard URL for monitoring
+input string   DashboardAPIKey     = "";          // API key from My Credentials
+input int      PushIntervalSeconds = 8;           // Push interval seconds
+input bool     PushRuntimeToDashboard = true;     // Enable dashboard sync
+
+//=== SECTION 5: DISPLAY ==============================================
+input group            "=== 5. DISPLAY ==="
+input bool     ShowSignalArrows    = true;        // Draw signal arrows on chart
+input color    BuyColor            = clrLime;
+input color    SellColor           = clrRed;
+
+//+------------------------------------------------------------------+
+//  SYMBOL RULES — 1:1 from smart_money_strategy.py SYMBOL_RULES   |
+//  Per-symbol: rr, min_score, atr_mult_stop, min_sweep_atr,        |
+//  trail_mult, use_ob, sessions, loose_bias, no_partial,           |
+//  timeout_bars, contrarian, contrarian_style                      |
+//+------------------------------------------------------------------+
+#define N_SYMS 3
+string   SR_sym[N_SYMS]          = {"EURUSD",  "XAUUSD",  "NAS100"};
+string   SR_broker[N_SYMS]       = {"EURUSD.i","XAUUSD.i","NAS100"};  // broker suffix per symbol
+double   SR_rr[N_SYMS]           = {1.8,        2.5,       1.8};
+int      SR_min_score[N_SYMS]    = {4,          3,         6};
+double   SR_atr_mult[N_SYMS]     = {0.65,       0.55,      0.45};
+double   SR_min_sweep[N_SYMS]    = {0.04,       0.04,      0.03};
+double   SR_max_spread[N_SYMS]   = {2.5,        60.0,      6.0};
+double   SR_trail[N_SYMS]        = {-1.0,       1.2,       0.8};  // -1 = None (no trail)
+bool     SR_use_ob[N_SYMS]       = {false,      true,      true};
+bool     SR_loose_bias[N_SYMS]   = {true,       false,     false};
+bool     SR_no_partial[N_SYMS]   = {true,       true,      true};
+int      SR_timeout[N_SYMS]      = {192,        96,        96};   // M5 bars
+bool     SR_contrarian[N_SYMS]   = {true,       false,     true};
+bool     SR_tight_fade[N_SYMS]   = {true,       false,     false};
+// Sessions: [start_hour, end_hour) pairs — max 2 per symbol
+int      SR_sess[N_SYMS][4]      = {{7,11,13,17},{12,18,19,22},{13,22,0,0}};
+int      SR_nsess[N_SYMS]        = {2,           2,            1};
+
+//---- Per-symbol live state (matches main.py global dicts)
+double   g_dayStartEquity[N_SYMS];     // symbol_day_start_balance
+double   g_peakEquity[N_SYMS];         // symbol_peak_virtual_balance
+double   g_virtEquity[N_SYMS];         // symbol_virtual_balance
+int      g_dayTradeCount[N_SYMS];      // daily_trade_count
+int      g_consecLosses[N_SYMS];       // consecutive_losses
+bool     g_killSwitch[N_SYMS];         // symbol_kill_switch
+datetime g_cooldownUntil[N_SYMS];      // sl_cooldown_until
+datetime g_dayStamp        = 0;
+// Per-symbol tracked position state (max 1 per symbol, matches tracked_positions)
+ulong    g_ticket[N_SYMS];
+double   g_entryPrice[N_SYMS];
+double   g_originalSL[N_SYMS];
+double   g_originalTP[N_SYMS];
+double   g_currentSL[N_SYMS];
+double   g_highestPrice[N_SYMS];       // For trailing stop buys
+double   g_lowestPrice[N_SYMS];        // For trailing stop sells
+bool     g_partialTaken[N_SYMS];
+datetime g_openTime[N_SYMS];
+string   g_direction[N_SYMS];
+bool     g_hasPosition[N_SYMS];
+// Global counters for dashboard
+int      g_totalSignals    = 0;
+int      g_totalOpened     = 0;
+int      g_totalClosed     = 0;
+datetime g_lastPush        = 0;
+datetime g_lastBarTime     = 0;
+
+//+------------------------------------------------------------------+
+//  HELPERS — EMA, ATR (1:1 from smart_money_strategy.py)           |
+//+------------------------------------------------------------------+
+// Simple EMA on array (adjust=False, same as pandas ewm)
+void CalcEMA(const double &src[], double &out[], int period, int n) {
+    double alpha = 2.0 / (period + 1);
+    out[0] = src[0];
+    for(int i = 1; i < n; i++)
+        out[i] = src[i] * alpha + out[i-1] * (1.0 - alpha);
 }
 
-void RefreshDayAnchor() {
-    datetime now = TimeCurrent();
-    MqlDateTime t; TimeToStruct(now, t);
-    datetime day = StructToTime(t) - (t.hour*3600 + t.min*60 + t.sec);
-    if(g_dayStamp != day) {
-        g_dayStamp = day;
-        g_dayStartEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+// ATR 14-period rolling mean of True Range (matches _atr in strategy)
+void CalcATR(const double &high[], const double &low[], const double &close[],
+             double &atr[], int n, int period=14) {
+    double tr[];  ArrayResize(tr, n);
+    tr[0] = high[0] - low[0];
+    for(int i = 1; i < n; i++) {
+        double hl = high[i] - low[i];
+        double hc = MathAbs(high[i] - close[i-1]);
+        double lc = MathAbs(low[i]  - close[i-1]);
+        tr[i] = MathMax(hl, MathMax(hc, lc));
+    }
+    // Rolling mean
+    for(int i = 0; i < n; i++) {
+        if(i < period - 1) { atr[i] = 0; continue; }
+        double s = 0;
+        for(int j = i - period + 1; j <= i; j++) s += tr[j];
+        atr[i] = s / period;
     }
 }
 
-bool DailyDrawdownBreached() {
-    if(g_dayStartEquity <= 0.0) return false;
+int SymIdx(string sym) {
+    for(int i = 0; i < N_SYMS; i++) if(SR_sym[i] == sym) return i;
+    return -1;
+}
+
+//+------------------------------------------------------------------+
+//  SESSION FILTER — 1:1 from SmartMoneyStrategy._in_session()      |
+//+------------------------------------------------------------------+
+bool InSession(int sidx) {
+    MqlDateTime t; TimeToStruct(TimeGMT(), t);
+    int h = t.hour;
+    for(int s = 0; s < SR_nsess[sidx]; s++) {
+        int st = SR_sess[sidx][s*2];
+        int en = SR_sess[sidx][s*2+1];
+        if(h >= st && h < en) return true;
+    }
+    return false;
+}
+
+//+------------------------------------------------------------------+
+//  DAILY RESET — matches main.py unconditional daily reset          |
+//+------------------------------------------------------------------+
+void RefreshDayAnchor() {
+    MqlDateTime t; TimeToStruct(TimeCurrent(), t);
+    t.hour=0; t.min=0; t.sec=0;
+    datetime day = StructToTime(t);
+    if(g_dayStamp == day) return;
+    g_dayStamp = day;
     double eq = AccountInfoDouble(ACCOUNT_EQUITY);
-    double dd = (g_dayStartEquity - eq) / g_dayStartEquity * 100.0;
-    return dd >= MaxDailyDrawdownPct;
+    for(int i = 0; i < N_SYMS; i++) {
+        g_dayStartEquity[i] = eq;
+        g_dayTradeCount[i]  = 0;
+        g_killSwitch[i]     = false;
+        g_consecLosses[i]   = 0;
+        // virtual equity also resets daily to real equity
+        g_virtEquity[i]     = eq;
+        if(eq > g_peakEquity[i]) g_peakEquity[i] = eq;
+    }
 }
 
-bool PositionLimitReached() {
-    return PositionsTotal() >= MaxOpenPositions;
+//+------------------------------------------------------------------+
+//  LOT SIZE — 1:1 from calculate_lot_size() in main.py             |
+//  Uses account EQUITY (compounding), applies dd_factor + vol_factor|
+//+------------------------------------------------------------------+
+double CalcLots(string sym, double slDist, double riskPct) {
+    if(slDist <= 0) return SymbolInfoDouble(sym, SYMBOL_VOLUME_MIN);
+    double equity    = AccountInfoDouble(ACCOUNT_EQUITY);
+    double riskAmt   = equity * riskPct / 100.0;
+    double tickVal   = SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_VALUE);
+    double tickSize  = SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_SIZE);
+    double lotStep   = SymbolInfoDouble(sym, SYMBOL_VOLUME_STEP);
+    double minLot    = SymbolInfoDouble(sym, SYMBOL_VOLUME_MIN);
+    double maxLot    = SymbolInfoDouble(sym, SYMBOL_VOLUME_MAX);
+    if(tickVal <= 0 || tickSize <= 0) return minLot;
+    double ticks     = slDist / tickSize;
+    double lots      = riskAmt / (ticks * tickVal);
+    lots = MathFloor(lots / lotStep) * lotStep;
+    lots = MathMax(minLot, MathMin(maxLot, lots));
+    return NormalizeDouble(lots, 2);
 }
 
-void PushRuntimeSnapshot() {
-    if(!PushRuntimeToDashboard) return;
-    if(StringLen(DashboardURL) < 8) return;
-    if(StringLen(DashboardAPIKey) < 8) return;
+//+------------------------------------------------------------------+
+//  VOLATILITY FACTOR — 1:1 from main.py vol_factor logic           |
+//  ATR ratio: >1.6 → 0.6x, <0.7 → 0.8x, else 1.0x                |
+//+------------------------------------------------------------------+
+double GetVolFactor(string sym, int sidx) {
+    int barsNeeded = 100;
+    double h[], l[], c[];
+    ArrayResize(h, barsNeeded); ArrayResize(l, barsNeeded); ArrayResize(c, barsNeeded);
+    if(CopyHigh(sym, PERIOD_M5, 1, barsNeeded, h) < barsNeeded) return 1.0;
+    if(CopyLow(sym,  PERIOD_M5, 1, barsNeeded, l) < barsNeeded) return 1.0;
+    if(CopyClose(sym,PERIOD_M5, 1, barsNeeded, c) < barsNeeded) return 1.0;
+    ArrayReverse(h); ArrayReverse(l); ArrayReverse(c);
+    double atr[]; ArrayResize(atr, barsNeeded);
+    CalcATR(h, l, c, atr, barsNeeded);
+    double atrNow = atr[barsNeeded-1];
+    // Median of last 80
+    double win[]; ArrayResize(win, 80);
+    int valid = 0;
+    for(int i = barsNeeded-80; i < barsNeeded; i++)
+        if(atr[i] > 0) { win[valid++] = atr[i]; }
+    if(valid < 20 || atrNow <= 0) return 1.0;
+    ArraySort(win);
+    double med = (valid % 2 == 0) ? (win[valid/2-1]+win[valid/2])/2.0 : win[valid/2];
+    if(med <= 0) return 1.0;
+    double ratio = atrNow / med;
+    if(ratio > 1.6) return 0.6;
+    if(ratio < 0.7) return 0.8;
+    return 1.0;
+}
 
-    string pushUrl = DashboardURL;
-    // strip trailing slash
-    if(StringGetCharacter(pushUrl, StringLen(pushUrl)-1) == '/')
-        pushUrl = StringSubstr(pushUrl, 0, StringLen(pushUrl)-1);
-    pushUrl += \"/api/mt5/runtime/push\";
+//+------------------------------------------------------------------+
+//  FULL SMC SIGNAL — 1:1 port of SmartMoneyStrategy.check_signal() |
+//+------------------------------------------------------------------+
+struct ZenithSignal {
+    bool   valid;
+    string direction;
+    double entry;
+    double sl;
+    double tp;
+    double rr;
+    int    score;
+};
 
-    string accountId = IntegerToString((int)AccountInfoInteger(ACCOUNT_LOGIN));
-    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
-    double equity = AccountInfoDouble(ACCOUNT_EQUITY);
-    double profit = AccountInfoDouble(ACCOUNT_PROFIT);
-    int openPositions = (int)PositionsTotal();
+ZenithSignal CheckSMCSignal(string sym, int sidx) {
+    ZenithSignal sig; sig.valid = false;
 
-    string payload =
-        \"{\"
-        + \"\\\"account_id\\\":\\\"\" + accountId + \"\\\",\"
-        + \"\\\"connected\\\":true,\"
-        + \"\\\"strategy\\\":\\\"\" + StrategyName + \"\\\",\"
-        + \"\\\"balance\\\":\" + DoubleToString(balance, 2) + \",\"
-        + \"\\\"equity\\\":\" + DoubleToString(equity, 2) + \",\"
-        + \"\\\"profit\\\":\" + DoubleToString(profit, 2) + \",\"
-        + \"\\\"open_positions\\\":\" + IntegerToString(openPositions)
-        + \"}\";
+    // --- SESSION FILTER (matches _in_session per symbol) ---
+    if(!InSession(sidx)) return sig;
 
-    string headers =
-        \"Content-Type: application/json\\r\\n\"
-        + \"X-Bot-Key: \" + DashboardAPIKey + \"\\r\\n\";
+    // Fetch M15 bars, resample to H1 and M5 (matches fetch_m15_and_resample)
+    int m15bars = 300; // enough for 250 H1 and 300 M5
+    double m15h[], m15l[], m15c[], m15o[];
+    ArrayResize(m15h,m15bars); ArrayResize(m15l,m15bars);
+    ArrayResize(m15c,m15bars); ArrayResize(m15o,m15bars);
+    if(CopyHigh(sym, PERIOD_M15,  1, m15bars, m15h) < m15bars) return sig;
+    if(CopyLow(sym,  PERIOD_M15,  1, m15bars, m15l) < m15bars) return sig;
+    if(CopyClose(sym,PERIOD_M15,  1, m15bars, m15c) < m15bars) return sig;
+    if(CopyOpen(sym, PERIOD_M15,  1, m15bars, m15o) < m15bars) return sig;
+    // Arrays from CopyXxx come newest-first; reverse to oldest-first
+    ArrayReverse(m15h); ArrayReverse(m15l); ArrayReverse(m15c); ArrayReverse(m15o);
 
-    char data[];
-    char result[];
-    string resultHeaders;
-    StringToCharArray(payload, data, 0, StringLen(payload), CP_UTF8);
+    // --- Resample M15 → M5 (every M15 bar = 3 M5 bars, use M15 OHLC as proxy) ---
+    // In live MT5 we have native M5 bars; use them directly instead
+    int m5bars = 300;
+    double h5[], l5[], c5[], o5[];
+    ArrayResize(h5,m5bars); ArrayResize(l5,m5bars); ArrayResize(c5,m5bars); ArrayResize(o5,m5bars);
+    if(CopyHigh(sym, PERIOD_M5,  1, m5bars, h5) < m5bars) return sig;
+    if(CopyLow(sym,  PERIOD_M5,  1, m5bars, l5) < m5bars) return sig;
+    if(CopyClose(sym,PERIOD_M5,  1, m5bars, c5) < m5bars) return sig;
+    if(CopyOpen(sym, PERIOD_M5,  1, m5bars, o5) < m5bars) return sig;
+    ArrayReverse(h5); ArrayReverse(l5); ArrayReverse(c5); ArrayReverse(o5);
 
-    ResetLastError();
-    int code = WebRequest(\"POST\", pushUrl, headers, 7000, data, result, resultHeaders);
-    if(code == -1) {
-        Print(\"[ZenithEA] Runtime push failed. Error=\", GetLastError());
+    // --- Resample M15 → H1 (every 4 M15 bars = 1 H1 bar) ---
+    int h1bars = m15bars / 4;
+    double h1h[], h1l[], h1c[], h1o[];
+    ArrayResize(h1h,h1bars); ArrayResize(h1l,h1bars); ArrayResize(h1c,h1bars); ArrayResize(h1o,h1bars);
+    for(int i = 0; i < h1bars; i++) {
+        int base = i*4;
+        h1o[i] = m15o[base];
+        h1h[i] = MathMax(MathMax(m15h[base],m15h[base+1]),MathMax(m15h[base+2],m15h[base+3]));
+        h1l[i] = MathMin(MathMin(m15l[base],m15l[base+1]),MathMin(m15l[base+2],m15l[base+3]));
+        h1c[i] = m15c[base+3];
+    }
+
+    int n5 = m5bars;
+    int n1 = h1bars;
+    if(n5 < 80 || n1 < 80) return sig;
+
+    // --- ATR on M5 ---
+    double atr5[]; ArrayResize(atr5, n5);
+    CalcATR(h5, l5, c5, atr5, n5);
+    double atrNow = atr5[n5-1];
+    if(atrNow <= 0) return sig;
+
+    // --- REGIME FILTER (matches _regime_ok) ---
+    {
+        double atrMed = 0; int cnt=0;
+        for(int i = n5-80; i < n5; i++) if(atr5[i]>0){atrMed+=atr5[i];cnt++;}
+        if(cnt>0) atrMed/=cnt;
+        if(atrMed <= 0) return sig;
+        if(atrNow < atrMed*0.6 || atrNow > atrMed*2.5) return sig;
+        // Body ratio + trendiness over last 24 M5 bars
+        double sumBody=0, sumRange=0;
+        for(int i=n5-24;i<n5;i++){sumBody+=MathAbs(c5[i]-o5[i]);sumRange+=(h5[i]-l5[i]);}
+        double bodyRatio = sumRange>0 ? sumBody/sumRange : 0;
+        double rangeSpan = 0;
+        double rHigh=h5[n5-24], rLow=l5[n5-24];
+        for(int i=n5-24;i<n5;i++){if(h5[i]>rHigh)rHigh=h5[i];if(l5[i]<rLow)rLow=l5[i];}
+        rangeSpan = rHigh-rLow;
+        double dirMove = MathAbs(c5[n5-1]-o5[n5-24]);
+        double trendiness = rangeSpan>0 ? dirMove/rangeSpan : 0;
+        if(bodyRatio < 0.35 && trendiness < 0.25) return sig;
+        if(trendiness < 0.15) return sig;
+    }
+
+    // --- HTF BIAS (matches _htf_bias) ---
+    // EMA20, EMA50, EMA200 on H1 close
+    double ema20_1h[], ema50_1h[], ema200_1h[];
+    ArrayResize(ema20_1h,n1); ArrayResize(ema50_1h,n1); ArrayResize(ema200_1h,n1);
+    CalcEMA(h1c, ema20_1h,  20,  n1);
+    CalcEMA(h1c, ema50_1h,  50,  n1);
+    CalcEMA(h1c, ema200_1h, 200 < n1 ? 200 : n1, n1);
+    double e20  = ema20_1h[n1-1];
+    double e50  = ema50_1h[n1-1];
+    double e200 = ema200_1h[n1-1];
+    double e20p = n1>6 ? ema20_1h[n1-6] : e20;
+    double price1h = h1c[n1-1];
+    bool bullish, bearish;
+    if(SR_loose_bias[sidx]) {
+        bullish = (price1h > e20) && (e20 > e50) && (e20 >= e20p);
+        bearish = (price1h < e20) && (e20 < e50) && (e20 <= e20p);
+    } else {
+        bullish = (price1h > e20) && (e20 >= e50) && (e50 >= e200) && (e20 >= e20p);
+        bearish = (price1h < e20) && (e20 <= e50) && (e50 <= e200) && (e20 <= e20p);
+    }
+    if(!bullish && !bearish) return sig;
+    string direction = bullish ? "buy" : "sell";
+
+    // --- PREMIUM/DISCOUNT SCORE ---
+    double h1high=h1h[n1-1], h1low=h1l[n1-1];
+    for(int i=MathMax(0,n1-48);i<n1;i++){if(h1h[i]>h1high)h1high=h1h[i];if(h1l[i]<h1low)h1low=h1l[i];}
+    int zone_score=0;
+    if(h1high>h1low){
+        double eq2 = h1low+(h1high-h1low)*0.5;
+        double dd  = h1low+(h1high-h1low)*0.35;
+        double dp  = h1low+(h1high-h1low)*0.65;
+        double cp  = c5[n5-1];
+        if(direction=="buy"  && cp<=eq2) zone_score=(cp<=dd)?2:1;
+        if(direction=="sell" && cp>=eq2) zone_score=(cp>=dp)?2:1;
+    }
+
+    // --- LIQUIDITY SWEEP (matches _find_liquidity_sweep) ---
+    int lookback=24, search=40;
+    if(n5 < lookback+search+5) return sig;
+    int sweep_idx=-1; double sweep_level=0, sweep_extreme=0; int sweep_score=0;
+    for(int off=search; off>=1; off--) {
+        int idx = n5-off;
+        double priorLow=l5[idx-lookback], priorHigh=h5[idx-lookback];
+        for(int j=idx-lookback;j<idx;j++){if(l5[j]<priorLow)priorLow=l5[j];if(h5[j]>priorHigh)priorHigh=h5[j];}
+        if(direction=="buy") {
+            double depth = priorLow - l5[idx];
+            if(depth >= atrNow*SR_min_sweep[sidx] && c5[idx]>priorLow) {
+                sweep_idx=idx; sweep_level=priorLow; sweep_extreme=l5[idx];
+                sweep_score=(depth>atrNow*0.25)?2:1; break;
+            }
+        } else {
+            double depth = h5[idx]-priorHigh;
+            if(depth >= atrNow*SR_min_sweep[sidx] && c5[idx]<priorHigh) {
+                sweep_idx=idx; sweep_level=priorHigh; sweep_extreme=h5[idx];
+                sweep_score=(depth>atrNow*0.25)?2:1; break;
+            }
+        }
+    }
+    if(sweep_idx<0) return sig;
+
+    // --- MSS (matches _find_mss) ---
+    int mss_idx=-1; double mss_level=0; int mss_score=0;
+    if(sweep_idx>=8) {
+        if(direction=="buy") {
+            double struc=h5[sweep_idx-8];
+            for(int j=sweep_idx-8;j<sweep_idx;j++) if(h5[j]>struc) struc=h5[j];
+            for(int j=sweep_idx+1;j<MathMin(sweep_idx+12,n5);j++) {
+                if(c5[j]>struc){mss_idx=j;mss_level=struc;mss_score=(j<=sweep_idx+4)?2:1;break;}
+            }
+        } else {
+            double struc=l5[sweep_idx-8];
+            for(int j=sweep_idx-8;j<sweep_idx;j++) if(l5[j]<struc) struc=l5[j];
+            for(int j=sweep_idx+1;j<MathMin(sweep_idx+12,n5);j++) {
+                if(c5[j]<struc){mss_idx=j;mss_level=struc;mss_score=(j<=sweep_idx+4)?2:1;break;}
+            }
+        }
+    }
+    if(mss_idx<0) { mss_idx=sweep_idx; mss_level=sweep_level; mss_score=0; }
+
+    // --- DISPLACEMENT SCORE at MSS bar ---
+    int disp_score=0;
+    {
+        double atrAt = atr5[mss_idx];
+        double body  = MathAbs(c5[mss_idx]-o5[mss_idx]);
+        double rng   = h5[mss_idx]-l5[mss_idx];
+        if(rng>0 && atrAt>0) {
+            double br = body/rng;
+            bool dir_ok = (direction=="buy")?(c5[mss_idx]>o5[mss_idx]):(c5[mss_idx]<o5[mss_idx]);
+            if(dir_ok && body>=atrAt*0.45 && br>=0.55) disp_score=2;
+            else if(dir_ok && body>=atrAt*0.25 && br>=0.45) disp_score=1;
+        }
+    }
+
+    // --- ORDER BLOCK (matches _find_order_block) ---
+    bool has_ob=false; double ob_high=0, ob_low=0;
+    if(SR_use_ob[sidx] && mss_idx>sweep_idx) {
+        for(int j=mss_idx;j>sweep_idx;j--) {
+            if(direction=="buy"  && c5[j]<o5[j]){ob_high=h5[j];ob_low=l5[j];has_ob=true;break;}
+            if(direction=="sell" && c5[j]>o5[j]){ob_high=h5[j];ob_low=l5[j];has_ob=true;break;}
+        }
+    }
+
+    // --- FVG (matches _find_fvg) ---
+    bool has_fvg=false; double fvg_hi=0, fvg_lo=0;
+    {
+        int st=MathMax(sweep_idx+1,2);
+        int en=MathMin(mss_idx+2,n5-1);
+        for(int j=st;j<en;j++) {
+            if(direction=="buy"  && l5[j+1]>h5[j-1]){fvg_hi=l5[j+1];fvg_lo=h5[j-1];has_fvg=true;break;}
+            if(direction=="sell" && h5[j+1]<l5[j-1]){fvg_hi=h5[j+1];fvg_lo=l5[j-1];has_fvg=true;break;}
+        }
+    }
+
+    // --- ENTRY & STOP (matches _entry_and_stop) ---
+    double buffer = atrNow * SR_atr_mult[sidx];
+    double entry, stop_price;
+    if(has_ob)       entry = (ob_high+ob_low)/2.0;
+    else if(has_fvg) entry = (fvg_hi+fvg_lo)/2.0;
+    else {
+        double imp_h=h5[sweep_idx], imp_l=l5[sweep_idx];
+        for(int j=sweep_idx;j<=mss_idx;j++){if(h5[j]>imp_h)imp_h=h5[j];if(l5[j]<imp_l)imp_l=l5[j];}
+        entry = (direction=="buy") ? imp_h-(imp_h-imp_l)*0.50 : imp_l+(imp_h-imp_l)*0.50;
+    }
+    {
+        double sl_ref = sweep_extreme;
+        double range_l=l5[sweep_idx], range_h=h5[sweep_idx];
+        for(int j=sweep_idx;j<=mss_idx;j++){if(l5[j]<range_l)range_l=l5[j];if(h5[j]>range_h)range_h=h5[j];}
+        if(direction=="buy")  stop_price = MathMin(sl_ref,range_l)-buffer;
+        else                  stop_price = MathMax(sl_ref,range_h)+buffer;
+    }
+    if(direction=="buy"  && entry<=stop_price) return sig;
+    if(direction=="sell" && entry>=stop_price) return sig;
+
+    double stop_dist = MathAbs(entry-stop_price);
+
+    // Stop dist sanity (matches backtest: 0.20*atr to 3.5*atr)
+    if(stop_dist < atrNow*0.20 || stop_dist > atrNow*3.5) return sig;
+
+    // Spread check (matches main.py _stop_dist_check)
+    double spread_price = SymbolInfoInteger(sym, SYMBOL_SPREAD) * SymbolInfoDouble(sym, SYMBOL_POINT);
+    if(spread_price>0 && stop_dist <= spread_price*2) return sig;
+
+    // --- VOLATILITY SCORE ---
+    int vol_score=0;
+    {
+        double atrMed2=0; int vc=0;
+        for(int i=n5-80;i<n5;i++) if(atr5[i]>0){atrMed2+=atr5[i];vc++;}
+        if(vc>0){atrMed2/=vc; double r=atrNow/atrMed2; if(r>=0.75&&r<=1.80)vol_score=1;}
+    }
+
+    // --- CONFLUENCE SCORE ---
+    int score = 2 + zone_score + sweep_score + mss_score + disp_score
+                + (has_fvg?1:0) + (has_ob?1:0) + vol_score;
+    if(score < SR_min_score[sidx]) return sig;
+
+    // --- MOMENTUM CONFIRMATION (matches _momentum_confirms) ---
+    {
+        int bull=0;
+        for(int j=n5-4;j<n5-1;j++) if(c5[j]>o5[j]) bull++;
+        if(direction=="buy"  && bull<2) return sig;
+        if(direction=="sell" && (3-bull)<2) return sig;
+    }
+
+    // --- TREND STRENGTH (matches _trend_strength_ok, ADX-style) ---
+    {
+        double pdi=0, mdi=0;
+        for(int j=n5-14;j<n5;j++){
+            double hdiff=h5[j]-h5[j-1];
+            double ldiff=l5[j-1]-l5[j];
+            if(hdiff>ldiff&&hdiff>0) pdi+=hdiff;
+            if(ldiff>hdiff&&ldiff>0) mdi+=ldiff;
+        }
+        if(pdi+mdi>0){double r=MathMax(pdi,mdi)/(pdi+mdi);if(r<0.60)return sig;}
+    }
+
+    // --- BAR QUALITY (matches _bar_quality_ok) ---
+    {
+        double avgRng=0;
+        for(int j=n5-5;j<n5;j++) avgRng+=(h5[j]-l5[j]);
+        avgRng/=5.0;
+        double minR=avgRng*0.30;
+        for(int j=n5-5;j<n5;j++) if((h5[j]-l5[j])<minR) return sig;
+    }
+
+    // --- STRUCTURE ALIGNMENT (matches _structure_aligned) ---
+    {
+        if(direction=="buy") {
+            // Check H1 rolling-5-min lows rising
+            double firstLow=h1l[n1-20], lastLow=h1l[n1-1];
+            for(int j=n1-20;j<n1;j++) if(h1l[j]<firstLow)firstLow=h1l[j];
+            for(int j=n1-5; j<n1;j++) { double mn=h1l[j]; for(int k=j-4;k<=j;k++) if(h1l[k]<mn)mn=h1l[k]; lastLow=mn; }
+            if(lastLow < firstLow*0.995) return sig;
+        } else {
+            double firstHigh=h1h[n1-20], lastHigh=h1h[n1-1];
+            for(int j=n1-20;j<n1;j++) if(h1h[j]>firstHigh)firstHigh=h1h[j];
+            for(int j=n1-5; j<n1;j++) { double mx=h1h[j]; for(int k=j-4;k<=j;k++) if(h1h[k]>mx)mx=h1h[k]; lastHigh=mx; }
+            if(lastHigh > firstHigh*1.005) return sig;
+        }
+    }
+
+    // --- PULLBACK DEPTH (matches _pullback_depth_ok, Fibonacci 23.6%-61.8%) ---
+    {
+        double imp_h2=h5[sweep_idx], imp_l2=l5[sweep_idx];
+        for(int j=sweep_idx;j<=mss_idx;j++){if(h5[j]>imp_h2)imp_h2=h5[j];if(l5[j]<imp_l2)imp_l2=l5[j];}
+        double imp_sz = imp_h2-imp_l2;
+        if(imp_sz>0) {
+            double depth;
+            if(direction=="buy")  depth=(imp_h2-l5[n5-1])/imp_sz;
+            else                  depth=(h5[n5-1]-imp_l2)/imp_sz;
+            if(depth<0.236 || depth>0.618) return sig;
+        }
+    }
+
+    // --- TARGET (effective_rr, matches main.py generate_smart_money_signal) ---
+    double rr = SR_rr[sidx];
+    double effective_rr = (SR_trail[sidx]>0) ? MathMax(rr, 3.0) : rr;
+    double target = (direction=="buy") ? entry+stop_dist*effective_rr : entry-stop_dist*effective_rr;
+
+    // --- CONTRARIAN FLIP (matches check_signal contrarian block) ---
+    if(SR_contrarian[sidx]) {
+        if(SR_tight_fade[sidx]) {
+            double atrbuf = atrNow*0.30;
+            double imp_h3=h5[sweep_idx], imp_l3=l5[sweep_idx];
+            for(int j=sweep_idx;j<=mss_idx+2&&j<n5;j++){if(h5[j]>imp_h3)imp_h3=h5[j];if(l5[j]<imp_l3)imp_l3=l5[j];}
+            string nd; double ns, nt;
+            if(direction=="buy"){nd="sell";ns=imp_h3+atrbuf;nt=sweep_extreme;}
+            else               {nd="buy"; ns=imp_l3-atrbuf;nt=sweep_extreme;}
+            double nsd=MathAbs(entry-ns);
+            if(nsd<=0) return sig;
+            double nrr=MathAbs(entry-nt)/nsd;
+            if(nrr<0.6||nrr>5.0) return sig;
+            direction=nd; stop_price=ns; target=nt; stop_dist=nsd; effective_rr=nrr;
+        } else {
+            // inverted
+            string nd=(direction=="buy")?"sell":"buy";
+            double ns=target, nt=stop_price;
+            direction=nd; stop_price=ns; target=nt;
+            stop_dist=MathAbs(entry-stop_price);
+        }
+    }
+
+    sig.valid     = true;
+    sig.direction = direction;
+    sig.entry     = entry;
+    sig.sl        = stop_price;
+    sig.tp        = target;
+    sig.rr        = effective_rr;
+    sig.score     = score;
+    return sig;
+}
+
+//+------------------------------------------------------------------+
+//  FORCE TRADE — fire one real order per symbol immediately        |
+//  Used to demonstrate live execution on a demo account.           |
+//  Uses ATR-based SL/TP, bypasses signal/session filters.          |
+//+------------------------------------------------------------------+
+void FireForceTrade(string sym, int sidx) {
+    // Alternate direction per symbol for variety in presentation
+    string dir = (sidx==1) ? "sell" : "buy";
+
+    // Ensure symbol is in market watch and prices are populated
+    SymbolSelect(sym, true);
+    double ask = 0, bid = 0;
+    for(int _try=0; _try<10; _try++) {
+        ask = SymbolInfoDouble(sym, SYMBOL_ASK);
+        bid = SymbolInfoDouble(sym, SYMBOL_BID);
+        if(ask > 0 && bid > 0) break;
+        Sleep(200);  // wait 200ms and retry
+    }
+    if(ask<=0 || bid<=0) { Print("[ZenithEA][FORCE] No price for ",sym," after retries"); return; }
+
+    // ATR for SL/TP sizing
+    double h[100],l[100],c[100];
+    if(CopyHigh(sym,PERIOD_M5,1,100,h)<100) return;
+    if(CopyLow(sym, PERIOD_M5,1,100,l)<100) return;
+    if(CopyClose(sym,PERIOD_M5,1,100,c)<100) return;
+    ArrayReverse(h); ArrayReverse(l); ArrayReverse(c);
+    double atr[]; ArrayResize(atr,100);
+    CalcATR(h,l,c,atr,100);
+    double atrVal = atr[99];
+    if(atrVal<=0) {
+        // Fallback ATR per instrument
+        if(sym=="XAUUSD")  atrVal=3.0;
+        else if(sym=="NAS100") atrVal=30.0;
+        else atrVal=0.00050;
+    }
+
+    double price  = (dir=="buy") ? ask : bid;
+    double slDist = atrVal * SR_atr_mult[sidx];
+    double tpDist = slDist * SR_rr[sidx];
+    double sl     = (dir=="buy") ? price-slDist : price+slDist;
+    double tp     = (dir=="buy") ? price+tpDist : price-tpDist;
+    int    digits = (int)SymbolInfoInteger(sym,SYMBOL_DIGITS);
+    sl = NormalizeDouble(sl,digits); tp = NormalizeDouble(tp,digits);
+
+    double lots = CalcLots(sym, slDist, RiskPerTradePct);
+
+    MqlTradeRequest req={}; MqlTradeResult res={};
+    req.action       = TRADE_ACTION_DEAL;
+    req.symbol       = sym;
+    req.volume       = lots;
+    req.price        = price;
+    req.sl           = sl;
+    req.tp           = tp;
+    req.type         = (dir=="buy") ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+    req.type_filling = ORDER_FILLING_IOC;
+    req.deviation    = 20;
+    req.magic        = 20250101;
+    req.comment      = "ZenithEA_FORCE";
+
+    if(OrderSend(req,res)) {
+        // Resolve position ticket: select by symbol after fill
+        ulong posTicket = 0;
+        if(PositionSelect(sym)) posTicket = PositionGetInteger(POSITION_TICKET);
+        g_ticket[sidx]       = posTicket;
+        g_entryPrice[sidx]   = price;
+        g_originalSL[sidx]   = sl;
+        g_originalTP[sidx]   = tp;
+        g_currentSL[sidx]    = sl;
+        g_highestPrice[sidx] = price;
+        g_lowestPrice[sidx]  = price;
+        g_openTime[sidx]     = TimeCurrent();
+        g_direction[sidx]    = dir;
+        g_hasPosition[sidx]  = true;
+        g_dayTradeCount[sidx]++;
+        g_totalOpened++;
+        if(ShowSignalArrows) {
+            string nm="ZenithEA_"+(dir=="buy"?"BUY":"SELL")+"_FORCE_"+sym;
+            ObjectCreate(0,nm,OBJ_ARROW,0,TimeCurrent(),price);
+            ObjectSetInteger(0,nm,OBJPROP_ARROWCODE,(dir=="buy")?233:234);
+            ObjectSetInteger(0,nm,OBJPROP_COLOR,(dir=="buy")?BuyColor:SellColor);
+            ObjectSetInteger(0,nm,OBJPROP_WIDTH,3);
+        }
+        Print("[ZenithEA][FORCE] Opened ",dir," ",sym,
+              " lots=",lots," entry=",price," SL=",sl," TP=",tp);
+        PushTradeEvent("opened",sym,dir,price,sl,tp,lots,0,res.deal);
+    } else {
+        Print("[ZenithEA][FORCE] OrderSend failed ",sym,": ",res.retcode," ",res.comment);
+    }
+}
+
+//+------------------------------------------------------------------+
+//  POSITION MANAGEMENT — trailing stop + max hold time             |
+//  1:1 from process_single_symbol() trade management block         |
+//+------------------------------------------------------------------+
+void ManagePosition(string sym, int sidx) {
+    if(!g_hasPosition[sidx]) return;
+    // Check position still open
+    if(!PositionSelectByTicket(g_ticket[sidx])) {
+        // Position closed — record profit/loss, update state
+        HistorySelect(g_openTime[sidx], TimeCurrent());
+        double profit=0;
+        for(int d=HistoryDealsTotal()-1;d>=0;d--) {
+            ulong dticket=HistoryDealGetTicket(d);
+            if(HistoryDealGetInteger(dticket,DEAL_POSITION_ID)==(long)g_ticket[sidx]) {
+                profit+=HistoryDealGetDouble(dticket,DEAL_PROFIT);
+            }
+        }
+        // Update virtual equity
+        g_virtEquity[sidx]  += profit;
+        if(g_virtEquity[sidx] > g_peakEquity[sidx]) g_peakEquity[sidx]=g_virtEquity[sidx];
+        // Consecutive losses (matches backtest: profit_r<=0 → increment)
+        if(profit <= 0) {
+            g_consecLosses[sidx]++;
+            if(g_consecLosses[sidx] >= MaxConsecLosses)
+                g_cooldownUntil[sidx] = TimeCurrent() + CooldownMinutes*60;
+        } else {
+            g_consecLosses[sidx] = 0;
+        }
+        g_hasPosition[sidx] = false;
+        g_totalClosed++;
         return;
     }
 
-    if(code < 200 || code >= 300) {
-        Print(\"[ZenithEA] Runtime push HTTP code=\", code);
+    // Max hold time check (matches main.py timeout_bars * 5 min)
+    int maxHoldSec = SR_timeout[sidx] * 5 * 60;
+    if((int)(TimeCurrent()-g_openTime[sidx]) >= maxHoldSec) {
+        Trade.PositionClose(g_ticket[sidx]);
+        Print("[ZenithEA] ", sym, " max hold time — force close");
+        g_hasPosition[sidx]=false;
+        return;
+    }
+
+    // Trailing stop (matches backtest else-branch: no_partial=true → trail immediately)
+    double trail = SR_trail[sidx];
+    if(trail > 0) {
+        double initialRisk = MathAbs(g_entryPrice[sidx]-g_originalSL[sidx]);
+        double trailDist   = initialRisk * trail;
+        double curSL       = PositionGetDouble(POSITION_SL);
+        int digits         = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
+
+        // Use last completed M15 bar high/low (matches main.py bar_high/bar_low logic)
+        double barH[2], barL[2];
+        CopyHigh(sym,PERIOD_M15,1,2,barH); CopyLow(sym,PERIOD_M15,1,2,barL);
+        double lastBarHigh = barH[0];  // index 0 = last completed bar when copied from pos 1
+        double lastBarLow  = barL[0];
+
+        if(g_direction[sidx]=="buy") {
+            if(lastBarHigh > g_highestPrice[sidx]) g_highestPrice[sidx]=lastBarHigh;
+            double newSL = NormalizeDouble(g_highestPrice[sidx]-trailDist, digits);
+            if(newSL > curSL && newSL < PositionGetDouble(POSITION_PRICE_CURRENT))
+                Trade.PositionModify(g_ticket[sidx], newSL, PositionGetDouble(POSITION_TP));
+        } else {
+            if(lastBarLow < g_lowestPrice[sidx]) g_lowestPrice[sidx]=lastBarLow;
+            double newSL = NormalizeDouble(g_lowestPrice[sidx]+trailDist, digits);
+            if(newSL < curSL && newSL > PositionGetDouble(POSITION_PRICE_CURRENT))
+                Trade.PositionModify(g_ticket[sidx], newSL, PositionGetDouble(POSITION_TP));
+        }
     }
 }
 
+//+------------------------------------------------------------------+
+//  OPEN POSITION — with dd_factor + vol_factor (matches main.py)   |
+//+------------------------------------------------------------------+
+void OpenPosition(string sym, int sidx, ZenithSignal &sig) {
+    double slDist = MathAbs(sig.entry-sig.sl);
+
+    // dd_factor: halve risk when peak-to-current DD > 4% * risk_scale (backtest line 1838)
+    double ddFactor=1.0;
+    double peak=g_peakEquity[sidx], curr=AccountInfoDouble(ACCOUNT_EQUITY);
+    if(peak>0 && (peak-curr)/peak > 0.04) ddFactor=0.5;
+
+    // vol_factor: ATR-based scaling (backtest lines 1827-1837)
+    double volFactor=GetVolFactor(sym,sidx);
+
+    double riskUsed = RiskPerTradePct * ddFactor * volFactor;
+    double lots     = CalcLots(sym, slDist, riskUsed);
+
+    // ── LIVE MODE ──
+    MqlTradeRequest req={}; MqlTradeResult res={};
+    req.action       = TRADE_ACTION_DEAL;
+    req.symbol       = sym;
+    req.volume       = lots;
+    req.price        = (sig.direction=="buy") ? SymbolInfoDouble(sym,SYMBOL_ASK)
+                                              : SymbolInfoDouble(sym,SYMBOL_BID);
+    req.sl           = NormalizeDouble(sig.sl, (int)SymbolInfoInteger(sym,SYMBOL_DIGITS));
+    req.tp           = NormalizeDouble(sig.tp, (int)SymbolInfoInteger(sym,SYMBOL_DIGITS));
+    req.type         = (sig.direction=="buy") ? ORDER_TYPE_BUY : ORDER_TYPE_SELL;
+    req.type_filling = ORDER_FILLING_IOC;
+    req.deviation    = 10;
+    req.magic        = 20250101;
+    req.comment      = "ZenithEA_SMC_v3";
+
+    if(!LiveTrading) {
+        Print("[ZenithEA][DRY-RUN] Would open ", sig.direction, " ", sym,
+              " lots=", lots, " entry=", req.price, " SL=", req.sl, " TP=", req.tp);
+        return;
+    }
+
+    if(OrderSend(req, res)) {
+        // Resolve position ticket by selecting symbol after fill
+        ulong posTicket = 0;
+        if(PositionSelect(sym)) posTicket = PositionGetInteger(POSITION_TICKET);
+        g_ticket[sidx]       = posTicket;
+        g_entryPrice[sidx]   = req.price;
+        g_originalSL[sidx]   = req.sl;
+        g_originalTP[sidx]   = req.tp;
+        g_currentSL[sidx]    = req.sl;
+        g_highestPrice[sidx] = req.price;
+        g_lowestPrice[sidx]  = req.price;
+        g_partialTaken[sidx] = false;
+        g_openTime[sidx]     = TimeCurrent();
+        g_direction[sidx]    = sig.direction;
+        g_hasPosition[sidx]  = true;
+        g_dayTradeCount[sidx]++;
+        g_totalOpened++;
+        if(ShowSignalArrows) {
+            string nm="ZenithEA_"+(sig.direction=="buy"?"BUY":"SELL")+"_"+IntegerToString((int)g_ticket[sidx]);
+            ObjectCreate(0,nm,OBJ_ARROW,0,TimeCurrent(),req.price);
+            ObjectSetInteger(0,nm,OBJPROP_ARROWCODE,(sig.direction=="buy")?233:234);
+            ObjectSetInteger(0,nm,OBJPROP_COLOR,(sig.direction=="buy")?BuyColor:SellColor);
+            ObjectSetInteger(0,nm,OBJPROP_WIDTH,2);
+        }
+        Print("[ZenithEA] Opened ", sig.direction, " ", sym, " lots=", lots,
+              " entry=", req.price, " SL=", req.sl, " TP=", req.tp,
+              " risk=", riskUsed, "% dd=", ddFactor, " vol=", volFactor);
+        PushTradeEvent("opened", sym, sig.direction, req.price, req.sl, req.tp, lots, 0, res.deal);
+    } else {
+        Print("[ZenithEA] OrderSend failed: ", res.retcode, " ", res.comment);
+    }
+}
+
+//+------------------------------------------------------------------+
+//  DASHBOARD PUSH (unchanged from v2.1)                            |
+//+------------------------------------------------------------------+
+void PushTradeEvent(string evtType, string sym, string dir, double price,
+                    double sl, double tp, double lots, double pnl, ulong ticket) {
+    if(!PushRuntimeToDashboard||StringLen(DashboardURL)<8||StringLen(DashboardAPIKey)<8) return;
+    string url=DashboardURL;
+    if(StringGetCharacter(url,StringLen(url)-1)=='/') url=StringSubstr(url,0,StringLen(url)-1);
+    url+="/api/mt5/runtime/push";
+    string payload="{"
+        +"\"account_id\":\""+IntegerToString((int)AccountInfoInteger(ACCOUNT_LOGIN))+"\","
+        +"\"connected\":true,"
+        +"\"event\":\""+evtType+"\","
+        +"\"symbol\":\""+sym+"\","
+        +"\"direction\":\""+dir+"\","
+        +"\"price\":"+DoubleToString(price,5)+","
+        +"\"sl\":"+DoubleToString(sl,5)+","
+        +"\"tp\":"+DoubleToString(tp,5)+","
+        +"\"lots\":"+DoubleToString(lots,2)+","
+        +"\"pnl\":"+DoubleToString(pnl,2)+","
+        +"\"ticket\":"+IntegerToString((int)ticket)+","
+        +"\"mode\":\"live\""
+        +"}";
+    string headers="Content-Type: application/json\r\nX-Bot-Key: "+DashboardAPIKey+"\r\n";
+    char data[]; char result[]; string resHdr;
+    StringToCharArray(payload,data,0,StringLen(payload),CP_UTF8);
+    int code=WebRequest("POST",url,headers,10000,data,result,resHdr);
+    if(code<0) Print("[ZenithEA] Push failed err=",GetLastError());
+}
+
+void PushRuntimeSnapshot() {
+    if(!PushRuntimeToDashboard||StringLen(DashboardURL)<8||StringLen(DashboardAPIKey)<8) return;
+    string url=DashboardURL;
+    if(StringGetCharacter(url,StringLen(url)-1)=='/') url=StringSubstr(url,0,StringLen(url)-1);
+    url+="/api/mt5/runtime/push";
+    double bal=AccountInfoDouble(ACCOUNT_BALANCE);
+    double eq=AccountInfoDouble(ACCOUNT_EQUITY);
+    double pnl=AccountInfoDouble(ACCOUNT_PROFIT);
+    string payload="{"
+        +"\"account_id\":\""+IntegerToString((int)AccountInfoInteger(ACCOUNT_LOGIN))+"\","
+        +"\"connected\":true,"
+        +"\"mode\":\"live\","
+        +"\"strategy\":\"zenith_smc_v3\","
+        +"\"balance\":"+DoubleToString(bal,2)+","
+        +"\"equity\":"+DoubleToString(eq,2)+","
+        +"\"profit\":"+DoubleToString(pnl,2)+","
+        +"\"open_positions\":"+IntegerToString((int)PositionsTotal())+","
+        +"\"signals_detected\":"+IntegerToString(g_totalSignals)+","
+        +"\"positions_opened\":"+IntegerToString(g_totalOpened)+","
+        +"\"positions_closed\":"+IntegerToString(g_totalClosed)
+        +"}";
+    string headers="Content-Type: application/json\r\nX-Bot-Key: "+DashboardAPIKey+"\r\n";
+    char data[]; char result[]; string resHdr;
+    StringToCharArray(payload,data,0,StringLen(payload),CP_UTF8);
+    WebRequest("POST",url,headers,10000,data,result,resHdr);
+}
+
+//+------------------------------------------------------------------+
+int g_symCount=N_SYMS;
+string g_symbols[N_SYMS];
+
 int OnInit() {
-    RefreshDayAnchor();
-    int sec = (int)MathMax((double)PushIntervalSeconds, 5.0);
-    EventSetTimer(sec);
+    for(int i=0;i<N_SYMS;i++) {
+        g_symbols[i]=SR_broker[i];  // use broker symbol (with suffix) for all MT5 calls
+        SymbolSelect(g_symbols[i],true);
+    }
+    double eq=AccountInfoDouble(ACCOUNT_EQUITY);
+    for(int i=0;i<N_SYMS;i++) {
+        g_dayStartEquity[i]=eq; g_peakEquity[i]=eq; g_virtEquity[i]=eq;
+        g_dayTradeCount[i]=0; g_consecLosses[i]=0; g_killSwitch[i]=false;
+        g_cooldownUntil[i]=0; g_hasPosition[i]=false; g_partialTaken[i]=false;
+    }
+    EventSetTimer((int)MathMax((double)PushIntervalSeconds,5.0));
+    Print("[ZenithEA v3.0] LIVE=",LiveTrading," | Risk=",RiskPerTradePct,
+          "% | MaxTrades=",MaxDailyTrades," | KillSwitch=",KillSwitchDDPct,"%");
+    Print("[ZenithEA v3.0] Broker symbols: ",SR_broker[0],", ",SR_broker[1],", ",SR_broker[2]);
+    string modeStr = ForceTrade ? "FORCE — instant execution on startup" :
+                     (LiveTrading ? "LIVE — real strategy orders" : "DRY-RUN — no orders");
+    Comment("ZenithEA v3.0 | SYMBOLS: EURUSD, XAUUSD, NAS100\n"
+            "Mode: ",modeStr,"\n"
+            "Risk: ",RiskPerTradePct,"% | MaxDailyTrades: ",MaxDailyTrades);
+    // FORCE TRADE: fire one order per symbol immediately on attach
+    if(ForceTrade) {
+        for(int i=0;i<N_SYMS;i++) {
+            FireForceTrade(g_symbols[i],i);
+            Sleep(500);  // 500ms gap between orders
+        }
+    }
+    PushRuntimeSnapshot();
     return(INIT_SUCCEEDED);
 }
 
 void OnDeinit(const int reason) {
     EventKillTimer();
+    ObjectsDeleteAll(0,"ZenithEA_");
+    Comment("");
 }
 
-void OnTimer() {
-    PushRuntimeSnapshot();
-}
+void OnTimer() { RefreshDayAnchor(); PushRuntimeSnapshot(); }
 
 void OnTick() {
     RefreshDayAnchor();
 
-    if(!IsAlgoTradingEnabled()) return;
-    if(DailyDrawdownBreached()) return;
-    if(PositionLimitReached()) return;
+    // Manage any open positions every tick (trailing stop, max hold)
+    for(int s=0;s<N_SYMS;s++) ManagePosition(g_symbols[s],s);
 
-    // TODO: insert ICT/SMC signal logic here.
-    // Runtime push continues independently via OnTimer().
+    // Signal scan: only on new M15 bar close (matches main.py M15 scan timing)
+    datetime barTime=iTime(_Symbol,PERIOD_M15,0);
+    if(barTime==g_lastBarTime) return;
+    g_lastBarTime=barTime;
+
+    string today=TimeToString(TimeCurrent(),TIME_DATE);
+
+    for(int s=0;s<N_SYMS;s++) {
+        string sym=g_symbols[s];
+
+        // Skip if already has position (MaxOpenPositions=1 per symbol)
+        if(g_hasPosition[s]) continue;
+
+        // ── SAFETY CHECKS (1:1 main.py order: cooldown→kill→target→DD) ──
+
+        // Cooldown after consecutive losses (matches main.py sl_cooldown_until)
+        if(g_cooldownUntil[s]>0 && TimeCurrent()<g_cooldownUntil[s]) continue;
+
+        // Kill switch: peak-to-trough DD >= KillSwitchDDPct (backtest line 1769)
+        {
+            double eq2=AccountInfoDouble(ACCOUNT_EQUITY);
+            double pk=g_peakEquity[s];
+            if(pk>0 && (pk-eq2)/pk*100.0 >= KillSwitchDDPct) g_killSwitch[s]=true;
+        }
+        if(g_killSwitch[s]) continue;
+
+        // Daily profit target (backtest line 1782)
+        {
+            double eq2=AccountInfoDouble(ACCOUNT_EQUITY);
+            double ds=g_dayStartEquity[s];
+            if(ds>0 && (eq2-ds)/ds*100.0 >= DailyTargetPct) continue;
+        }
+
+        // Daily drawdown block (backtest: dd_pct >= max_daily_dd)
+        {
+            double eq2=AccountInfoDouble(ACCOUNT_EQUITY);
+            double ds=g_dayStartEquity[s];
+            if(ds>0 && (ds-eq2)/ds*100.0 >= MaxDailyDrawdownPct) continue;
+        }
+
+        // Max daily trades (backtest: daily_trade_count >= MAX_DAILY_TRADES)
+        if(g_dayTradeCount[s]>=MaxDailyTrades) continue;
+
+        // Consecutive losses block (matches should_trade: consecutive_losses >= max_losses)
+        if(g_consecLosses[s]>=MaxConsecLosses) continue;
+
+        // Skip if algo trading not enabled in terminal
+        if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED)) continue;
+
+        // ── SIGNAL GENERATION (full SmartMoneyStrategy) ──
+        ZenithSignal sig=CheckSMCSignal(sym,s);
+        if(!sig.valid) continue;
+
+        g_totalSignals++;
+        Print("[ZenithEA] Signal: ",sig.direction," ",sym,
+              " score=",sig.score," RR=",DoubleToString(sig.rr,1),
+              " entry=",sig.entry," SL=",sig.sl," TP=",sig.tp);
+
+        OpenPosition(sym,s,sig);
+    }
 }
+
 """
 
 
@@ -2323,27 +3265,42 @@ def _build_bot_package_zip() -> io.BytesIO:
             "README.txt",
             "ZENITH TRADING BOT - Complete Package\n"
             "=====================================\n\n"
+            "HOW THIS WORKS\n"
+            "--------------\n"
+            "This package ships TWO fully functional trading engines that are 1:1 identical\n"
+            "in strategy logic. Use whichever fits your deployment:\n\n"
+            "  OPTION A — ZenithEA.mq5 (RECOMMENDED for VPS / prop firm submission)\n"
+            "    Standalone MQL5 Expert Advisor. No Python required. Runs 24/7 inside MT5.\n"
+            "    Full SMC strategy + risk engine compiled into a single .ex5 file.\n\n"
+            "  OPTION B — Python bot (bot/main.py)\n"
+            "    Same strategy, runs as a Python process connecting to MT5 via the API.\n"
+            "    Requires Python 3.11+ and MetaTrader5 package installed.\n\n"
             "This package contains:\n\n"
-            "[mt5/] MetaTrader 5 EA (for live trading via MT5)\n"
-            "  - ZenithEA.mq5: Compile in MetaEditor to .ex5\n"
-            "  - EA_Config_Template.set: Input settings template\n\n"
-            "[bot/] Python Trading Bot (standalone version)\n"
-            "  - main.py: Live trading bot entry point\n"
-            "  - smart_money_strategy.py: Strategy logic (Smart Money Concepts)\n"
-            "  - backtest_improved.py: Backtesting engine\n"
-            "  - requirements.txt: Python dependencies\n"
-            "  - runtime_config.json: Bot configuration\n\n"
-            "SETUP OPTIONS:\n\n"
-            "Option A - MT5 EA (Recommended for most users):\n"
-            "  1. Open mt5/ZenithEA.mq5 in MetaEditor, compile to .ex5\n"
-            "  2. Attach EA to any chart in MT5\n"
-            "  3. In EA Inputs, paste Dashboard URL and API Key\n"
-            "  4. Tools -> Options -> Expert Advisors -> Allow WebRequest\n\n"
-            "Option B - Python Bot (Advanced users):\n"
+            "[mt5/] MT5 Expert Advisor — STANDALONE TRADING ENGINE\n"
+            "  - ZenithEA.mq5:            Full 1:1 port of main.py + smart_money_strategy.py\n"
+            "                             Compile in MetaEditor (F7), attach to M15 chart.\n"
+            "                             Modes: ForceTrade (demo/test), LiveTrading (real)\n"
+            "  - EA_Config_Template.set:  Input settings template\n\n"
+            "[bot/] Python Trading Bot — ALTERNATIVE ENGINE\n"
+            "  - main.py:                 Live trading bot (runs the full SmartMoneyStrategy)\n"
+            "  - smart_money_strategy.py: Full SMC strategy logic — 1:1 identical to backtest\n"
+            "  - backtest_improved.py:    Backtesting engine\n"
+            "  - requirements.txt:        Python dependencies\n"
+            "  - runtime_config.json:     Bot configuration\n\n"
+            "SETUP — Option A: ZenithEA.mq5 (Standalone)\n"
+            "  1. Open mt5/ZenithEA.mq5 in MetaEditor, press F7 to compile\n"
+            "  2. Attach ZenithEA.ex5 to an M15 chart in MT5\n"
+            "  3. In EA Inputs:\n"
+            "       ForceTrade=false, LiveTrading=true  → normal strategy mode\n"
+            "       ForceTrade=true,  LiveTrading=true  → instant demo/test orders on attach\n"
+            "  4. Optionally paste Dashboard URL + API Key to push data to the web dashboard\n"
+            "  5. Tools -> Options -> Expert Advisors -> Allow WebRequest for your URL\n\n"
+            "SETUP — Option B: Python bot\n"
             "  1. pip install -r bot/requirements.txt\n"
-            "  2. Edit bot/runtime_config.json with your settings\n"
-            "  3. python bot/main.py\n\n"
-            "API credentials available in dashboard 'My Credentials'\n",
+            "  2. Edit bot/runtime_config.json with your risk settings\n"
+            "  3. python bot/main.py\n"
+            "     (or use the web dashboard Start Bot button)\n\n"
+            "API credentials available in dashboard under 'My Credentials'\n",
         )
 
     zip_buf.seek(0)
@@ -2681,7 +3638,21 @@ def get_status():
     bridge = load_mt5_runtime_snapshot(request.user["id"])
     process_alive = BOT_PROCESS is not None and BOT_PROCESS.poll() is None
 
-    # --- Detect externally-started bot via runtime_status.json heartbeat ---
+    # --- EA alive = MT5 bridge snapshot pushed within last 90 seconds ---
+    bridge_ts = bridge.get("timestamp") if bridge else None
+    bridge_age_s = None
+    if bridge_ts:
+        try:
+            parsed_b = datetime.fromisoformat(str(bridge_ts).replace("Z", "+00:00"))
+            if parsed_b.tzinfo is None:
+                parsed_b = parsed_b.replace(tzinfo=timezone.utc)
+            bridge_age_s = int((datetime.now(timezone.utc) - parsed_b).total_seconds())
+        except Exception:
+            bridge_age_s = None
+    # EA is "live" only if it pushed data recently (< 90s)
+    ea_alive = bridge_age_s is not None and bridge_age_s < 90
+
+    # --- Python bot heartbeat (runtime_status.json) ---
     last_scan_time = runtime.get("timestamp")
     last_scan_age_s = None
     if last_scan_time:
@@ -2693,45 +3664,43 @@ def get_status():
         except Exception:
             last_scan_age_s = None
 
-    # Bot is "externally alive" if runtime_status.json was updated within last
-    # 120 seconds and its state field is not 'stopped' or 'error'.
     runtime_state = str(runtime.get("state", "")).lower()
-    external_alive = (
+    python_bot_alive = (
         last_scan_age_s is not None
         and last_scan_age_s < 120
         and runtime_state in ("running", "starting", "mt5_connected", "degraded")
     )
 
-    running = state.get("is_running", False)
+    # process_alive is only meaningful if the heartbeat is also fresh (< 120s)
+    # A zombie/orphan process with stale heartbeat should not count as running
+    process_truly_alive = process_alive and (last_scan_age_s is None or last_scan_age_s < 120)
 
-    if bridge:
-        running = bool(bridge.get("connected", True))
+    # Bot is alive if EA is active OR python process truly running OR python heartbeat fresh
+    effective_alive = ea_alive or process_truly_alive or python_bot_alive
 
-    # Reconcile: treat bot as running if process OR external heartbeat is alive
-    effective_alive = process_alive or external_alive
+    # Running = EA is connected (primary signal) OR python bot is active
+    running = ea_alive or process_truly_alive or python_bot_alive
 
-    if running and not effective_alive:
-        running = False
-        state["is_running"] = False
-        save_telegram_state(state)
-    elif effective_alive and not running:
-        running = True
-        state["is_running"] = True
+    # Sync telegram state
+    if state.get("is_running") != running:
+        state["is_running"] = running
         save_telegram_state(state)
 
     engine_status = "stopped"
-    if effective_alive and running:
+    if ea_alive:
+        engine_status = "running"  # EA is the gold standard
+    elif process_truly_alive or python_bot_alive:
         engine_status = "running"
         if last_scan_age_s is not None and last_scan_age_s > 45:
             engine_status = "running_stale"
-    elif effective_alive:
-        engine_status = "process_only"
 
     return json_response({
         "status": "running" if running else "stopped",
         "active_strategy": state.get("strategy", None) or (bridge.get("strategy") if bridge else None),
         "engine_status": engine_status,
         "process_alive": effective_alive,
+        "ea_alive": ea_alive,
+        "bridge_age_s": bridge_age_s,
         "pid": BOT_PROCESS.pid if process_alive else None,
         "last_scan_time": last_scan_time,
         "last_scan_age_s": last_scan_age_s,
@@ -2743,7 +3712,7 @@ def get_status():
         "signals_detected": runtime.get("signals_detected"),
         "positions_opened": runtime.get("positions_opened"),
         "failed_orders": runtime.get("failed_orders"),
-        "bridge_connected": bool(bridge),
+        "bridge_connected": ea_alive,
         "bridge_account_id": bridge.get("account_id") if bridge else None,
         "timestamp": _utcnow().isoformat()
     })
@@ -3212,7 +4181,7 @@ def get_bot_activity():
         "opened": sum(1 for e in events if e["type"] == "opened"),
         "failed": sum(1 for e in events if e["type"] == "failed"),
         "closed": sum(1 for e in events if e["type"] == "closed"),
-        "scans": sum(1 for e in events if e["type"] == "scan"),
+        "scans": lines,
     }
 
     return json_response({

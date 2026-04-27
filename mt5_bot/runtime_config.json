@@ -1,15 +1,11 @@
 {
-  "risk_percent": 20.0,
+  "risk_percent": 2.0,
   "max_daily_drawdown_pct": 3.0,
   "max_margin_usage_pct": 95.0,
   "daily_drawdown_adjustment_usd": 0.0,
   "enabled_symbols": [
-    "BTCUSD",
     "EURUSD",
-    "GBPJPY",
-    "GBPUSD",
     "NAS100",
-    "USDJPY",
     "XAUUSD"
   ]
 }

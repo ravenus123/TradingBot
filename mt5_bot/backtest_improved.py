@@ -543,6 +543,7 @@ def run_backtest_no_lookahead(
     last_loss_idx = -1000  # PROFITABILITY BOOSTER #3: Track last loss to avoid revenge trades
     c_losses  = 0
     risk      = max(0.1, min(10.0, risk_pct))
+    _risk_scale_old = risk / 1.0  # scale all % thresholds (base = 1.0%)
 
     is_crypto = symbol in ('BTCUSD',)
     is_us     = symbol in ('NAS100',)
@@ -687,7 +688,7 @@ def run_backtest_no_lookahead(
                     if er == 'SL': cooldown = i + 4
                 else:
                     c_losses = 0
-                if day_bal > 0 and (day_bal - bal)/day_bal*100 >= 3.0:
+                if day_bal > 0 and (day_bal - bal)/day_bal*100 >= 3.0 * _risk_scale_old:
                     blocked = True
             continue
 
@@ -1605,7 +1606,10 @@ def _slice_live_engine_window(df: pd.DataFrame, end_time, bars: int) -> pd.DataF
 
 
 def run_live_smc_engine_backtest(df_m15: pd.DataFrame, symbol: str, risk_pct: float = 1.0) -> dict:
-    from mt5_bot.smart_money_strategy import SmartMoneyStrategy, SYMBOL_RULES, _atr
+    try:
+        from mt5_bot.smart_money_strategy import SmartMoneyStrategy, SYMBOL_RULES, _atr
+    except ModuleNotFoundError:
+        from smart_money_strategy import SmartMoneyStrategy, SYMBOL_RULES, _atr
 
     df = _standardize_ohlc_columns(df_m15)
     if not isinstance(df.index, pd.DatetimeIndex):
@@ -1623,6 +1627,7 @@ def run_live_smc_engine_backtest(df_m15: pd.DataFrame, symbol: str, risk_pct: fl
     peak_equity = INITIAL_BALANCE
     equity_curve = [equity]
     trades = []
+    signal_markers = []
     open_trade = None
     m5_times = list(df_m5.index)
     i = 120
@@ -1631,8 +1636,11 @@ def run_live_smc_engine_backtest(df_m15: pd.DataFrame, symbol: str, risk_pct: fl
     daily_trade_count = {}
     daily_start_equity = {}
     MAX_DAILY_TRADES = 3
-    DAILY_TARGET_PCT = 3.0
-    KILL_SWITCH_DD_PCT = 5.0
+    # Scale all % thresholds proportionally to risk_pct (base = 1.0%)
+    # So at 10% risk: DAILY_TARGET=30%, KILL_SWITCH=50%, dd_factor at 40% - same behaviour
+    _risk_scale = risk_pct / 1.0
+    DAILY_TARGET_PCT = 3.0 * _risk_scale
+    KILL_SWITCH_DD_PCT = 5.0 * _risk_scale
     kill_switch_triggered = False
 
     while i < len(m5_times) - 20:
@@ -1743,6 +1751,8 @@ def run_live_smc_engine_backtest(df_m15: pd.DataFrame, symbol: str, risk_pct: fl
                 trades.append(trade)
                 if profit_r <= 0:
                     consecutive_losses += 1
+                    if consecutive_losses >= 2:
+                        cooldown_until = i + 12
                 else:
                     consecutive_losses = 0
                 open_trade = None
@@ -1785,6 +1795,16 @@ def run_live_smc_engine_backtest(df_m15: pd.DataFrame, symbol: str, risk_pct: fl
             i += 1
             continue
 
+        # Record signal marker for frontend visualization
+        signal_markers.append({
+            'time': str(now),
+            'direction': signal.get('direction', 'buy'),
+            'entry': float(signal.get('entry', 0)),
+            'stop': float(signal.get('stop', 0)),
+            'rr': float(signal.get('rr', 2.0)),
+            'score': float(signal.get('score', 0)),
+        })
+
         entry_i = i + 1
         if entry_i >= len(df_m5):
             break
@@ -1797,7 +1817,11 @@ def run_live_smc_engine_backtest(df_m15: pd.DataFrame, symbol: str, risk_pct: fl
             i += 1
             continue
         sym_rules = SYMBOL_RULES[symbol]
-        effective_rr = max(signal['rr'], 4.0) if sym_rules.get('trail_mult') is not None else signal['rr']
+        if sym_rules.get('trail_mult') is not None:
+            # With trailing stop: use max of signal RR, sym_rules RR, and 3.0 minimum so trail has room to run
+            effective_rr = max(signal['rr'], float(sym_rules.get('rr', 2.0)), 3.0)
+        else:
+            effective_rr = signal['rr']
         target = entry + stop_dist * effective_rr if direction == 'buy' else entry - stop_dist * effective_rr
 
         atr_window = _atr(df_m5).iloc[max(0, entry_i - 80):entry_i].dropna()
@@ -1811,7 +1835,7 @@ def run_live_smc_engine_backtest(df_m15: pd.DataFrame, symbol: str, risk_pct: fl
                     vol_factor = 0.6
                 elif ratio < 0.7:
                     vol_factor = 0.8
-        dd_factor = 0.5 if (peak_equity - equity) / peak_equity > 0.04 else 1.0
+        dd_factor = 0.5 if (peak_equity - equity) / peak_equity > 0.04 * _risk_scale else 1.0
         final_risk_pct = risk_pct * dd_factor * vol_factor
 
         if day_key is not None:
@@ -1832,10 +1856,12 @@ def run_live_smc_engine_backtest(df_m15: pd.DataFrame, symbol: str, risk_pct: fl
             'partial_taken': False,
             'banked_r': 0.0,
             'effective_rr': float(effective_rr),
+            'highest': float(entry),
+            'lowest': float(entry),
         }
         i = entry_i
 
-    return {'trades': trades, 'equity_curve': equity_curve, 'metrics': _live_engine_metrics(trades, equity_curve)}
+    return {'trades': trades, 'equity_curve': equity_curve, 'signal_markers': signal_markers, 'metrics': _live_engine_metrics(trades, equity_curve)}
 
 
 def _live_engine_metrics(trades: list, equity_curve: list) -> dict:

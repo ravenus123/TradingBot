@@ -177,6 +177,9 @@ MAX_RUNTIME_RISK = float(os.getenv('MAX_RUNTIME_RISK', '20.00'))
 # Track last signal to avoid spam
 last_signals = {}
 
+# Debug mode flag — set by --debug arg
+_DEBUG_MODE = False
+
 # Per-symbol confluence gates (EXACT MATCH TO BACKTEST)
 def get_min_confluence(symbol):
     """OPTIMIZED confluence gates - instrument-specific tuning"""
@@ -209,28 +212,31 @@ def get_adx_floor(symbol):
 tracked_positions = {}
 
 # ── Safety state (matching backtest engine) ──────────────────────────────
-# Daily trade cap: 6/day forex, 8/day crypto (BTCUSD) — matches backtest
+# Daily trade cap: 3/day per symbol — matches backtest MAX_DAILY_TRADES = 3
 daily_trade_count = {}   # {symbol: {date_str: int}}
 
-# Consecutive loss blocker: 3 consecutive SLs → block symbol for the day
+# Consecutive loss blocker: 2 consecutive SLs → block symbol for the day (matches backtest)
 consecutive_losses = {}  # {symbol: int}
 blocked_symbols = {}     # {symbol: date_str} — blocked until next day
 
-# Post-SL cooldown: 4 bars (~1 hour on M15) after any SL
+# Post-consecutive-loss cooldown: 12 M5 bars = 60 min — matches backtest exactly
+# Backtest: cooldown_until = i + 12 after 2 consecutive losses
 sl_cooldown_until = {}   # {symbol: datetime}
-SL_COOLDOWN_MINUTES = 60  # 4 bars × 15 min = 60 min
+SL_COOLDOWN_MINUTES = 60  # 12 M5 bars × 5 min = 60 min (matches backtest)
 
 # Backtest-parity virtual balance state (per symbol)
 # Mirrors backtest's per-symbol balance/day-balance logic for DD blocking.
 BACKTEST_INITIAL_BALANCE = 10000.0
 BACKTEST_DD_LIMIT_PCT = 3.0
-symbol_virtual_balance = {}    # {symbol: float}
-symbol_day_start_balance = {}  # {symbol: float}
-symbol_day_marker = {}         # {symbol: 'YYYY-MM-DD'}
+symbol_virtual_balance = {}      # {symbol: float} — current virtual equity
+symbol_peak_virtual_balance = {} # {symbol: float} — running peak (for dd_factor, matches backtest peak_equity)
+symbol_kill_switch = {}          # {symbol: bool} — permanent stop when peak DD >= 5%*risk_scale (matches backtest)
+symbol_day_start_balance = {}    # {symbol: float}
+symbol_day_marker = {}           # {symbol: 'YYYY-MM-DD'}
 
-# Max hold time: auto-close positions exceeding max bars
-MAX_HOLD_MINUTES_FOREX = 96 * 15   # 96 bars × 15 min = 1440 min = 24 h
-MAX_HOLD_MINUTES_CRYPTO = 120 * 15 # 120 bars × 15 min = 1800 min = 30 h
+# Max hold time: from SYMBOL_RULES timeout_bars (M5 bars × 5min)
+# EURUSD=192 M5 bars=960min, NAS100/XAUUSD=96 M5 bars=480min (backtest default)
+MAX_HOLD_MINUTES_DEFAULT = 96 * 5   # 96 M5 bars = 480 min = 8h (backtest default)
 
 # Order retry settings
 MAX_ORDER_RETRIES = 3
@@ -446,7 +452,7 @@ def calculate_lot_size(symbol: str, risk_percent: float, stop_distance: float, s
     if account is None:
         return sym_info['volume_min']
     
-    balance = account.balance
+    balance = account.equity  # use equity to match backtest compounding (equity * risk%)
     risk_amount = balance * (risk_percent / 100.0)
     
     # Get tick value (profit per 1 lot per 1 tick movement)
@@ -646,6 +652,37 @@ def fetch_live_candles(symbol: str, timeframe=mt5.TIMEFRAME_M15, bars: int = LOO
     df = df[['Time', 'open', 'high', 'low', 'close', 'tick_volume']]
     df.columns = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume']
     return df
+
+
+def _resample_m15_to_tf(df_m15: pd.DataFrame, rule: str) -> pd.DataFrame:
+    """Resample M15 candles to another timeframe — mirrors backtest exactly.
+    Backtest does: df_h1 = resample(M15, '1h'), df_m5 = resample(M15, '5min')
+    We do the same so live signal inputs are identical to backtest inputs."""
+    work = df_m15.copy()
+    # Set DatetimeIndex if not already set
+    if not isinstance(work.index, pd.DatetimeIndex):
+        work = work.set_index(pd.to_datetime(work['Time']))
+    return work.resample(rule).agg({
+        'Open': 'first',
+        'High': 'max',
+        'Low': 'min',
+        'Close': 'last',
+    }).dropna()
+
+
+def fetch_m15_and_resample(symbol: str, bars: int = LOOKBACK_BARS) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
+    """Fetch M15 data and resample into H1 + M5 — exact backtest methodology.
+    Returns (df_h1, df_m5) both derived from the same M15 feed.
+    H1 drops the last (currently forming) bar — matches backtest h1_cutoff = decision_time - 1h
+    which ensures only completed H1 bars feed into bias calculation (no lookahead)."""
+    df_m15 = fetch_live_candles(symbol, timeframe=mt5.TIMEFRAME_M15, bars=bars)
+    if df_m15 is None or len(df_m15) < 100:
+        return None, None
+    df_h1 = _resample_m15_to_tf(df_m15, '1h').iloc[:-1]  # drop forming bar — matches backtest
+    df_m5 = _resample_m15_to_tf(df_m15, '5min').iloc[:-1]  # drop forming M5 bar too
+    if len(df_h1) < 80 or len(df_m5) < 80:
+        return None, None
+    return df_h1, df_m5
 
 
 # multi-tf context
@@ -1128,17 +1165,18 @@ def generate_signal(df: pd.DataFrame, params: dict, symbol: str, sym_info: dict)
     return signal_result
 
 
-def generate_smart_money_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame, 
-                                 symbol: str, sym_info: dict) -> dict | None:
+def generate_smart_money_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame,
+                                 symbol: str, sym_info: dict, debug: bool = False) -> dict | None:
     """
     Smart Money Strategy - Liquidity Sweep + MSS + Pullback Entry
     HTF Bias (1H) → LTF Entry (5m)
     """
-    from smart_money_strategy import SmartMoneyStrategy, should_trade, get_session_filter
+    from smart_money_strategy import SmartMoneyStrategy, should_trade
     
-    # Check session filter first (London 07-11, NY 13-17)
-    if not get_session_filter():
-        return None
+    # NOTE: No outer session gate here — backtest has none.
+    # Session filtering is done per-symbol inside SmartMoneyStrategy._in_session()
+    # using SYMBOL_RULES sessions (XAUUSD: 12-18, 19-22 / NAS100: 13-22 / EURUSD: 7-11, 13-17)
+    # An outer gate of 6-17 was incorrectly blocking XAUUSD 19-22 and NAS100 17-22.
     
     # Check trade limits
     today = datetime.now().strftime('%Y-%m-%d')
@@ -1161,9 +1199,9 @@ def generate_smart_money_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame,
     
     # Create strategy instance
     strategy = SmartMoneyStrategy(df_1h, df_5m, symbol)
-    
+
     # Check for signal
-    signal = strategy.check_signal()
+    signal = strategy.check_signal(debug=debug)
     if signal is None:
         return None
     
@@ -1175,8 +1213,21 @@ def generate_smart_money_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame,
     direction = signal['direction']
     entry = signal['entry']
     stop = signal['stop']
-    target = signal['target']
-    
+    stop_dist = abs(entry - stop)
+
+    # Mirror backtest effective_rr logic exactly (backtest_improved.py line ~1809)
+    # When trail_mult is active, TP must be far enough to let trailing stop run
+    sym_rules_live = SMC_SYMBOL_RULES.get(symbol, {})
+    if sym_rules_live.get('trail_mult') is not None:
+        effective_rr = max(float(signal.get('rr', 2.0)), float(sym_rules_live.get('rr', 2.0)), 3.0)
+    else:
+        effective_rr = float(signal.get('rr', 2.0))
+
+    if direction == 'buy':
+        target = entry + stop_dist * effective_rr
+    else:
+        target = entry - stop_dist * effective_rr
+
     return {
         'symbol': symbol,
         'broker_symbol': sym_info['broker_symbol'],
@@ -1393,14 +1444,27 @@ class TelegramBot:
                             val = float(parts[1])
                             if MIN_RUNTIME_RISK <= val <= MAX_RUNTIME_RISK:
                                 cfg['risk_percent'] = round(val, 2)
-                                send_telegram_message(f"✅ <b>Risk Updated</b>\n{cfg['risk_percent']}% per trade")
+                                # Scale all risk protections proportionally (base = DEFAULT_RISK)
+                                _risk_scale = val / DEFAULT_RISK
+                                cfg['max_daily_drawdown_pct'] = round(MAX_DAILY_DRAWDOWN * _risk_scale, 2)
+                                send_telegram_message(
+                                    f"✅ <b>Risk Updated</b>\n"
+                                    f"📊 Risk per trade: <b>{cfg['risk_percent']}%</b>\n"
+                                    f"🛑 Daily DD limit auto-scaled: <b>{cfg['max_daily_drawdown_pct']:.2f}%</b>\n"
+                                    f"<i>(Base risk {DEFAULT_RISK}% → {val}% = {_risk_scale:.1f}x scale)</i>"
+                                )
                                 changed = True
                             else:
                                 send_telegram_message(f"❌ Risk must be between {MIN_RUNTIME_RISK:.2f}-{MAX_RUNTIME_RISK:.2f}%\nExample: /risk 0.5")
                         except ValueError:
                             send_telegram_message("❌ Invalid format\nExample: /risk 0.5")
                     else:
-                        send_telegram_message(f"📊 <b>Current Risk</b>\n{cfg['risk_percent']}% per trade\n\nTo change: /risk [value]")
+                        send_telegram_message(
+                            f"📊 <b>Current Risk</b>\n"
+                            f"Risk per trade: {cfg['risk_percent']}%\n"
+                            f"Daily DD limit: {cfg.get('max_daily_drawdown_pct', MAX_DAILY_DRAWDOWN):.2f}%\n\n"
+                            f"To change: /risk [value]"
+                        )
                 
                 # /status command
                 elif text == '/status':
@@ -1558,29 +1622,36 @@ def process_single_symbol(symbol: str, enabled: set, risk: float) -> tuple:
     if existing_pos and symbol in tracked_positions:
         existing_pos['entry_regime'] = tracked_positions[symbol].get('entry_regime', 'unknown')
     
-    # Get strategy params from best_settings.json (baseline)
+    # Get strategy params from best_settings.json (baseline); fall back to SYMBOL_RULES defaults
     params = get_instrument_settings(symbol)
     if not params:
-        return (symbol, f"{symbol}:NOCFG", None)
+        rule = SMC_SYMBOL_RULES.get(symbol)
+        if rule:
+            params = {
+                'EMA_Fast': 20, 'EMA_Slow': 50,
+                'ADX': 20.0,
+                'ATR_Mult': float(rule.get('atr_mult_stop', 0.65)),
+                'RR': float(rule.get('rr', 2.0)),
+            }
+        else:
+            return (symbol, f"{symbol}:NOCFG", None)
     
     # Parity mode: do NOT override backtest settings with live-learned params.
     
-    # Fetch LIVE candles
-    df = fetch_live_candles(symbol)
-    if df is None or len(df) < 100:
-        return (symbol, f"{symbol}:NODATA", None)
-    
     # Generate signal - Choose strategy
     if USE_SMART_MONEY_STRATEGY:
-        # Smart Money Strategy: Liquidity Sweep + MSS + Pullback
-        df_1h = fetch_live_candles(symbol, timeframe=mt5.TIMEFRAME_H1, bars=200)
-        df_5m = fetch_live_candles(symbol, timeframe=mt5.TIMEFRAME_M5, bars=300)
-        if df_1h is not None and df_5m is not None:
-            signal = generate_smart_money_signal(df_1h, df_5m, symbol, sym_info)
-        else:
-            signal = None
+        # Smart Money Strategy: fetch M15, resample to H1+M5 — EXACT backtest methodology
+        # Backtest does: df_h1 = resample(M15, '1h'), df_m5 = resample(M15, '5min')
+        # We do the same so live inputs are 1:1 with backtest inputs
+        df_1h, df_5m = fetch_m15_and_resample(symbol, bars=LOOKBACK_BARS)
+        if df_1h is None or df_5m is None:
+            return (symbol, f"{symbol}:NODATA", None)
+        signal = generate_smart_money_signal(df_1h, df_5m, symbol, sym_info, debug=_DEBUG_MODE)
     else:
         # Original ICT/SMC strategy
+        df = fetch_live_candles(symbol)
+        if df is None or len(df) < 100:
+            return (symbol, f"{symbol}:NODATA", None)
         signal = generate_signal(df, params, symbol, sym_info)
     
     # Fixed-rule signal validation
@@ -1595,8 +1666,10 @@ def process_single_symbol(symbol: str, enabled: set, risk: float) -> tuple:
             if open_time_str:
                 open_dt = datetime.strptime(open_time_str, '%Y-%m-%d %H:%M:%S')
                 elapsed_min = (datetime.now() - open_dt).total_seconds() / 60
-                is_crypto_or_index = symbol in ('BTCUSD', 'NAS100')
-                max_hold = MAX_HOLD_MINUTES_CRYPTO if is_crypto_or_index else MAX_HOLD_MINUTES_FOREX
+                # Use per-symbol timeout_bars from SYMBOL_RULES — matches backtest exactly
+                # timeout_bars are M5 bars, each = 5 minutes
+                timeout_bars = SMC_SYMBOL_RULES.get(symbol, {}).get('timeout_bars', 96)
+                max_hold = timeout_bars * 5  # M5 bars × 5 min
                 if elapsed_min >= max_hold:
                     print(f"⏰ {symbol}: Max hold time exceeded ({elapsed_min:.0f} min > {max_hold} min) — force closing")
                     log_event(f"{symbol}: Max hold time close after {elapsed_min:.0f} min", "INFO")
@@ -1635,15 +1708,28 @@ def process_single_symbol(symbol: str, enabled: set, risk: float) -> tuple:
             initial_risk = abs(entry_price - original_sl)
             stop_dist = initial_risk  # same as backtest
 
+            # Use last completed bar High/Low — matches backtest which uses bar['High']/bar['Low']
+            # NOT current_price (single tick) which would differ from backtest behaviour
+            bar_high = current_price
+            bar_low = current_price
+            try:
+                broker_sym_trail = get_broker_symbol(symbol)
+                last_bars = mt5.copy_rates_from_pos(broker_sym_trail, mt5.TIMEFRAME_M15, 0, 2)
+                if last_bars is not None and len(last_bars) >= 2:
+                    bar_high = float(last_bars[-2]['high'])  # last COMPLETED bar high
+                    bar_low = float(last_bars[-2]['low'])    # last COMPLETED bar low
+            except Exception:
+                pass
+
             if existing_pos['direction'] == 'BUY':
                 unrealized = current_price - entry_price
                 highest_price = tracked.get('highest_price', entry_price)
-                highest_price = max(highest_price, current_price)
+                highest_price = max(highest_price, bar_high)
                 lowest_price = tracked.get('lowest_price', entry_price)
             else:
                 unrealized = entry_price - current_price
                 lowest_price = tracked.get('lowest_price', entry_price)
-                lowest_price = min(lowest_price, current_price)
+                lowest_price = min(lowest_price, bar_low)
                 highest_price = tracked.get('highest_price', entry_price)
 
             # Update tracked high/low for trailing
@@ -1652,49 +1738,57 @@ def process_single_symbol(symbol: str, enabled: set, risk: float) -> tuple:
 
             partial_taken = tracked.get('partial_taken', False)
 
-            # STAGE 1: PARTIAL TP at 1R (if symbol allows partial closes)
+            # Mirrors backtest logic exactly:
+            # if (not no_partial AND partial NOT yet taken): check partial TP hit
+            # else (no_partial=True OR partial already taken): trail the stop
+            # These are mutually exclusive — trailing only activates after partial (or if no_partial)
             if not no_partial and not partial_taken and initial_risk > 0:
+                # STAGE 1: PARTIAL TP at 1R
                 tp1_dist = initial_risk * tp1_r
                 hit_tp1 = unrealized >= tp1_dist
                 if hit_tp1:
-                    # Close partial (e.g., 50% default)
                     success, closed_vol = close_partial_position(existing_pos, tp1_fraction)
                     if success:
                         banked_r = tp1_r * tp1_fraction
                         tracked_positions[symbol]['partial_taken'] = True
                         tracked_positions[symbol]['banked_r'] = banked_r
                         tracked_positions[symbol]['remaining_fraction'] = 1.0 - tp1_fraction
-                        # Move SL to entry (break-even) after partial
+                        # Move SL to entry (break-even) — matches backtest: open_trade['stop'] = entry
                         new_sl = round(entry_price, digits)
                         if (existing_pos['direction'] == 'BUY' and new_sl > current_sl) or \
                            (existing_pos['direction'] == 'SELL' and new_sl < current_sl):
                             modify_position_sl_tp(existing_pos, new_sl=new_sl)
                             tracked_positions[symbol]['sl'] = new_sl
+                        # Reset high/low to partial bar — matches backtest lines 1674-1675
+                        # open_trade['highest'] = bar['High'], open_trade['lowest'] = bar['Low']
+                        tracked_positions[symbol]['highest_price'] = bar_high
+                        tracked_positions[symbol]['lowest_price'] = bar_low
                         log_event(f"{symbol}: Partial TP at 1R closed {tp1_fraction*100:.0f}% ({closed_vol} lots)", "INFO")
                         send_telegram_message(
-                            f"� <b>Partial TP Hit</b>\n"
+                            f"🏦 <b>Partial TP Hit</b>\n"
                             f"{symbol}: Closed {tp1_fraction*100:.0f}% at 1R\n"
                             f"Volume: {closed_vol} lots\n"
                             f"Unrealized (remaining): ${unrealized:.2f}"
                         )
-
-            # STAGE 2: TRAILING STOP (after partial, or directly if no_partial)
-            if trail_mult is not None:
-                trail_dist = stop_dist * trail_mult
-                if existing_pos['direction'] == 'BUY':
-                    new_stop = highest_price - trail_dist
-                    if new_stop > current_sl:
-                        new_sl = round(new_stop, digits)
-                        if modify_position_sl_tp(existing_pos, new_sl=new_sl):
-                            tracked_positions[symbol]['sl'] = new_sl
-                            log_event(f"{symbol}: Trail SL → {new_sl}", "INFO")
-                else:
-                    new_stop = lowest_price + trail_dist
-                    if new_stop < current_sl:
-                        new_sl = round(new_stop, digits)
-                        if modify_position_sl_tp(existing_pos, new_sl=new_sl):
-                            tracked_positions[symbol]['sl'] = new_sl
-                            log_event(f"{symbol}: Trail SL → {new_sl}", "INFO")
+            else:
+                # STAGE 2: TRAILING STOP (only after partial taken, or if no_partial=True)
+                # Exactly matches backtest else-branch
+                if trail_mult is not None:
+                    trail_dist = stop_dist * trail_mult
+                    if existing_pos['direction'] == 'BUY':
+                        new_stop = highest_price - trail_dist
+                        if new_stop > current_sl:
+                            new_sl = round(new_stop, digits)
+                            if modify_position_sl_tp(existing_pos, new_sl=new_sl):
+                                tracked_positions[symbol]['sl'] = new_sl
+                                log_event(f"{symbol}: Trail SL → {new_sl}", "INFO")
+                    else:
+                        new_stop = lowest_price + trail_dist
+                        if new_stop < current_sl:
+                            new_sl = round(new_stop, digits)
+                            if modify_position_sl_tp(existing_pos, new_sl=new_sl):
+                                tracked_positions[symbol]['sl'] = new_sl
+                                log_event(f"{symbol}: Trail SL → {new_sl}", "INFO")
 
         # Supplementary position fields for downstream logic
         try:
@@ -1745,20 +1839,35 @@ def scan_markets(cfg: dict, verbose: bool = False):
     max_daily_dd = BACKTEST_DD_LIMIT_PCT
     max_margin_usage = float(cfg.get('max_margin_usage_pct', MAX_MARGIN_USAGE))
     drawdown_adjustment = float(cfg.get('daily_drawdown_adjustment_usd', 0.0))
-    
+
+    # ── Daily reset (runs every scan, unconditionally) ─────────────────────
+    # Must not be inside the signal-execution loop — quiet days need reset too
+    _today = datetime.now().strftime('%Y-%m-%d')
+    for _sym in list(enabled):
+        if symbol_day_marker.get(_sym) != _today:
+            symbol_day_marker[_sym] = _today
+            if _sym not in symbol_virtual_balance:
+                symbol_virtual_balance[_sym] = BACKTEST_INITIAL_BALANCE
+            symbol_day_start_balance[_sym] = float(symbol_virtual_balance[_sym])
+            symbol_kill_switch[_sym] = False
+            symbol_peak_virtual_balance[_sym] = float(symbol_virtual_balance[_sym])
+
     # First, check for closed positions (SL/TP hit) - keep this sequential
+    # Key by broker symbol (e.g. 'EURUSD.i') — that's what MT5 returns in pos.symbol
     current_positions = {pos.symbol: pos for pos in get_open_positions()}
     
     for symbol, prev_pos in list(tracked_positions.items()):
-        if symbol not in current_positions:
+        broker_sym_check = get_broker_symbol(symbol)
+        if broker_sym_check not in current_positions:
             # Position was closed (SL or TP hit)
             from_date = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0)
             to_date = datetime.now(timezone.utc)
             
             deals = mt5.history_deals_get(from_date, to_date)
             if deals:
+                _broker_sym_match = get_broker_symbol(symbol)  # e.g. 'EURUSD.i' — MT5 stores broker name
                 for deal in reversed(deals):
-                    if deal.symbol == symbol and deal.position_id == prev_pos.get('ticket'):
+                    if deal.symbol == _broker_sym_match and deal.position_id == prev_pos.get('ticket'):
                         exit_price = deal.price
                         profit = deal.profit
                         
@@ -1826,13 +1935,15 @@ def scan_markets(cfg: dict, verbose: bool = False):
                         # Consecutive loss tracking
                         if profit < 0:
                             consecutive_losses[symbol] = consecutive_losses.get(symbol, 0) + 1
-                            if consecutive_losses[symbol] >= 3:
+                            if consecutive_losses[symbol] >= 2:
+                                # Backtest: cooldown_until = i + 12 (12 M5 bars = 60 min)
+                                sl_cooldown_until[symbol] = datetime.now(timezone.utc) + timedelta(minutes=SL_COOLDOWN_MINUTES)
                                 blocked_symbols[symbol] = today_str
-                                print(f"🚫 {symbol}: 3 consecutive losses — blocked for today")
-                                log_event(f"{symbol}: Blocked after 3 consecutive losses", "WARN")
+                                print(f"🚫 {symbol}: 2 consecutive losses — 60min cooldown + blocked for today (matches backtest)")
+                                log_event(f"{symbol}: Blocked after 2 consecutive losses", "WARN")
                                 send_telegram_message(
                                     f"🚫 <b>Symbol Blocked</b>\n"
-                                    f"{symbol}: 3 consecutive losses\n"
+                                    f"{symbol}: 2 consecutive losses\n"
                                     f"Blocked until tomorrow"
                                 )
                         else:
@@ -1842,6 +1953,13 @@ def scan_markets(cfg: dict, verbose: bool = False):
                         if symbol not in symbol_virtual_balance:
                             symbol_virtual_balance[symbol] = BACKTEST_INITIAL_BALANCE
                         symbol_virtual_balance[symbol] = float(symbol_virtual_balance[symbol]) + float(profit)
+                        # Track running peak — matches backtest peak_equity tracking
+                        if symbol not in symbol_peak_virtual_balance:
+                            symbol_peak_virtual_balance[symbol] = BACKTEST_INITIAL_BALANCE
+                        symbol_peak_virtual_balance[symbol] = max(
+                            symbol_peak_virtual_balance[symbol],
+                            symbol_virtual_balance[symbol]
+                        )
                         
                         # Post-SL cooldown DISABLED - matches backtest exactly
                         # if exit_reason == 'SL':
@@ -1877,13 +1995,6 @@ def scan_markets(cfg: dict, verbose: bool = False):
         
         today_str = datetime.now().strftime('%Y-%m-%d')
 
-        # Backtest-parity daily reset (per symbol)
-        if symbol_day_marker.get(symbol) != today_str:
-            symbol_day_marker[symbol] = today_str
-            if symbol not in symbol_virtual_balance:
-                symbol_virtual_balance[symbol] = BACKTEST_INITIAL_BALANCE
-            symbol_day_start_balance[symbol] = float(symbol_virtual_balance[symbol])
-
         # ── SAFETY: Reset daily blocks at new day ───────────────────
         # Clear blocks for symbols that were blocked on a previous day
         for sym in list(blocked_symbols.keys()):
@@ -1891,32 +2002,54 @@ def scan_markets(cfg: dict, verbose: bool = False):
                 del blocked_symbols[sym]
                 consecutive_losses[sym] = 0
 
-        # ── SAFETY: Consecutive Loss Blocker (3 losses → block for day) ──
+        # ── SAFETY: Consecutive Loss Blocker (2 losses → block for day) ──
         if symbol in blocked_symbols and blocked_symbols[symbol] == today_str:
-            print(f"🚫 {symbol}: Blocked after 3 consecutive losses — skipping")
+            print(f"🚫 {symbol}: Blocked after 2 consecutive losses — skipping")
             status.append(f"{symbol}:BLOCKED_LOSSES")
             continue
 
-        # Post-SL cooldown DISABLED - matches backtest exactly for maximum profit
-        # if symbol in sl_cooldown_until:
-        #     if datetime.now(timezone.utc) < sl_cooldown_until[symbol]:
-        #         remaining = (sl_cooldown_until[symbol] - datetime.now(timezone.utc)).total_seconds() / 60
-        #         print(f"⏳ {symbol}: SL cooldown — {remaining:.0f} min remaining")
-        #         status.append(f"{symbol}:COOLDOWN")
-        #         continue
-        #     else:
-        #         del sl_cooldown_until[symbol]  # Cooldown expired
+        # Post-consecutive-loss cooldown: 60 min (12 M5 bars) — matches backtest exactly
+        if symbol in sl_cooldown_until:
+            if datetime.now(timezone.utc) < sl_cooldown_until[symbol]:
+                remaining = (sl_cooldown_until[symbol] - datetime.now(timezone.utc)).total_seconds() / 60
+                print(f"⏳ {symbol}: Consecutive-loss cooldown — {remaining:.0f} min remaining")
+                status.append(f"{symbol}:COOLDOWN")
+                continue
+            else:
+                del sl_cooldown_until[symbol]  # Cooldown expired
 
-        # ── SAFETY: Daily Trade Cap (DISABLED - matches backtest exactly) ─────
-        # Daily cap removed - backtest has no daily restrictions
-        # is_crypto = symbol in ('BTCUSD',)
-        # max_daily = 100  # Increased from 6/8 for maximum trade volume
-        # sym_daily = daily_trade_count.get(symbol, {})
-        # trades_today = sym_daily.get(today_str, 0)
-        # if trades_today >= max_daily:
-        #     print(f"📊 {symbol}: Daily trade cap reached ({trades_today}/{max_daily}) — skipping")
-        #     status.append(f"{symbol}:DAILY_CAP")
-        #     continue
+        # ── SAFETY: Kill Switch — peak-to-trough DD >= 5%*risk_scale (matches backtest) ───
+        # Backtest: kill_switch_triggered = True when (peak_equity - equity) / peak_equity >= 5%*risk_scale
+        # Resets daily in live (backtest resets per window; daily is the practical equivalent)
+        if symbol_day_marker.get(symbol) == today_str:  # only check if day is initialized
+            try:
+                _ks_peak = symbol_peak_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE)
+                _ks_curr = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
+                _ks_risk_scale = float(risk) / 1.0
+                KILL_SWITCH_DD_PCT = 5.0 * _ks_risk_scale
+                if _ks_peak > 0 and (_ks_peak - _ks_curr) / _ks_peak * 100.0 >= KILL_SWITCH_DD_PCT:
+                    symbol_kill_switch[symbol] = True
+            except Exception:
+                pass
+        if symbol_kill_switch.get(symbol):
+            print(f"🔴 {symbol}: Kill switch active (peak DD >= 5%×risk) — blocked for today")
+            status.append(f"{symbol}:KILL_SWITCH")
+            continue
+
+        # ── SAFETY: Daily Profit Target (backtest line 1782: day_pnl_pct >= 3%*risk_scale) ───
+        try:
+            _day_start = float(symbol_day_start_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
+            _day_curr  = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
+            _risk_scale_pt = float(risk) / 1.0
+            DAILY_TARGET_PCT = 3.0 * _risk_scale_pt
+            if _day_start > 0:
+                day_pnl_pct = (_day_curr - _day_start) / _day_start * 100.0
+                if day_pnl_pct >= DAILY_TARGET_PCT:
+                    print(f"🎯 {symbol}: Daily target reached ({day_pnl_pct:.2f}% >= {DAILY_TARGET_PCT:.2f}%) — done for today")
+                    status.append(f"{symbol}:TARGET_HIT")
+                    continue
+        except Exception:
+            pass
 
         # ── SAFETY: Daily Drawdown Block (match backtest per-symbol logic) ───
         try:
@@ -1928,21 +2061,6 @@ def scan_markets(cfg: dict, verbose: bool = False):
                     blocked_symbols[symbol] = today_str
                     print(f"🚫 {symbol}: Daily DD {dd_pct:.2f}% >= {max_daily_dd:.2f}% — blocked for today")
                     status.append(f"{symbol}:BLOCKED_DD")
-                    continue
-        except Exception:
-            pass
-
-        # ── SAFETY: Daily Profit Target (match backtest DAILY_TARGET_PCT = 3.0) ───
-        # Stop trading this symbol after 3% daily profit reached
-        DAILY_TARGET_PCT = 3.0
-        try:
-            day_start_bal = float(symbol_day_start_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-            curr_bal = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-            if day_start_bal > 0:
-                day_pnl_pct = (curr_bal - day_start_bal) / day_start_bal * 100.0
-                if day_pnl_pct >= DAILY_TARGET_PCT:
-                    print(f"🎯 {symbol}: Daily profit target reached ({day_pnl_pct:.2f}% >= {DAILY_TARGET_PCT}%) — pausing for today")
-                    status.append(f"{symbol}:DAILY_TARGET_HIT")
                     continue
         except Exception:
             pass
@@ -1964,14 +2082,58 @@ def scan_markets(cfg: dict, verbose: bool = False):
 
         # NEW SIGNAL - this is important, print it
         sym_info = get_symbol_info(symbol)
+
+        # Backtest line 1816: skip if stop_dist <= spread * 2 (too tight — spread eats the trade)
+        _stop_dist_check = abs(signal['entry'] - signal['stop'])
+        _spread_price = sym_info.get('spread', 0) * sym_info.get('tick_size', 0.00001) if sym_info else 0
+        if _spread_price > 0 and _stop_dist_check <= _spread_price * 2:
+            print(f"⚠️ {symbol}: Stop too tight (dist={_stop_dist_check:.5f} <= spread×2={_spread_price*2:.5f}) — skipping")
+            status.append(f"{symbol}:STOP_TOO_TIGHT")
+            continue
+
         dir_char = '▲' if signal['direction'] == 'BUY' else '▼'
         sig_line = f">>> NEW SIGNAL: {dir_char} {signal['direction']} {symbol} @ {signal['entry']} | TP:{signal['tp']} SL:{signal['stop']}"
         print(f"\n{sig_line}")
         _push_logs_async([sig_line])
         
-        # Backtest parity: disable HTF confirmation gate and adaptive risk scaling.
+        # Backtest parity: dd_factor + vol_factor on lot size (mirrors backtest_improved.py exactly)
         htf_bias = 'N/A'
-        risk_used = float(risk)
+        dd_factor_live = 1.0
+        vol_factor_live = 1.0
+        try:
+            # Use running peak — matches backtest peak_equity (not just current balance)
+            peak_bal = symbol_peak_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE)
+            curr_bal_dd = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
+            _risk_scale_dd = float(risk) / 1.0
+            if peak_bal > 0 and (peak_bal - curr_bal_dd) / peak_bal > 0.04 * _risk_scale_dd:
+                dd_factor_live = 0.5
+        except Exception:
+            pass
+        # vol_factor: ATR ratio scaling — matches backtest lines 1827-1837 exactly
+        # Backtest uses _atr(df_m5) — resampled M5 data, NOT raw M15.
+        # ratio>1.6 → scale risk to 0.6x (high vol), ratio<0.7 → scale to 0.8x (low vol)
+        try:
+            from smart_money_strategy import _atr as _smc_atr
+            _df_m15_vf = fetch_live_candles(symbol, timeframe=mt5.TIMEFRAME_M15, bars=100)
+            if _df_m15_vf is not None and len(_df_m15_vf) >= 20:
+                if not isinstance(_df_m15_vf.index, pd.DatetimeIndex):
+                    _df_m15_vf = _df_m15_vf.set_index(pd.to_datetime(_df_m15_vf['Time']))
+                # Resample to M5 — matches backtest df_m5 ATR computation
+                _df_m5_vf = _resample_m15_to_tf(_df_m15_vf, '5min').iloc[:-1]
+                atr_s = _smc_atr(_df_m5_vf)
+                atr_window = atr_s.iloc[-80:].dropna()
+                if len(atr_window) >= 20:
+                    atr_now_vf = float(atr_window.iloc[-1])
+                    atr_med_vf = float(atr_window.median())
+                    if atr_med_vf > 0:
+                        ratio_vf = atr_now_vf / atr_med_vf
+                        if ratio_vf > 1.6:
+                            vol_factor_live = 0.6
+                        elif ratio_vf < 0.7:
+                            vol_factor_live = 0.8
+        except Exception:
+            pass
+        risk_used = float(risk) * dd_factor_live * vol_factor_live
 
         # Don't send signal alert - will send when position actually opens
         success = open_position_with_retry(signal, sym_info, risk_used)
@@ -2057,7 +2219,7 @@ def scan_markets(cfg: dict, verbose: bool = False):
     status_dict = {s.split(':')[0]: s for s in status}
     sorted_status = [status_dict.get(sym, f"{sym}:-") for sym in SYMBOLS if sym in enabled]
     ts = datetime.now().strftime('%H:%M:%S')
-    print(f"[{ts}] {' | '.join(sorted_status)}")
+    print(f"\r[{ts}] {' | '.join(sorted_status)}   ", end='', flush=True)
 
     opened_count = sum(1 for s in status if s.endswith(':OPENED'))
     fail_count = sum(1 for s in status if s.endswith(':FAIL'))
@@ -2120,11 +2282,16 @@ def scan_markets(cfg: dict, verbose: bool = False):
 def main():
     parser = argparse.ArgumentParser(description="LIVE Trading Bot")
     parser.add_argument('--once', action='store_true', help='Single scan and exit')
-    parser.add_argument('--loop', type=int, default=10, help='Seconds between scans (default: 10)')
+    parser.add_argument('--loop', type=int, default=900, help='Seconds between scans (default: 900 = M15 candle close)')
+    parser.add_argument('--debug', action='store_true', help='Print per-filter rejection reason for each symbol')
     args = parser.parse_args()
+    global _DEBUG_MODE
+    _DEBUG_MODE = args.debug
+    if _DEBUG_MODE:
+        print("[DEBUG MODE ON] Will print filter rejection reasons for each symbol")
 
     print("=" * 60)
-    print("  ULTIMA TRADING BOT — ICT / SMC Engine")
+    print("  ZENITH TRADING BOT — ICT / SMC Engine")
     print("=" * 60)
 
     # Initialize SQLite database (trades, order_blocks, logs)
@@ -2173,7 +2340,7 @@ def main():
             scan_markets(cfg)
         else:
             interval = max(2, args.loop)
-            print(f"[+] Scanning every {interval}s (Ctrl+C to stop)\n")
+            print(f"[+] Scanning every {interval}s / M15 candle close (Ctrl+C to stop)\n")
             
             # Start Telegram polling in separate thread for instant response
             telegram_active = threading.Event()
@@ -2190,17 +2357,39 @@ def main():
             
 
             
-            # Market scanning loop
+            # Market scanning loop — synchronized to M15 candle close
+            # This guarantees the bot scans on exactly the same bar boundaries
+            # as the backtest engine (p = i-1 closed bar), never mid-candle.
+            CANDLE_SECONDS = 900  # M15 = 15 * 60
+            SCAN_OFFSET    = 3    # scan 3s after close to let MT5 finalize the bar
+
+            def _wait_for_m15_close():
+                """Sleep until the next M15 candle boundary + SCAN_OFFSET seconds."""
+                now = time.time()
+                # seconds elapsed inside current 15-min window
+                elapsed_in_candle = now % CANDLE_SECONDS
+                # seconds until next close
+                wait = (CANDLE_SECONDS - elapsed_in_candle) + SCAN_OFFSET
+                next_close = datetime.utcfromtimestamp(now + wait).strftime('%H:%M:%S')
+                print(f"\r[~] Next M15 close scan at {next_close} UTC ({wait:.0f}s)   ", end='', flush=True)
+                time.sleep(wait)
+
+            # Do one immediate scan on startup (may be mid-candle, but gives
+            # instant feedback that the bot is alive), then sync to candle close.
+            try:
+                cfg = load_config()
+                scan_markets(cfg)
+            except Exception as e:
+                print(f"\n[!] Startup scan error: {e}")
+
             while True:
-                start = time.time()
+                _wait_for_m15_close()
                 try:
                     cfg = load_config()
                     scan_markets(cfg)
                 except Exception as e:
-                    print(f"[!] Scan loop error: {e}")
+                    print(f"\n[!] Scan loop error: {e}")
                     update_runtime_status(state='error', message=f"Scan loop error: {e}")
-                elapsed = time.time() - start
-                time.sleep(max(1, interval - elapsed))
     except KeyboardInterrupt:
         print("\n[!] Stopped by user")
         update_runtime_status(state='stopped', message='Stopped by user')

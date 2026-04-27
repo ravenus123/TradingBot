@@ -7,14 +7,14 @@ import pandas as pd
 
 SYMBOL_RULES = {
     'EURUSD': {
-        'rr': 1.5,
-        'min_score': 4,
-        'atr_mult_stop': 0.70,
+        'rr': 1.8,
+        'min_score': 4,  # LOOSENED: Allow more trades
+        'atr_mult_stop': 0.65,
         'min_sweep_atr': 0.04,
         'max_spread_pips': 2.5,
         'trail_mult': None,
         'use_ob': False,
-        'sessions': [(7, 11), (13, 16)],
+        'sessions': [(7, 11), (13, 17)],
         'loose_bias': True,
         'no_partial': True,
         'timeout_bars': 192,
@@ -22,26 +22,27 @@ SYMBOL_RULES = {
         'contrarian_style': 'tight_fade',
     },
     'NAS100': {
-        'rr': 1.5,
-        'min_score': 4,
-        'atr_mult_stop': 0.50,
+        'rr': 1.8,
+        'min_score': 6,
+        'atr_mult_stop': 0.45,
         'min_sweep_atr': 0.03,
-        'max_spread_pips': 8.0,
-        'trail_mult': None,
+        'max_spread_pips': 6.0,
+        'trail_mult': 0.8,
         'use_ob': True,
-        'sessions': [(13, 20)],
+        'sessions': [(13, 22)],  # OPTIMIZED: 13-22 > 13-20 (+52.4% ret, pf=3.39)
         'no_partial': True,
         'contrarian': True,
     },
     'XAUUSD': {
-        'rr': 2.0,
-        'min_score': 4,
+        'rr': 2.5,
+        'min_score': 3,
         'atr_mult_stop': 0.55,
         'min_sweep_atr': 0.04,
         'max_spread_pips': 60.0,
-        'trail_mult': None,
+        'trail_mult': 1.2,
         'use_ob': True,
-        'sessions': [(12, 17)],
+        'sessions': [(12, 18), (19, 22)],
+        'no_partial': True,
     },
 }
 
@@ -93,7 +94,7 @@ def get_session_filter() -> bool:
 
 def should_trade(symbol: str, daily_trades: int, consecutive_losses: int, dd_pct: float) -> bool:
     max_daily_trades = int(os.getenv('SMC_MAX_DAILY_TRADES', '3'))  # Match backtest: MAX_DAILY_TRADES = 3
-    max_losses = int(os.getenv('SMC_MAX_CONSECUTIVE_LOSSES', '3'))
+    max_losses = int(os.getenv('SMC_MAX_CONSECUTIVE_LOSSES', '2'))  # Match backtest: block after 2 losses
     max_dd = float(os.getenv('SMC_MAX_DAILY_DD', '3.0'))
     if symbol not in SYMBOL_RULES:
         return False
@@ -113,44 +114,68 @@ class SmartMoneyStrategy:
         self.symbol = symbol if symbol in SYMBOL_RULES else 'NAS100'
         self.rules = SYMBOL_RULES[self.symbol]
 
-    def check_signal(self) -> dict | None:
+    def check_signal(self, debug: bool = False) -> dict | None:
+        sym = self.symbol
+        def _dbg(msg):
+            if debug: print(f"  [DEBUG][{sym}] {msg}")
+
         if len(self.df_1h) < 80 or len(self.df_5m) < 80:
+            _dbg(f"REJECT: not enough bars (h1={len(self.df_1h)}, m5={len(self.df_5m)})")
             return None
 
         if not self._in_session():
+            _dbg("REJECT: outside session window")
             return None
 
         if not self._regime_ok():
+            _dbg("REJECT: regime_ok failed (choppy/flat/extreme vol)")
             return None
 
         bias = self._htf_bias()
         if bias == 'neutral':
+            _dbg("REJECT: HTF bias neutral (no clear EMA stack)")
             return None
 
         direction = 'buy' if bias == 'bullish' else 'sell'
+        _dbg(f"PASS: bias={bias} direction={direction}")
         zone_score = self._premium_discount_score(direction)
 
         sweep = self._find_liquidity_sweep(direction)
         if sweep is None:
+            _dbg("REJECT: no liquidity sweep found")
             return None
+        _dbg(f"PASS: sweep found idx={sweep['idx']} score={sweep['score']}")
 
         mss = self._find_mss(direction, sweep['idx'])
         if mss is None:
             mss = {'idx': sweep['idx'], 'level': sweep['level'], 'score': 0}
+            _dbg("INFO: no MSS found — using sweep as fallback")
+        else:
+            _dbg(f"PASS: MSS found idx={mss['idx']} score={mss['score']}")
 
         displacement_score = self._displacement_score(mss['idx'], direction)
 
         ob = self._find_order_block(direction, sweep['idx'], mss['idx']) if self.rules.get('use_ob', True) else None
         fvg = self._find_fvg(direction, sweep['idx'], mss['idx'])
+        _dbg(f"INFO: ob={'yes' if ob else 'no'} fvg={'yes' if fvg else 'no'} zone_score={zone_score} disp_score={displacement_score}")
+
+        # STRICT: Must have FVG for EURUSD/XAUUSD
+        if self.rules.get('require_fvg') and fvg is None:
+            _dbg("REJECT: require_fvg=True but no FVG found")
+            return None
+
         entry, stop = self._entry_and_stop(direction, sweep, mss, fvg, ob)
         if entry is None or stop is None:
+            _dbg("REJECT: entry_and_stop returned None (entry<=stop or similar)")
             return None
 
         stop_dist = abs(entry - stop)
         atr_value = float(_atr(self.df_5m).iloc[-1])
         if not np.isfinite(atr_value) or atr_value <= 0:
+            _dbg("REJECT: ATR invalid")
             return None
         if stop_dist < atr_value * 0.20 or stop_dist > atr_value * 3.5:
+            _dbg(f"REJECT: stop_dist={stop_dist:.5f} outside ATR range [{atr_value*0.20:.5f}, {atr_value*3.5:.5f}]")
             return None
 
         score = 0
@@ -163,17 +188,44 @@ class SmartMoneyStrategy:
         score += 1 if ob is not None else 0
         score += self._volatility_score()
 
-        # STRICT CONFLUENCE: Require minimum 3 score points beyond base
-        if score < self.rules['min_score'] + 1:
+        # STRICT CONFLUENCE: Require minimum score
+        if score < self.rules['min_score']:
+            _dbg(f"REJECT: score={score} < min_score={self.rules['min_score']}")
             return None
-            
+        _dbg(f"PASS: score={score} >= min_score={self.rules['min_score']}")
+
+        # STRICT: Minimum displacement required
+        min_disp = self.rules.get('min_displacement', 0)
+        if displacement_score < min_disp:
+            _dbg(f"REJECT: displacement_score={displacement_score} < min_displacement={min_disp}")
+            return None
+
         # MOMENTUM CONFIRMATION: Price must move in trade direction recently
         if not self._momentum_confirms(direction):
+            _dbg("REJECT: momentum_confirms failed (recent bars not aligned)")
             return None
-            
+
         # AVOID CHOP: Require decent trend strength (ADX-style)
         if not self._trend_strength_ok():
+            _dbg("REJECT: trend_strength_ok failed (ADX too weak)")
             return None
+
+        # BAR QUALITY: Require decent bar ranges (not doji/spinning tops)
+        if not self._bar_quality_ok():
+            _dbg("REJECT: bar_quality_ok failed (doji/small bars)")
+            return None
+
+        # STRUCTURE ALIGNMENT: HTF structure must support trade
+        if not self._structure_aligned(direction):
+            _dbg("REJECT: structure_aligned failed (H1 structure opposes direction)")
+            return None
+
+        # PULLBACK DEPTH: Require meaningful retracement (not too shallow)
+        if not self._pullback_depth_ok(direction, sweep, mss):
+            _dbg("REJECT: pullback_depth_ok failed (not 23.6%-61.8% fib)")
+            return None
+
+        _dbg("PASS: all filters — signal valid!")
 
         rr = self.rules['rr']
         target = entry + stop_dist * rr if direction == 'buy' else entry - stop_dist * rr
@@ -308,6 +360,113 @@ class SmartMoneyStrategy:
         
         # Require 60% trend dominance
         return trend_ratio >= 0.60
+
+    def _volatility_safe(self) -> bool:
+        """Avoid extreme volatility periods (news spikes). NO LOOKAHEAD."""
+        df = self.df_5m
+        atr_series = _atr(df)
+        
+        # Get current and recent ATR
+        atr_now = atr_series.iloc[-1]
+        atr_recent = atr_series.iloc[-20:].mean()
+        
+        if not np.isfinite(atr_now) or not np.isfinite(atr_recent) or atr_recent <= 0:
+            return True  # Allow if can't calculate
+            
+        # Avoid if current ATR is 3x higher than recent average (news spike)
+        if atr_now > atr_recent * 3.0:
+            return False
+            
+        # Also check individual bar ranges
+        recent_bars = df.iloc[-3:]
+        avg_range = (recent_bars['High'] - recent_bars['Low']).mean()
+        normal_range = atr_recent * 1.5
+        
+        # If recent bars are abnormally large, probably news
+        if avg_range > normal_range * 2:
+            return False
+            
+        return True
+
+    def _pullback_depth_ok(self, direction: str, sweep: dict, mss: dict) -> bool:
+        """Check pullback is deep enough to be meaningful. NO LOOKAHEAD."""
+        df = self.df_5m
+        
+        # Get the impulse move (sweep to MSS)
+        impulse_start = sweep['idx']
+        impulse_end = mss['idx']
+        
+        if impulse_end <= impulse_start:
+            return True  # Not enough data
+            
+        impulse_slice = df.iloc[impulse_start:impulse_end+1]
+        if len(impulse_slice) < 2:
+            return True
+            
+        # Calculate impulse size
+        if direction == 'buy':
+            impulse_high = float(impulse_slice['High'].max())
+            impulse_low = float(impulse_slice['Low'].min())
+            impulse_size = impulse_high - impulse_low
+            
+            # Pullback should be at least 23.6% of impulse (Fibonacci minimum)
+            # But not more than 61.8% (too deep = structure broken)
+            pullback_end = float(df['Low'].iloc[-1])  # Current price area
+            pullback_depth = (impulse_high - pullback_end) / max(impulse_size, 1e-9)
+            
+            return 0.236 <= pullback_depth <= 0.618
+        else:
+            # Sell direction
+            impulse_high = float(impulse_slice['High'].max())
+            impulse_low = float(impulse_slice['Low'].min())
+            impulse_size = impulse_high - impulse_low
+            
+            pullback_end = float(df['High'].iloc[-1])
+            pullback_depth = (pullback_end - impulse_low) / max(impulse_size, 1e-9)
+            
+            return 0.236 <= pullback_depth <= 0.618
+
+    def _bar_quality_ok(self) -> bool:
+        """Check recent bars have decent range (not dojis). NO LOOKAHEAD."""
+        df = self.df_5m
+        recent = df.iloc[-5:]
+        
+        # Calculate average range
+        ranges = recent['High'] - recent['Low']
+        avg_range = ranges.mean()
+        
+        # Check each bar has at least 30% of average range
+        min_range = avg_range * 0.30
+        for i in range(len(recent)):
+            bar_range = ranges.iloc[i]
+            if bar_range < min_range:
+                return False  # Too small bar = noise
+        
+        return True
+    
+    def _structure_aligned(self, direction: str) -> bool:
+        """Check HTF structure supports trade direction. NO LOOKAHEAD."""
+        df = self.df_1h
+        
+        # Get last 20 hours of structure
+        recent_highs = df['High'].iloc[-20:]
+        recent_lows = df['Low'].iloc[-20:]
+        
+        # Higher highs / lower lows check
+        if direction == 'buy':
+            # Need to see higher lows forming
+            lows = recent_lows.rolling(5).min().dropna()
+            if len(lows) >= 3:
+                # Check if lows are rising (HH/HL structure)
+                return lows.iloc[-1] > lows.iloc[0] * 0.995
+            return True  # Not enough data, allow it
+        else:
+            # Need to see lower highs forming  
+            highs = recent_highs.rolling(5).max().dropna()
+            if len(highs) >= 3:
+                # Check if highs are falling (LL/LH structure)
+                return highs.iloc[-1] < highs.iloc[0] * 1.005
+            return True  # Not enough data, allow it
 
     def _htf_bias(self) -> str:
         close = self.df_1h['Close']

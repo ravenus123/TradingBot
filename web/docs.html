@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docs — Zenith Trading Bot</title>
+    <title>How to Use Zenith — Setup Guide</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20260225-2">
     <link rel="shortcut icon" href="/favicon.svg?v=20260225-2">
     <link rel="apple-touch-icon" href="/favicon.svg?v=20260225-2">
@@ -13,11 +13,204 @@
     <link rel="stylesheet" href="css/style.css?v=20260226-17">
     <link rel="stylesheet" href="css/docs.css?v=20260226-8">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ── Animated pulse-grid background ── */
+        .docs-bg-grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(0,255,135,0.038) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,135,0.038) 1px, transparent 1px);
+            background-size: 72px 72px;
+        }
+        .docs-bg-grid::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(96,239,255,0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(96,239,255,0.018) 1px, transparent 1px);
+            background-size: 216px 216px;
+        }
+        .grid-pulse-layer { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+        .grid-pulse-wave {
+            position: absolute;
+            border-radius: 50%;
+            width: var(--pulse-size, 300px);
+            height: var(--pulse-size, 300px);
+            transform: translate(-50%, -50%) scale(0);
+            background: radial-gradient(circle, rgba(0,255,135,0.13) 0%, rgba(0,255,135,0.04) 40%, transparent 70%);
+            animation: docsPulse 4s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes docsPulse {
+            0%   { transform: translate(-50%,-50%) scale(0); opacity: 1; }
+            70%  { opacity: 0.5; }
+            100% { transform: translate(-50%,-50%) scale(1); opacity: 0; }
+        }
+        /* glint streaks */
+        .docs-glint {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            width: 1px;
+            background: linear-gradient(to bottom, transparent, rgba(0,255,135,0.22), transparent);
+            animation: glintFall linear infinite;
+        }
+        @keyframes glintFall {
+            from { transform: translateY(-120px); opacity: 0.7; }
+            to   { transform: translateY(110vh);  opacity: 0; }
+        }
+        /* step number badges */
+        .doc-step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg,#00ff87,#60efff);
+            color: #000;
+            font-size: 0.78rem;
+            font-weight: 800;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .doc-step-label {
+            display: flex;
+            align-items: center;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--z-text-1);
+            margin: 1.8rem 0 0.9rem;
+        }
+        /* tip / warning boxes */
+        .alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            margin: 1.2rem 0;
+        }
+        .alert i { margin-top: 2px; flex-shrink: 0; }
+        .alert-info    { background: rgba(96,239,255,0.07); border: 1px solid rgba(96,239,255,0.18); color: var(--z-text-2); }
+        .alert-info i  { color: #60efff; }
+        .alert-success { background: rgba(0,255,135,0.07); border: 1px solid rgba(0,255,135,0.18); color: var(--z-text-2); }
+        .alert-success i { color: #00ff87; }
+        .alert-warning { background: rgba(255,190,50,0.07); border: 1px solid rgba(255,190,50,0.2); color: var(--z-text-2); }
+        .alert-warning i { color: #ffbe32; }
+        /* inline highlight box */
+        .highlight-box {
+            background: rgba(0,255,135,0.06);
+            border: 1px solid rgba(0,255,135,0.14);
+            border-radius: 10px;
+            padding: 1.2rem 1.5rem;
+            margin: 1rem 0;
+        }
+        /* code-like inline path */
+        code {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 5px;
+            padding: 1px 7px;
+            font-family: var(--font-mono);
+            font-size: 0.85em;
+            color: #60efff;
+        }
+        /* numbered checklist */
+        .checklist { list-style: none; padding: 0; margin: 1rem 0; }
+        .checklist li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.92rem;
+            color: var(--z-text-2);
+        }
+        .checklist li:last-child { border: none; }
+        .checklist li i { color: #00ff87; margin-top: 3px; flex-shrink: 0; }
+        /* FAQ items */
+        .faq-item { margin-bottom: 1rem; }
+        .faq-item summary {
+            cursor: pointer;
+            font-weight: 600;
+            padding: 14px 18px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.93rem;
+        }
+        .faq-item summary::after { content: '+'; color: #00ff87; font-size: 1.1rem; }
+        .faq-item[open] summary::after { content: '−'; }
+        .faq-item p {
+            padding: 14px 18px;
+            font-size: 0.88rem;
+            color: var(--z-text-3);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            margin: 0;
+        }
+        /* instruction image placeholder */
+        .img-placeholder {
+            width: 100%;
+            aspect-ratio: 16/7;
+            border-radius: 12px;
+            background: rgba(0,255,135,0.04);
+            border: 1px dashed rgba(0,255,135,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--z-text-3);
+            font-size: 0.85rem;
+            margin: 1rem 0;
+        }
+        /* input group visual */
+        .input-group-preview {
+            background: #0d0f10;
+            border: 1px solid rgba(0,255,135,0.15);
+            border-radius: 10px;
+            padding: 1rem 1.4rem;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            color: var(--z-text-2);
+            margin: 0.8rem 0;
+        }
+        .input-group-preview .ig-section {
+            color: #60efff;
+            font-weight: 700;
+            margin: 0.8rem 0 0.4rem;
+            font-size: 0.78rem;
+            letter-spacing: 0.04em;
+        }
+        .input-group-preview .ig-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .input-group-preview .ig-row:last-child { border: none; }
+        .input-group-preview .ig-key { color: var(--z-text-2); }
+        .input-group-preview .ig-val { color: #00ff87; }
+        .input-group-preview .ig-val.off { color: #ff6b6b; }
+    </style>
 </head>
 <body>
 <div class="page-transition-overlay" id="pageTransition"></div>
-<div class="site-reactive-grid"></div>
+<!-- Animated grid background -->
+<div class="docs-bg-grid" id="docsBgGrid"></div>
 <canvas id="particleCanvas"></canvas>
+
+<!-- Nav -->
 <nav class="navbar" id="navbar">
     <div class="container">
         <a href="index.html" class="nav-brand">
@@ -34,263 +227,458 @@
             <a href="login.html" class="nav-link nav-link-border">Login / Register</a>
         </div>
         <div class="nav-actions" id="navActions">
-            <a href="https://github.com/Ravenko123/TradingBot" target="_blank" class="nav-btn nav-btn-icon nav-btn-github" title="Open Source on GitHub" aria-label="Open Source on GitHub"><i class="fab fa-github"></i></a>
             <a href="dashboard.html" class="nav-btn nav-btn-primary">Launch Dashboard <i class="fas fa-arrow-right"></i></a>
             <a href="signup.html" class="nav-btn nav-btn-outline">Get Started</a>
         </div>
         <button class="mobile-toggle" id="mobileToggle"><span></span><span></span><span></span></button>
     </div>
 </nav>
+
+<!-- Hero -->
 <section class="hero" style="min-height:44vh;padding-top:120px">
     <div class="hero-spotlight"></div>
     <div class="hero-overlay"></div>
     <div class="container hero-container" style="justify-content:center">
         <div class="hero-left" style="text-align:center;align-items:center;max-width:760px;margin:0 auto">
-            <div class="hero-eyebrow reveal-up"><span>Documentation <i class="fas fa-book-open"></i></span></div>
-            <h1 class="hero-title reveal-up" data-delay="80" style="font-size:clamp(2rem,5vw,3.6rem)">Zenith <span class="title-gradient">Reference</span></h1>
-            <p class="hero-subtitle reveal-up" data-delay="160" style="text-align:center;margin:0 auto 2rem">Everything you need to install, configure, run backtests, and connect the bot to MetaTrader 5.</p>
+            <div class="hero-eyebrow reveal-up"><span><i class="fas fa-book-open"></i> User Guide</span></div>
+            <h1 class="hero-title reveal-up" data-delay="80" style="font-size:clamp(2rem,5vw,3.6rem)">How to Use <span class="title-gradient">Zenith</span></h1>
+            <p class="hero-subtitle reveal-up" data-delay="160" style="text-align:center;margin:0 auto 2rem">Step-by-step guide — from downloading the EA to watching your first live trade on the dashboard. No coding required.</p>
             <div class="docs-search-row reveal-up" data-delay="240">
-                <div class="docs-search-wrap"><i class="fas fa-search docs-search-icon"></i><input type="text" id="docsSearch" class="docs-search-input" placeholder="Search documentation…"></div>
+                <div class="docs-search-wrap"><i class="fas fa-search docs-search-icon"></i><input type="text" id="docsSearch" class="docs-search-input" placeholder="Search guide…"></div>
             </div>
         </div>
     </div>
 </section>
+
+<!-- Main layout -->
 <div class="docs-wrapper container">
     <aside class="docs-sidebar glass-card">
         <nav class="docs-nav">
             <div class="docs-nav-group">
                 <span class="docs-nav-label">Getting Started</span>
-                <a href="#overview" class="sidebar-link active"><i class="fas fa-circle-dot"></i> Overview</a>
-                <a href="#installation" class="sidebar-link"><i class="fas fa-download"></i> Installation</a>
-                <a href="#configuration" class="sidebar-link"><i class="fas fa-sliders"></i> Configuration</a>
-                <a href="#quickstart" class="sidebar-link"><i class="fas fa-bolt"></i> Quick Start</a>
+                <a href="#overview"    class="sidebar-link active"><i class="fas fa-circle-dot"></i> What is Zenith?</a>
+                <a href="#mt5install"  class="sidebar-link"><i class="fas fa-download"></i> Install MetaTrader 5</a>
+                <a href="#broker"      class="sidebar-link"><i class="fas fa-building-columns"></i> Choose a Broker</a>
+                <a href="#download-ea" class="sidebar-link"><i class="fas fa-robot"></i> Download the EA</a>
             </div>
             <div class="docs-nav-group">
-                <span class="docs-nav-label">Strategy</span>
-                <a href="#strategy" class="sidebar-link"><i class="fas fa-brain"></i> Signal Logic</a>
-                <a href="#risk" class="sidebar-link"><i class="fas fa-shield-halved"></i> Risk Management</a>
-                <a href="#sessions" class="sidebar-link"><i class="fas fa-clock"></i> Trading Sessions</a>
+                <span class="docs-nav-label">Setup in MT5</span>
+                <a href="#install-ea"  class="sidebar-link"><i class="fas fa-folder-open"></i> Install &amp; Compile EA</a>
+                <a href="#attach-ea"   class="sidebar-link"><i class="fas fa-plug"></i> Attach to Chart</a>
+                <a href="#settings"    class="sidebar-link"><i class="fas fa-sliders"></i> Configure Settings</a>
+                <a href="#demo-live"   class="sidebar-link"><i class="fas fa-toggle-on"></i> Demo vs Live</a>
             </div>
             <div class="docs-nav-group">
-                <span class="docs-nav-label">Backtesting</span>
-                <a href="#backtest" class="sidebar-link"><i class="fas fa-chart-line"></i> Running Tests</a>
-                <a href="#results" class="sidebar-link"><i class="fas fa-table"></i> Interpreting Results</a>
+                <span class="docs-nav-label">Dashboard</span>
+                <a href="#dashboard"   class="sidebar-link"><i class="fas fa-gauge-high"></i> Open Dashboard</a>
+                <a href="#monitoring"  class="sidebar-link"><i class="fas fa-eye"></i> Monitor Trades</a>
+                <a href="#telegram"    class="sidebar-link"><i class="fab fa-telegram"></i> Telegram Alerts</a>
             </div>
             <div class="docs-nav-group">
-                <span class="docs-nav-label">API Reference</span>
-                <a href="#api" class="sidebar-link"><i class="fas fa-server"></i> REST API</a>
-                <a href="#endpoints" class="sidebar-link"><i class="fas fa-code"></i> Endpoints</a>
-            </div>
-            <div class="docs-nav-group">
-                <span class="docs-nav-label">Integrations</span>
-                <a href="#telegram" class="sidebar-link"><i class="fab fa-telegram"></i> Telegram</a>
-                <a href="#troubleshooting" class="sidebar-link"><i class="fas fa-wrench"></i> Troubleshooting</a>
+                <span class="docs-nav-label">Help</span>
+                <a href="#faq"         class="sidebar-link"><i class="fas fa-circle-question"></i> FAQ</a>
+                <a href="#troubleshoot" class="sidebar-link"><i class="fas fa-wrench"></i> Troubleshooting</a>
             </div>
         </nav>
     </aside>
+
     <main class="docs-main">
+
+        <!-- OVERVIEW -->
         <section class="doc-section" id="overview">
             <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Overview</span>
             <h2 class="doc-section-title">What is Zenith?</h2>
-            <p class="lead">Zenith is an open-source algorithmic trading system built on ICT/Smart Money Concepts. It includes a Python-based strategy engine, MetaTrader 5 integration, a Flask REST API, and a real-time web dashboard.</p>
+            <p class="lead">Zenith is an automated trading bot that runs inside MetaTrader 5 and trades on your behalf 24/7. It uses <strong>Smart Money Concepts</strong> (the same methods used by institutional traders) to find high-probability entries on EURUSD, NAS100, and Gold (XAUUSD).</p>
             <div class="features-bento" style="--cols:3;margin-top:2rem">
-                <div class="bento-item glass-card" style="padding:1.5rem"><div class="feature-icon" style="width:2.4rem;height:2.4rem;margin-bottom:1rem;font-size:1rem"><i class="fas fa-brain"></i></div><h4 style="margin:0 0 0.5rem;font-size:0.95rem">Strategy Engine</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">ICT/SMC signal detection — liquidity sweep, MSS, displacement, FVG, order block, regime &amp; confluence scoring</p></div>
-                <div class="bento-item glass-card" style="padding:1.5rem"><div class="feature-icon" style="width:2.4rem;height:2.4rem;margin-bottom:1rem;font-size:1rem"><i class="fas fa-chart-line"></i></div><h4 style="margin:0 0 0.5rem;font-size:0.95rem">Backtesting</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Calendar-walk, walk-forward 70/30, Monte Carlo &amp; stacked-portfolio modes on real MT5 OHLCV</p></div>
-                <div class="bento-item glass-card" style="padding:1.5rem"><div class="feature-icon" style="width:2.4rem;height:2.4rem;margin-bottom:1rem;font-size:1rem"><i class="fas fa-globe"></i></div><h4 style="margin:0 0 0.5rem;font-size:0.95rem">Web Dashboard</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Real-time metrics, equity curves, trade history, live control panel</p></div>
+                <div class="bento-item glass-card" style="padding:1.5rem">
+                    <div class="feature-icon" style="width:2.4rem;height:2.4rem;margin-bottom:1rem;font-size:1rem"><i class="fas fa-robot"></i></div>
+                    <h4 style="margin:0 0 0.5rem;font-size:0.95rem">MT5 Expert Advisor</h4>
+                    <p style="font-size:0.84rem;color:var(--z-text-3);margin:0">The EA runs directly inside MetaTrader 5. You just attach it to a chart — it handles everything else automatically.</p>
+                </div>
+                <div class="bento-item glass-card" style="padding:1.5rem">
+                    <div class="feature-icon" style="width:2.4rem;height:2.4rem;margin-bottom:1rem;font-size:1rem"><i class="fas fa-shield-halved"></i></div>
+                    <h4 style="margin:0 0 0.5rem;font-size:0.95rem">Built-in Risk Control</h4>
+                    <p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Automatic stop-loss on every trade. Daily drawdown kill-switch. Max 3 trades per day per symbol.</p>
+                </div>
+                <div class="bento-item glass-card" style="padding:1.5rem">
+                    <div class="feature-icon" style="width:2.4rem;height:2.4rem;margin-bottom:1rem;font-size:1rem"><i class="fas fa-gauge-high"></i></div>
+                    <h4 style="margin:0 0 0.5rem;font-size:0.95rem">Live Dashboard</h4>
+                    <p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Watch every trade in real-time. Equity curve, win rate, P&amp;L — all updated live in your browser.</p>
+                </div>
+            </div>
+            <div class="alert alert-info" style="margin-top:1.5rem">
+                <i class="fas fa-circle-info"></i>
+                <span>You do <strong>not</strong> need to know how to code. You just download the EA file, put it in the right folder, and click a few buttons in MetaTrader 5.</span>
             </div>
         </section>
-        <section class="doc-section" id="installation">
-            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Installation</span>
-            <h2 class="doc-section-title">Installation</h2>
-            <p class="lead">Requires Python 3.10+, MetaTrader 5 desktop client, and a broker account with MT5 access.</p>
-            <h4 class="doc-step-label"><span class="doc-step-num">1</span> Clone the Repository</h4>
-            <div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)"><i class="fas fa-copy"></i></button></div><pre><code>git clone https://github.com/Ravenko123/TradingBot
-cd TradingBot</code></pre></div>
-            <h4 class="doc-step-label"><span class="doc-step-num">2</span> Install Python Dependencies</h4>
-            <div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)"><i class="fas fa-copy"></i></button></div><pre><code>cd mt5_bot
-pip install -r requirements.txt
-cd ../web
-pip install -r requirements.txt</code></pre></div>
-            <h4 class="doc-step-label"><span class="doc-step-num">3</span> Launch the Web API</h4>
-            <div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)"><i class="fas fa-copy"></i></button></div><pre><code>cd web
-python alpha_api.py</code></pre></div>
-            <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>The web server starts on <strong>http://localhost:5000</strong> by default.</span></div>
-        </section>
-        <section class="doc-section" id="configuration">
-            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Configuration</span>
-            <h2 class="doc-section-title">Configuration</h2>
-            <p class="lead">All bot settings live in <code>mt5_bot/runtime_config.json</code>. Telegram credentials are stored in <code>mt5_bot/telegram_config.json</code>.</p>
-            <h4 class="doc-step-label"><span class="doc-step-num">1</span> runtime_config.json — Key Fields</h4>
-            <div class="code-block"><div class="code-header"><span class="code-lang">json</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)"><i class="fas fa-copy"></i></button></div><pre><code>{
-  "symbols": ["EURUSD","NAS100","XAUUSD"],
-  "risk_percent": 1.0,
-  "per_symbol_kill_switch_pct": 5.0,
-  "max_trades_per_day": 3,
-  "mt5_login": 12345678,
-  "mt5_password": "your_password",
-  "mt5_server": "BrokerName-Server"
-}</code></pre></div>
-            <h4 class="doc-step-label"><span class="doc-step-num">2</span> telegram_config.json</h4>
-            <div class="code-block"><div class="code-header"><span class="code-lang">json</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)"><i class="fas fa-copy"></i></button></div><pre><code>{
-  "bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
-  "chat_id": "YOUR_CHAT_ID"
-}</code></pre></div>
-        </section>
-        <section class="doc-section" id="quickstart">
-            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Quick Start</span>
-            <h2 class="doc-section-title">Quick Start</h2>
-            <p class="lead">Start both the trading bot and the web server to get everything running.</p>
-            <div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)"><i class="fas fa-copy"></i></button></div><pre><code># Terminal 1 — Start Web API
-cd web && python alpha_api.py
 
-# Terminal 2 — Start Trading Bot
-cd mt5_bot && python main.py</code></pre></div>
-            <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>MetaTrader 5 must be running and logged in before starting the bot.</span></div>
-        </section>
-        <section class="doc-section" id="strategy">
-            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Strategy</span>
-            <h2 class="doc-section-title">Signal Logic</h2>
-            <p class="lead">Signals are identified using a state machine that processes M15 OHLCV candles in sequence with strict no-lookahead enforcement. A trade requires a minimum confluence score of <strong>4 / 8</strong> from weighted sub-signals. EUR/USD &amp; NAS100 trade <strong>contrarian fades</strong> of the resulting setup; XAU/USD trades the continuation.</p>
-            <div class="docs-metrics-grid">
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">HTF Bias</div><div class="docs-metric-lbl">EMA 20/50/200 alignment on H1 (+2)</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">Sweep + MSS</div><div class="docs-metric-lbl">Liquidity sweep + market structure shift (+2)</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">Displacement</div><div class="docs-metric-lbl">Strong impulse candle out of zone (+1)</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">FVG / OB</div><div class="docs-metric-lbl">Fair Value Gap or Order Block found (+1 each)</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">Premium / Disc.</div><div class="docs-metric-lbl">Discount for longs / premium for shorts (+1)</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val">Vol Regime</div><div class="docs-metric-lbl">ATR healthy + directional body ratio (+1)</div></div>
-            </div>
-            <div class="alert alert-warning" style="margin-top:1.75rem"><i class="fas fa-triangle-exclamation"></i><span>Signals scoring &lt; 4 are skipped entirely. Adjust <code>min_score</code> per symbol inside <code>SYMBOL_RULES</code> in <code>smart_money_strategy.py</code>.</span></div>
-        </section>
-        <section class="doc-section" id="risk">
-            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Risk</span>
-            <h2 class="doc-section-title">Risk Management</h2>
-            <p class="lead">Every trade is sized from its exact stop-loss distance at <strong>1% account risk</strong>, with multi-layer dynamic protection on top.</p>
-            <div class="features-bento" style="--cols:2;margin-top:1.75rem">
-                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--z-text-2)">Position Sizing</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0"><code>lots = (balance × 1% × dd_factor × vol_factor) ÷ (stop_ticks × tick_value)</code></p></div>
-                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--z-text-2)">DD Risk Halving</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Risk per trade is automatically halved when an instrument is more than 4% below its peak equity</p></div>
-                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--z-text-2)">Per-Symbol Kill Switch</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Any instrument that drops 5% in a window is paused for the rest of that window — the other instruments keep trading</p></div>
-                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.5rem;font-size:0.9rem;color:var(--z-text-2)">Daily Cap + Trade Mgmt</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Max 3 trades per symbol per day. XAU/USD takes a 0.5R partial at +1R and trails the runner; EUR/USD &amp; NAS100 trade once and exit cleanly</p></div>
+        <!-- INSTALL MT5 -->
+        <section class="doc-section" id="mt5install">
+            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Step 1</span>
+            <h2 class="doc-section-title">Install MetaTrader 5</h2>
+            <p class="lead">MetaTrader 5 is a free trading platform. You need it installed on your Windows PC or laptop — the Zenith EA runs inside it.</p>
+            <h4 class="doc-step-label"><span class="doc-step-num">1</span> Download MT5</h4>
+            <p style="color:var(--z-text-3);font-size:0.9rem;margin-bottom:1rem">Go to <strong>metatrader5.com</strong> and click <em>"Download MetaTrader 5"</em>. Run the installer — it takes about 2 minutes.</p>
+            <h4 class="doc-step-label"><span class="doc-step-num">2</span> Open MT5 and Log In</h4>
+            <p style="color:var(--z-text-3);font-size:0.9rem;margin-bottom:0.5rem">After install, MT5 opens automatically. You'll see a login window.</p>
+            <ul class="checklist">
+                <li><i class="fas fa-check-circle"></i>Enter your broker login, password, and server (from your broker's welcome email)</li>
+                <li><i class="fas fa-check-circle"></i>Click <strong>Login</strong> — you should see your account balance appear in the top bar</li>
+                <li><i class="fas fa-check-circle"></i>If you see charts loading, you're in ✓</li>
+            </ul>
+            <div class="alert alert-warning">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span>MT5 only works on <strong>Windows</strong>. Mac users need to use a Windows VPS (virtual server) or Parallels/Boot Camp.</span>
             </div>
         </section>
-        <section class="doc-section" id="sessions">
-            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Sessions</span>
-            <h2 class="doc-section-title">Trading Sessions</h2>
-            <p class="lead">Each instrument trades only inside its own optimal session, configured per-symbol in <code>SYMBOL_RULES.sessions</code>. Outside these windows the engine ignores signals entirely.</p>
-            <div class="perf-showcase" style="margin-top:1.5rem">
-                <div class="glass-card perf-card">
-                    <table style="width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:0.86rem">
-                        <thead><tr>
-                            <th style="padding:9px 14px;text-align:left;color:var(--z-text-3);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.04)">Session</th>
-                            <th style="padding:9px 14px;text-align:left;color:var(--z-text-3);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.04)">Time (UTC)</th>
-                            <th style="padding:9px 14px;text-align:left;color:var(--z-text-3);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.04)">Symbols</th>
-                        </tr></thead>
-                        <tbody>
-                            <tr><td style="padding:12px 14px;color:var(--z-text)">London Session</td><td style="padding:12px 14px;color:var(--z-cyan)">07:00 – 11:00 UTC</td><td style="padding:12px 14px;color:var(--z-text-3)">EUR/USD</td></tr>
-                            <tr style="background:rgba(255,255,255,0.01)"><td style="padding:12px 14px;color:var(--z-text)">London / NY Overlap</td><td style="padding:12px 14px;color:var(--z-cyan)">12:00 – 17:00 UTC</td><td style="padding:12px 14px;color:var(--z-text-3)">XAU/USD</td></tr>
-                            <tr><td style="padding:12px 14px;color:var(--z-text)">NY Session</td><td style="padding:12px 14px;color:var(--z-cyan)">13:00 – 20:00 UTC</td><td style="padding:12px 14px;color:var(--z-text-3)">NAS100 + EUR/USD afternoon window</td></tr>
-                        </tbody>
-                    </table>
+
+        <!-- BROKER -->
+        <section class="doc-section" id="broker">
+            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Step 2</span>
+            <h2 class="doc-section-title">Choose a Broker</h2>
+            <p class="lead">You need a broker that supports MT5 and offers the instruments Zenith trades: <strong>EURUSD, NAS100, XAUUSD</strong>.</p>
+            <div class="features-bento" style="--cols:2;margin-top:1.5rem">
+                <div class="bento-item glass-card" style="padding:1.5rem">
+                    <h4 style="margin:0 0 0.6rem;font-size:0.9rem;color:var(--z-text-2)"><i class="fas fa-star" style="color:#00ff87;margin-right:6px"></i>Recommended Brokers</h4>
+                    <p style="font-size:0.84rem;color:var(--z-text-3);margin:0">IC Markets, Pepperstone, FP Markets, Exness — all offer MT5, low spreads, and all 3 required symbols.</p>
+                </div>
+                <div class="bento-item glass-card" style="padding:1.5rem">
+                    <h4 style="margin:0 0 0.6rem;font-size:0.9rem;color:var(--z-text-2)"><i class="fas fa-flask" style="color:#60efff;margin-right:6px"></i>Start with a Demo Account</h4>
+                    <p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Every broker lets you open a <strong>free demo account</strong> with virtual money. Test Zenith there first — no risk.</p>
+                </div>
+            </div>
+            <div class="alert alert-success" style="margin-top:1rem">
+                <i class="fas fa-circle-check"></i>
+                <span>Make sure <strong>EURUSD, NAS100</strong> (or US100), and <strong>XAUUSD</strong> (or Gold) are visible in your broker's Market Watch panel inside MT5.</span>
+            </div>
+        </section>
+
+        <!-- DOWNLOAD EA -->
+        <section class="doc-section" id="download-ea">
+            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Step 3</span>
+            <h2 class="doc-section-title">Download the Zenith EA</h2>
+            <p class="lead">The EA (Expert Advisor) is the file that actually runs inside MetaTrader 5 and executes trades. Download it directly from the Zenith dashboard.</p>
+            <h4 class="doc-step-label"><span class="doc-step-num">1</span> Log into your Zenith account</h4>
+            <p style="color:var(--z-text-3);font-size:0.9rem;margin-bottom:1rem">Go to <a href="dashboard.html" style="color:#00ff87">your dashboard</a> → click <strong>"Download EA"</strong> in the top right corner.</p>
+            <h4 class="doc-step-label"><span class="doc-step-num">2</span> What's in the download?</h4>
+            <div class="highlight-box">
+                <p style="margin:0 0 0.6rem;font-size:0.88rem;color:var(--z-text-2);font-weight:600">You'll receive a ZIP file containing:</p>
+                <ul class="checklist" style="margin:0">
+                    <li><i class="fas fa-file-code"></i><span><code>ZenithEA.mq5</code> — the EA source file (goes into MT5)</span></li>
+                    <li><i class="fas fa-file-alt"></i><span><code>EA_Config_Template.set</code> — pre-filled settings file</span></li>
+                </ul>
+            </div>
+            <div class="alert alert-info">
+                <i class="fas fa-circle-info"></i>
+                <span>Zenith is <strong>open-source</strong> — you can see exactly what the bot does. There are no hidden fees or subscriptions inside the EA itself.</span>
+            </div>
+        </section>
+
+        <!-- INSTALL EA -->
+        <section class="doc-section" id="install-ea">
+            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Step 4</span>
+            <h2 class="doc-section-title">Install &amp; Compile the EA in MT5</h2>
+            <p class="lead">The EA file needs to be placed in the correct MT5 folder and compiled once. This takes about 2 minutes.</p>
+            <h4 class="doc-step-label"><span class="doc-step-num">1</span> Open the MT5 Data Folder</h4>
+            <p style="color:var(--z-text-3);font-size:0.9rem;margin-bottom:0.5rem">In MetaTrader 5, click the top menu: <strong>File → Open Data Folder</strong></p>
+            <div class="highlight-box">
+                <p style="margin:0;font-size:0.88rem;color:var(--z-text-2)">Navigate to: <code>MQL5 → Experts</code> — this is where Expert Advisors live.</p>
+            </div>
+            <h4 class="doc-step-label"><span class="doc-step-num">2</span> Copy the EA File</h4>
+            <p style="color:var(--z-text-3);font-size:0.9rem;margin-bottom:1rem">Copy <code>ZenithEA.mq5</code> from the ZIP into the <code>Experts</code> folder. Leave the window open.</p>
+            <h4 class="doc-step-label"><span class="doc-step-num">3</span> Compile in MetaEditor</h4>
+            <ul class="checklist">
+                <li><i class="fas fa-check-circle"></i>Back in MT5, press <strong>F4</strong> (or click Tools → MetaEditor) to open MetaEditor</li>
+                <li><i class="fas fa-check-circle"></i>In the left panel, find <code>Experts → ZenithEA.mq5</code> and double-click it</li>
+                <li><i class="fas fa-check-circle"></i>Press <strong>F7</strong> to compile — wait for the green "0 errors" message at the bottom</li>
+                <li><i class="fas fa-check-circle"></i>Close MetaEditor and go back to MT5</li>
+            </ul>
+            <div class="alert alert-success">
+                <i class="fas fa-circle-check"></i>
+                <span>If you see <strong>"0 errors, 0 warnings"</strong> in the MetaEditor log — the EA is ready to use.</span>
+            </div>
+        </section>
+
+        <!-- ATTACH EA -->
+        <section class="doc-section" id="attach-ea">
+            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Step 5</span>
+            <h2 class="doc-section-title">Attach the EA to a Chart</h2>
+            <p class="lead">You only need to attach the EA to <strong>one chart</strong>. From that single chart it can trade all 3 symbols automatically.</p>
+            <h4 class="doc-step-label"><span class="doc-step-num">1</span> Open a Chart</h4>
+            <p style="color:var(--z-text-3);font-size:0.9rem;margin-bottom:1rem">In MT5, right-click in the <strong>Market Watch</strong> panel on EURUSD → <strong>Chart Window</strong>. Make sure the chart is set to <strong>M15 timeframe</strong> (15-minute candles).</p>
+            <h4 class="doc-step-label"><span class="doc-step-num">2</span> Drag the EA onto the Chart</h4>
+            <ul class="checklist">
+                <li><i class="fas fa-check-circle"></i>In the <strong>Navigator</strong> panel (left side), expand <strong>Expert Advisors</strong></li>
+                <li><i class="fas fa-check-circle"></i>Find <strong>ZenithEA</strong> and drag it onto the chart</li>
+                <li><i class="fas fa-check-circle"></i>A settings dialog will appear — see the next step before clicking OK</li>
+            </ul>
+            <h4 class="doc-step-label"><span class="doc-step-num">3</span> Enable "Allow Automated Trading"</h4>
+            <p style="color:var(--z-text-3);font-size:0.9rem;margin-bottom:1rem">In the dialog, go to the <strong>"Common"</strong> tab and make sure <strong>"Allow automated trading"</strong> is ticked. Also enable it in the top MT5 toolbar (the green "AutoTrading" button).</p>
+            <div class="alert alert-warning">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span>If the AutoTrading button in the MT5 toolbar is <strong>red</strong>, click it to turn it <strong>green</strong> — otherwise the EA will not execute any trades.</span>
+            </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section class="doc-section" id="settings">
+            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Step 6</span>
+            <h2 class="doc-section-title">Configure the Settings</h2>
+            <p class="lead">When you attach the EA, a settings dialog opens. The inputs are organized into clear sections. Here's what each section does:</p>
+            <div class="input-group-preview">
+                <div class="ig-section">=== 1. TRADING MODE ===</div>
+                <div class="ig-row"><span class="ig-key">DemoMode</span><span class="ig-val">true ← Start here!</span></div>
+                <div class="ig-row"><span class="ig-key">LiveTrading</span><span class="ig-val off">false</span></div>
+                <div class="ig-section">=== 2. SYMBOLS ===</div>
+                <div class="ig-row"><span class="ig-key">TradeChartSymbol</span><span class="ig-val">true</span></div>
+                <div class="ig-row"><span class="ig-key">ExtraSymbol1</span><span class="ig-val">XAUUSD</span></div>
+                <div class="ig-row"><span class="ig-key">ExtraSymbol2</span><span class="ig-val">NAS100</span></div>
+                <div class="ig-section">=== 3. DASHBOARD CONNECTION ===</div>
+                <div class="ig-row"><span class="ig-key">DashboardURL</span><span class="ig-val">https://your-dashboard-url</span></div>
+                <div class="ig-row"><span class="ig-key">DashboardAPIKey</span><span class="ig-val">your-api-key</span></div>
+                <div class="ig-section">=== 4. RISK MANAGEMENT ===</div>
+                <div class="ig-row"><span class="ig-key">RiskPerTradePct</span><span class="ig-val">1.0</span></div>
+                <div class="ig-row"><span class="ig-key">MaxDailyDrawdownPct</span><span class="ig-val">5.0</span></div>
+                <div class="ig-row"><span class="ig-key">MaxDailyTrades</span><span class="ig-val">3</span></div>
+            </div>
+            <div class="alert alert-info" style="margin-top:1rem">
+                <i class="fas fa-circle-info"></i>
+                <span>Your <strong>Dashboard URL</strong> and <strong>API Key</strong> are found in the <a href="dashboard.html" style="color:#60efff">Dashboard → My Credentials</a> panel. Paste them here to sync live trades to your browser.</span>
+            </div>
+        </section>
+
+        <!-- DEMO vs LIVE -->
+        <section class="doc-section" id="demo-live">
+            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Step 7</span>
+            <h2 class="doc-section-title">Demo Mode vs Live Trading</h2>
+            <p class="lead">Always start with <strong>Demo Mode</strong>. It simulates real trades without using any real money — perfect for testing that everything works.</p>
+            <div class="features-bento" style="--cols:2;margin-top:1.5rem">
+                <div class="bento-item glass-card" style="padding:1.5rem;border-color:rgba(0,255,135,0.2)">
+                    <h4 style="margin:0 0 0.8rem;font-size:1rem;color:#00ff87"><i class="fas fa-flask" style="margin-right:8px"></i>Demo Mode <span style="font-size:0.75rem;opacity:0.7;font-weight:400">(Recommended first)</span></h4>
+                    <ul class="checklist" style="margin:0">
+                        <li><i class="fas fa-check-circle"></i>Set <code>DemoMode = true</code></li>
+                        <li><i class="fas fa-check-circle"></i>Leave <code>LiveTrading = false</code></li>
+                        <li><i class="fas fa-check-circle"></i>EA simulates trades, no real orders placed</li>
+                        <li><i class="fas fa-check-circle"></i>All signals show on the dashboard</li>
+                    </ul>
+                </div>
+                <div class="bento-item glass-card" style="padding:1.5rem;border-color:rgba(255,107,107,0.2)">
+                    <h4 style="margin:0 0 0.8rem;font-size:1rem;color:#ff6b6b"><i class="fas fa-bolt" style="margin-right:8px"></i>Live Trading <span style="font-size:0.75rem;opacity:0.7;font-weight:400">(Real money)</span></h4>
+                    <ul class="checklist" style="margin:0">
+                        <li><i class="fas fa-check-circle"></i>Set <code>DemoMode = false</code></li>
+                        <li><i class="fas fa-check-circle"></i>Set <code>LiveTrading = true</code></li>
+                        <li><i class="fas fa-check-circle"></i>Real orders are sent to your broker</li>
+                        <li><i class="fas fa-check-circle"></i>Only switch after successful demo period</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="alert alert-warning" style="margin-top:1rem">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span>Run Demo Mode for at least <strong>1–2 weeks</strong> before switching to live. Watch the dashboard to verify the signals make sense for your market conditions.</span>
+            </div>
+        </section>
+
+        <!-- DASHBOARD -->
+        <section class="doc-section" id="dashboard">
+            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Dashboard</span>
+            <h2 class="doc-section-title">Open the Dashboard</h2>
+            <p class="lead">The Zenith dashboard shows all your trades, equity curve, and live bot status in your browser — no installation needed.</p>
+            <h4 class="doc-step-label"><span class="doc-step-num">1</span> Log in to your account</h4>
+            <p style="color:var(--z-text-3);font-size:0.9rem;margin-bottom:1rem">Go to <a href="login.html" style="color:#00ff87">Zenith → Login</a> and enter your credentials. You'll be taken straight to the dashboard.</p>
+            <h4 class="doc-step-label"><span class="doc-step-num">2</span> What you'll see</h4>
+            <div class="features-bento" style="--cols:2;margin-top:1rem">
+                <div class="bento-item glass-card" style="padding:1.2rem">
+                    <h4 style="margin:0 0 0.4rem;font-size:0.88rem;color:var(--z-text-2)"><i class="fas fa-chart-line" style="color:#00ff87;margin-right:6px"></i>Live Equity Curve</h4>
+                    <p style="font-size:0.82rem;color:var(--z-text-3);margin:0">Your account balance growing in real-time as trades close.</p>
+                </div>
+                <div class="bento-item glass-card" style="padding:1.2rem">
+                    <h4 style="margin:0 0 0.4rem;font-size:0.88rem;color:var(--z-text-2)"><i class="fas fa-list" style="color:#60efff;margin-right:6px"></i>Trade History</h4>
+                    <p style="font-size:0.82rem;color:var(--z-text-3);margin:0">Every trade with entry/exit price, direction, profit &amp; loss.</p>
+                </div>
+                <div class="bento-item glass-card" style="padding:1.2rem">
+                    <h4 style="margin:0 0 0.4rem;font-size:0.88rem;color:var(--z-text-2)"><i class="fas fa-signal" style="color:#00ff87;margin-right:6px"></i>Bot Status</h4>
+                    <p style="font-size:0.82rem;color:var(--z-text-3);margin:0">See if the EA is connected, what mode it's in, open positions.</p>
+                </div>
+                <div class="bento-item glass-card" style="padding:1.2rem">
+                    <h4 style="margin:0 0 0.4rem;font-size:0.88rem;color:var(--z-text-2)"><i class="fas fa-flask" style="color:#60efff;margin-right:6px"></i>Backtest Results</h4>
+                    <p style="font-size:0.82rem;color:var(--z-text-3);margin:0">Run backtests from the dashboard and see detailed results instantly.</p>
                 </div>
             </div>
         </section>
-        <section class="doc-section" id="backtest">
-            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Backtesting</span>
-            <h2 class="doc-section-title">Running Backtests</h2>
-            <p class="lead">Four robustness modes available. All use real MT5 historical data downloaded via the Python MT5 API and run through the same lookahead-free engine that powers live execution.</p>
-            <h4 class="doc-step-label"><span class="doc-step-num">1</span> Standard Backtest</h4>
-            <div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)"><i class="fas fa-copy"></i></button></div><pre><code>cd mt5_bot
-python -c "from backtest_improved import validate_live_smc_engine; validate_live_smc_engine(symbols=('EURUSD','NAS100','XAUUSD'), periods=30)"</code></pre></div>
-            <h4 class="doc-step-label"><span class="doc-step-num">2</span> Calendar-walk &amp; Portfolio</h4>
-            <div class="code-block"><div class="code-header"><span class="code-lang">bash</span><button class="code-copy" onclick="navigator.clipboard.writeText(this.closest('.code-block').querySelector('code').innerText)"><i class="fas fa-copy"></i></button></div><pre><code>python -c "from backtest_improved import calendar_walk_validate; calendar_walk_validate(windows=15)"
-python -c "from backtest_improved import portfolio_calendar_walk; portfolio_calendar_walk(windows=15)"
-python -c "from backtest_improved import monte_carlo_live_smc_engine; monte_carlo_live_smc_engine(simulations=500)"</code></pre></div>
-            <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>Results are saved to <code>mt5_bot/backtest_results/</code> as JSON files. The dashboard reads these automatically.</span></div>
-        </section>
-        <section class="doc-section" id="results">
-            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Results</span>
-            <h2 class="doc-section-title">Interpreting Results</h2>
-            <p class="lead">Key metrics to assess strategy robustness — prioritise Profit Factor and Max Drawdown over raw return.</p>
-            <div class="docs-metrics-grid">
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val" style="color:var(--z-green)">R / trade &gt; +0.10</div><div class="docs-metric-lbl">Genuine per-trade edge over noise</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val" style="color:var(--z-green)">&lt; 10% DD</div><div class="docs-metric-lbl">Worst-window drawdown ceiling</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val" style="color:var(--z-cyan)">&gt; 60%</div><div class="docs-metric-lbl">Profitable months across calendar walk</div></div>
-                <div class="glass-card" style="padding:1.5rem 1.75rem"><div class="docs-metric-val" style="color:var(--z-cyan)">&gt; 25 windows</div><div class="docs-metric-lbl">Min sample for robustness claims</div></div>
+
+        <!-- MONITORING -->
+        <section class="doc-section" id="monitoring">
+            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Monitoring</span>
+            <h2 class="doc-section-title">Monitor Your Trades</h2>
+            <p class="lead">Once the EA is running, you don't need to do anything. It scans the market every 15 minutes and only trades during the optimal sessions for each symbol.</p>
+            <div class="glass-card" style="padding:1.5rem;margin-top:1rem">
+                <table style="width:100%;border-collapse:collapse;font-size:0.88rem">
+                    <thead><tr>
+                        <th style="padding:8px 12px;text-align:left;color:var(--z-text-3);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.05)">Symbol</th>
+                        <th style="padding:8px 12px;text-align:left;color:var(--z-text-3);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.05)">When it trades (UTC)</th>
+                        <th style="padding:8px 12px;text-align:left;color:var(--z-text-3);font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.05)">Max trades/day</th>
+                    </tr></thead>
+                    <tbody>
+                        <tr><td style="padding:10px 12px;color:var(--z-text)">EUR/USD</td><td style="padding:10px 12px;color:#60efff;font-family:var(--font-mono)">07:00 – 11:00 &amp; 13:00 – 17:00</td><td style="padding:10px 12px;color:var(--z-text-3)">3</td></tr>
+                        <tr style="background:rgba(255,255,255,0.01)"><td style="padding:10px 12px;color:var(--z-text)">NAS100</td><td style="padding:10px 12px;color:#60efff;font-family:var(--font-mono)">13:00 – 22:00</td><td style="padding:10px 12px;color:var(--z-text-3)">3</td></tr>
+                        <tr><td style="padding:10px 12px;color:var(--z-text)">Gold (XAUUSD)</td><td style="padding:10px 12px;color:#60efff;font-family:var(--font-mono)">12:00 – 18:00 &amp; 19:00 – 22:00</td><td style="padding:10px 12px;color:var(--z-text-3)">3</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="alert alert-info" style="margin-top:1rem">
+                <i class="fas fa-circle-info"></i>
+                <span>Outside these windows, the EA is idle — this is intentional. Trading only during high-liquidity sessions produces better results.</span>
             </div>
         </section>
-        <section class="doc-section" id="api">
-            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">API</span>
-            <h2 class="doc-section-title">REST API</h2>
-            <p class="lead">The Flask server exposes authenticated endpoints consumed by the dashboard. JWT optional — pass API key in the <code>X-API-Key</code> header.</p>
-            <div class="code-block"><div class="code-header"><span class="code-lang">http</span></div><pre><code>Base URL: http://localhost:5000
-Auth:     X-API-Key: &lt;your_api_key&gt;</code></pre></div>
-        </section>
-        <section class="doc-section" id="endpoints">
-            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Endpoints</span>
-            <h2 class="doc-section-title">Endpoints</h2>
-            <div class="endpoint-list">
-                <div class="endpoint-item glass-card"><div class="endpoint-header"><span class="method get">GET</span><code class="endpoint-path">/api/status</code></div><p class="endpoint-desc">Returns bot running state, balance, equity, today's P&amp;L, and open positions count.</p></div>
-                <div class="endpoint-item glass-card"><div class="endpoint-header"><span class="method get">GET</span><code class="endpoint-path">/api/trades</code></div><p class="endpoint-desc">Returns trade history array from SQLite. Supports <code>?limit=50</code> and <code>?symbol=EURUSD</code> query params.</p></div>
-                <div class="endpoint-item glass-card"><div class="endpoint-header"><span class="method get">GET</span><code class="endpoint-path">/api/performance</code></div><p class="endpoint-desc">Aggregated performance by symbol — win rate, profit factor, total trades, net PnL.</p></div>
-                <div class="endpoint-item glass-card"><div class="endpoint-header"><span class="method get">GET</span><code class="endpoint-path">/api/backtest/results</code></div><p class="endpoint-desc">Lists all saved JSON backtest result files with summary stats.</p></div>
-                <div class="endpoint-item glass-card"><div class="endpoint-header"><span class="method post">POST</span><code class="endpoint-path">/api/bot/start</code></div><p class="endpoint-desc">Starts the trading bot subprocess. Returns <code>{"status":"started"}</code> or error message.</p></div>
-                <div class="endpoint-item glass-card"><div class="endpoint-header"><span class="method post">POST</span><code class="endpoint-path">/api/bot/stop</code></div><p class="endpoint-desc">Gracefully stops the bot. All open positions are closed before exit.</p></div>
-            </div>
-        </section>
+
+        <!-- TELEGRAM -->
         <section class="doc-section" id="telegram">
-            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Telegram</span>
-            <h2 class="doc-section-title">Telegram Integration</h2>
-            <p class="lead">The bot sends alerts for every trade and responds to remote commands via your personal Telegram bot.</p>
+            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Optional</span>
+            <h2 class="doc-section-title">Telegram Alerts</h2>
+            <p class="lead">Get notified on your phone the moment a trade opens or closes — even when you're away from your computer.</p>
+            <h4 class="doc-step-label"><span class="doc-step-num">1</span> Create a Telegram Bot</h4>
+            <ul class="checklist">
+                <li><i class="fas fa-check-circle"></i>Open Telegram and search for <strong>@BotFather</strong></li>
+                <li><i class="fas fa-check-circle"></i>Send <code>/newbot</code> and follow the instructions</li>
+                <li><i class="fas fa-check-circle"></i>Copy the <strong>Bot Token</strong> you receive</li>
+            </ul>
+            <h4 class="doc-step-label"><span class="doc-step-num">2</span> Add credentials to Dashboard</h4>
+            <p style="color:var(--z-text-3);font-size:0.9rem">Go to Dashboard → Settings → Telegram, paste your Bot Token and Chat ID. Done.</p>
             <div class="features-bento" style="--cols:2;margin-top:1.5rem">
-                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.75rem;font-size:0.9rem">/status</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Current equity, balance, open trades, and today's P&amp;L</p></div>
-                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.75rem;font-size:0.9rem">/start / /stop</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Start or stop the bot remotely from anywhere</p></div>
-                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.75rem;font-size:0.9rem">/trades</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">List today's executed trades with symbol, direction, and result</p></div>
-                <div class="bento-item glass-card" style="padding:1.5rem"><h4 style="margin:0 0 0.75rem;font-size:0.9rem">Auto Alerts</h4><p style="font-size:0.84rem;color:var(--z-text-3);margin:0">Instant notifications on trade open, close, TP hit, SL hit, daily limit reached</p></div>
+                <div class="bento-item glass-card" style="padding:1.2rem"><h4 style="margin:0 0 0.4rem;font-size:0.88rem">Trade Opened alert</h4><p style="font-size:0.82rem;color:var(--z-text-3);margin:0">Symbol, direction, entry price, stop-loss, take-profit</p></div>
+                <div class="bento-item glass-card" style="padding:1.2rem"><h4 style="margin:0 0 0.4rem;font-size:0.88rem">Trade Closed alert</h4><p style="font-size:0.82rem;color:var(--z-text-3);margin:0">Exit reason (TP/SL), profit/loss in dollars</p></div>
+                <div class="bento-item glass-card" style="padding:1.2rem"><h4 style="margin:0 0 0.4rem;font-size:0.88rem">/status command</h4><p style="font-size:0.82rem;color:var(--z-text-3);margin:0">Send /status to the bot anytime to see balance &amp; open trades</p></div>
+                <div class="bento-item glass-card" style="padding:1.2rem"><h4 style="margin:0 0 0.4rem;font-size:0.88rem">Daily summary</h4><p style="font-size:0.82rem;color:var(--z-text-3);margin:0">End-of-day P&amp;L, total trades, win rate for the day</p></div>
             </div>
         </section>
-        <section class="doc-section" id="troubleshooting">
+
+        <!-- FAQ -->
+        <section class="doc-section" id="faq">
+            <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">FAQ</span>
+            <h2 class="doc-section-title">Frequently Asked Questions</h2>
+            <details class="faq-item">
+                <summary>Do I need to leave my computer on all day?</summary>
+                <p>Yes — MT5 needs to be running for the EA to work. If you want it truly 24/7, use a <strong>Windows VPS</strong> (Virtual Private Server). Many brokers offer free VPS hosting for active accounts.</p>
+            </details>
+            <details class="faq-item">
+                <summary>Will the EA open trades while I'm asleep?</summary>
+                <p>Yes — that's the whole point. It monitors the market automatically and only enters trades that meet all its criteria. You'll get a Telegram notification when something happens.</p>
+            </details>
+            <details class="faq-item">
+                <summary>Can I use it on a Demo account first?</summary>
+                <p>Absolutely — and we strongly recommend it. Set <code>DemoMode = true</code> in the EA settings. Demo mode simulates trades with fake money so you can see exactly how the bot behaves before risking anything real.</p>
+            </details>
+            <details class="faq-item">
+                <summary>What if I only want to trade one symbol?</summary>
+                <p>Set <code>TradeChartSymbol = true</code> and leave <code>ExtraSymbol1</code>, <code>ExtraSymbol2</code>, <code>ExtraSymbol3</code> empty. The EA will only trade whichever symbol the chart is on.</p>
+            </details>
+            <details class="faq-item">
+                <summary>How much money do I need to start?</summary>
+                <p>The bot works with any account size. We recommend starting with at least <strong>$500–$1000</strong> on a live account so that position sizing is meaningful. With a demo account, you can start with any virtual balance your broker provides.</p>
+            </details>
+            <details class="faq-item">
+                <summary>What is the recommended risk per trade?</summary>
+                <p>The default is <strong>1% per trade</strong>. This means on a $1,000 account, the maximum loss per trade is $10. You can adjust this in the EA settings under Risk Management, but never go above 2–3% if you're new to automated trading.</p>
+            </details>
+        </section>
+
+        <!-- TROUBLESHOOT -->
+        <section class="doc-section" id="troubleshoot">
             <span class="section-tag" style="margin-bottom:1rem;display:inline-flex">Help</span>
             <h2 class="doc-section-title">Troubleshooting</h2>
             <div class="troubleshoot-list">
-                <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>MT5 connection fails</strong></div><p class="ts-a">Ensure MetaTrader 5 is open and logged in. Verify <code>mt5_login</code>, <code>mt5_password</code>, and <code>mt5_server</code> in <code>runtime_config.json</code> match your broker credentials exactly.</p></div>
-                <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>No signals generated</strong></div><p class="ts-a">Check that the current time falls within the symbol&apos;s configured session window in <code>SYMBOL_RULES</code>. The regime filter also blocks setups during very low ATR or non-directional chop \u2014 low-volatility periods will produce no signals by design.</p></div>
-                <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>Dashboard shows no data</strong></div><p class="ts-a">Make sure <code>alpha_api.py</code> is running on port 5000. Check browser console for CORS errors — open directly via <code>http://localhost:5000</code>.</p></div>
-                <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>Telegram bot not responding</strong></div><p class="ts-a">Confirm bot token and chat ID in <code>telegram_config.json</code>. Run <code>python telegram_bot.py</code> directly to see error output.</p></div>
+                <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>EA shows a smiley face but no trades appear</strong></div><p class="ts-a">This is normal — the EA only trades during its configured session windows. Check the monitoring table above to see if the current UTC time falls inside a trading session. Also check that <code>DemoMode = true</code> or <code>LiveTrading = true</code>.</p></div>
+                <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>The AutoTrading button is red / greyed out</strong></div><p class="ts-a">Click the <strong>AutoTrading</strong> button in the MT5 toolbar to turn it green. Also right-click the chart → Expert Advisors → Make sure "Allow automated trading" is ticked in the EA properties.</p></div>
+                <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>Dashboard not showing live data from the EA</strong></div><p class="ts-a">Check that your <code>DashboardURL</code> and <code>DashboardAPIKey</code> in the EA settings are correct. Also go to MT5 → Tools → Options → Expert Advisors → Add your dashboard URL to the <strong>allowed URLs</strong> list (for WebRequest).</p></div>
+                <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>Compilation error when pressing F7</strong></div><p class="ts-a">Make sure you downloaded the latest version of the EA from the dashboard. Older versions may be incompatible with your MT5 build. Try deleting the old file and re-downloading.</p></div>
+                <div class="troubleshoot-item glass-card"><div class="ts-q"><i class="fas fa-circle-exclamation"></i><strong>Can't find NAS100 or XAUUSD in Market Watch</strong></div><p class="ts-a">Right-click inside Market Watch → <strong>Show All</strong>, or search for the symbol (some brokers name it US100, NASDAQ, or GOLD). If it's still missing, contact your broker — not all brokers offer all instruments.</p></div>
             </div>
         </section>
+
     </main>
 </div>
+
+<!-- CTA -->
 <section class="cta-section" style="margin-top:6rem">
     <div class="cta-bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
-    <div class="container"><div class="cta-content reveal-up"><h2>Still have questions?</h2><p>Open a GitHub issue or launch the dashboard and explore live.</p><a href="https://github.com/Ravenko123/TradingBot" target="_blank" class="btn-glow btn-glow-lg"><span class="btn-glow-text">Open on GitHub</span><span class="btn-glow-icon"><i class="fab fa-github"></i></span></a></div></div>
+    <div class="container">
+        <div class="cta-content reveal-up">
+            <h2>Ready to start?</h2>
+            <p>Download the EA from your dashboard and attach it to your first chart today.</p>
+            <a href="dashboard.html" class="btn-glow btn-glow-lg">
+                <span class="btn-glow-text">Launch Dashboard</span>
+                <span class="btn-glow-icon"><i class="fas fa-arrow-right"></i></span>
+            </a>
+        </div>
+    </div>
 </section>
+
 <footer class="site-footer">
     <div class="container">
         <div class="footer-grid">
             <div class="footer-brand-col">
                 <a href="index.html" class="nav-brand"><div class="brand-icon"><svg viewBox="0 0 40 40" fill="none"><path d="M20 4L36 12V28L20 36L4 28V12L20 4Z" stroke="url(#bGdoc2)" stroke-width="2" fill="none"/><path d="M12 20L18 14L24 22L32 12" stroke="url(#bGdoc2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="bGdoc2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00ff87"/><stop offset="100%" stop-color="#60efff"/></linearGradient></defs></svg></div><span class="brand-text">Zenith</span></a>
                 <p class="footer-desc">Automated algorithmic trading with multi-symbol backtesting and robustness verification.</p>
-                <div class="footer-socials"><a href="https://github.com/Ravenko123/TradingBot" target="_blank"><i class="fab fa-github"></i></a><a href="#"><i class="fab fa-telegram"></i></a><a href="#"><i class="fab fa-discord"></i></a></div>
+                <div class="footer-socials"><a href="#"><i class="fab fa-telegram"></i></a><a href="#"><i class="fab fa-discord"></i></a></div>
             </div>
             <div class="footer-col"><h4>Product</h4><a href="index.html#features">Features</a><a href="index.html#strategy">Strategy</a><a href="dashboard.html">Dashboard</a></div>
-            <div class="footer-col"><h4>Resources</h4><a href="docs.html">Documentation</a><a href="about.html">About</a><a href="https://github.com/Ravenko123/TradingBot" target="_blank">GitHub</a></div>
+            <div class="footer-col"><h4>Resources</h4><a href="docs.html">User Guide</a><a href="about.html">About</a></div>
             <div class="footer-col"><h4>Account</h4><a href="login.html">Login</a><a href="signup.html">Sign Up</a></div>
         </div>
-        <div class="footer-bottom"><p>&copy; 2026 Zenith Trading Bot. Built for educational purposes. <a href="https://github.com/Ravenko123/TradingBot" target="_blank" rel="noopener">Open source on GitHub</a>.</p></div>
+        <div class="footer-bottom"><p>&copy; 2026 Zenith Trading Bot. For educational and informational purposes.</p></div>
     </div>
 </footer>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="js/main.js?v=20260226-5"></script>
 <script>
 (function(){
+    // Sidebar active link tracking
     const links = document.querySelectorAll('.sidebar-link');
     const sections = document.querySelectorAll('.doc-section');
     const search = document.getElementById('docsSearch');
     const observer = new IntersectionObserver(entries=>{
         entries.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));const a=document.querySelector('.sidebar-link[href="#'+e.target.id+'"]');if(a)a.classList.add('active');}});
-    },{threshold:0.25,rootMargin:'-80px 0px -60% 0px'});
+    },{threshold:0.2,rootMargin:'-80px 0px -55% 0px'});
     sections.forEach(s=>observer.observe(s));
     links.forEach(l=>{l.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(l.getAttribute('href'));if(t)t.scrollIntoView({behavior:'smooth',block:'start'});});});
     if(search){search.addEventListener('input',()=>{const q=search.value.toLowerCase().trim();sections.forEach(s=>{s.style.display=q===''||s.textContent.toLowerCase().includes(q)?'':'none';});});}
+
+    // Animated pulse waves on the grid background
+    const grid = document.getElementById('docsBgGrid');
+    if(grid) {
+        let layer = document.createElement('div');
+        layer.className = 'grid-pulse-layer';
+        grid.appendChild(layer);
+        const spawnPulse = () => {
+            const wave = document.createElement('span');
+            wave.className = 'grid-pulse-wave';
+            wave.style.left = Math.random()*100+'%';
+            wave.style.top  = Math.random()*100+'%';
+            const size = 200 + Math.random()*400;
+            const dur  = 3500 + Math.random()*2500;
+            wave.style.setProperty('--pulse-size', size+'px');
+            wave.style.animationDuration = dur+'ms';
+            layer.appendChild(wave);
+            setTimeout(()=>wave.remove(), dur+100);
+        };
+        for(let i=0;i<3;i++) setTimeout(spawnPulse, i*300);
+        setInterval(spawnPulse, 600);
+    }
+
+    // Glint streaks
+    const glintCount = 6;
+    for(let i=0;i<glintCount;i++){
+        const g = document.createElement('div');
+        g.className = 'docs-glint';
+        const h = 60+Math.random()*120;
+        g.style.height = h+'px';
+        g.style.left = (Math.random()*100)+'%';
+        g.style.animationDuration = (6+Math.random()*10)+'s';
+        g.style.animationDelay = (Math.random()*8)+'s';
+        g.style.opacity = (0.12+Math.random()*0.18).toFixed(2);
+        document.body.appendChild(g);
+    }
 })();
 </script>
 </body>

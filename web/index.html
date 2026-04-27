@@ -43,7 +43,6 @@
             </div>
             <div class="nav-actions" id="navActions">
                 <a href="#" class="nav-btn nav-btn-ghost"><i class="fas fa-globe"></i> English <i class="fas fa-chevron-down" style="font-size:0.6em;opacity:0.6"></i></a>
-                <a href="https://github.com/Ravenko123/TradingBot" target="_blank" class="nav-btn nav-btn-icon nav-btn-github" title="Open Source on GitHub" aria-label="Open Source on GitHub"><i class="fab fa-github"></i></a>
                 <a href="dashboard.html" class="nav-btn nav-btn-primary">Launch Dashboard <i class="fas fa-arrow-right"></i></a>
                 <a href="signup.html" class="nav-btn nav-btn-outline">Get Started</a>
             </div>
@@ -98,7 +97,6 @@
                 <div class="hero-cta reveal-up" data-delay="300">
                     <a href="dashboard.html" class="btn-glow"><span class="btn-glow-text">Launch Dashboard</span><span class="btn-glow-icon"><i class="fas fa-arrow-right"></i></span></a>
                     <a href="docs.html" class="btn-outline-hero">Read Docs</a>
-                    <a href="https://github.com/Ravenko123/TradingBot" target="_blank" class="open-source-pill"><i class="fab fa-github"></i> Open Source</a>
                 </div>
             </div>
             <!-- hero right: stacked gradient text -->
@@ -146,29 +144,27 @@
         </div>
     </section>
 
-    <!-- trust strip -->
+    <!-- stats strip -->
     <section class="trust-strip">
-        <div class="container">
-            <div class="trust-items">
-                <div class="trust-item reveal-up">
-                    <div class="trust-icon"><i class="fas fa-code-branch"></i></div>
-                    <div class="trust-text"><strong>Open Source</strong><span>Fully transparent code</span></div>
-                </div>
-                <div class="trust-divider"></div>
-                <div class="trust-item reveal-up" data-delay="100">
-                    <div class="trust-icon"><i class="fas fa-server"></i></div>
-                    <div class="trust-text"><strong>MetaTrader 5</strong><span>Direct broker connection</span></div>
-                </div>
-                <div class="trust-divider"></div>
-                <div class="trust-item reveal-up" data-delay="200">
-                    <div class="trust-icon"><i class="fas fa-lock"></i></div>
-                    <div class="trust-text"><strong>Self-Hosted</strong><span>Your data stays yours</span></div>
-                </div>
-                <div class="trust-divider"></div>
-                <div class="trust-item reveal-up" data-delay="300">
-                    <div class="trust-icon"><i class="fas fa-flask-vial"></i></div>
-                    <div class="trust-text"><strong>Multiple Test Modes</strong><span>Rigorous validation</span></div>
-                </div>
+        <div class="trust-items">
+            <div class="trust-item reveal-up" data-delay="100">
+                <div class="trust-icon"><i class="fas fa-server"></i></div>
+                <div class="trust-text"><strong>MetaTrader 5</strong><span>Direct broker connection</span></div>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-item reveal-up" data-delay="150">
+                <div class="trust-icon"><i class="fas fa-lock"></i></div>
+                <div class="trust-text"><strong>Self-Hosted</strong><span>Your data stays yours</span></div>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-item reveal-up" data-delay="200">
+                <div class="trust-icon"><i class="fas fa-flask-vial"></i></div>
+                <div class="trust-text"><strong>Multiple Test Modes</strong><span>Rigorous validation</span></div>
+            </div>
+            <div class="trust-divider"></div>
+            <div class="trust-item reveal-up" data-delay="250">
+                <div class="trust-icon"><i class="fas fa-bolt"></i></div>
+                <div class="trust-text"><strong>Real-Time Signals</strong><span>M15 bar precision</span></div>
             </div>
         </div>
     </section>
@@ -427,18 +423,66 @@
                         <span class="brand-text">Zenith</span>
                     </a>
                     <p class="footer-desc">Automated algorithmic trading with multi-symbol backtesting and robustness verification.</p>
-                    <div class="footer-socials"><a href="https://github.com/Ravenko123/TradingBot" target="_blank"><i class="fab fa-github"></i></a><a href="#"><i class="fab fa-telegram"></i></a><a href="#"><i class="fab fa-discord"></i></a><a href="#"><i class="fab fa-instagram"></i></a></div>
+                    <div class="footer-socials"><a href="#"><i class="fab fa-telegram"></i></a><a href="#"><i class="fab fa-discord"></i></a><a href="#"><i class="fab fa-instagram"></i></a></div>
                 </div>
                 <div class="footer-col"><h4>Product</h4><a href="#features">Features</a><a href="#strategy">Strategy</a><a href="#pricing">Pricing</a><a href="dashboard.html">Dashboard</a><a href="#performance">Performance</a></div>
                 <div class="footer-col"><h4>Resources</h4><a href="docs.html">Documentation</a><a href="docs.html#backtest">Backtest Guide</a><a href="about.html">About</a></div>
                 <div class="footer-col"><h4>Account</h4><a href="login.html">Login</a><a href="signup.html">Sign Up</a><a href="dashboard.html">Dashboard</a></div>
             </div>
-            <div class="footer-bottom"><p>&copy; 2026 Zenith Trading Bot. Built for educational purposes. <a href="https://github.com/Ravenko123/TradingBot" target="_blank" rel="noopener">Open source on GitHub</a>.</p></div>
+            <div class="footer-bottom"><p>&copy; 2026 Zenith Trading Bot. All rights reserved.</p></div>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/main.js?v=20260225-01"></script>
+    <script>
+    // ── Glint streaks canvas ──────────────────────────────────────
+    (function initGlints() {
+        const canvas = document.createElement('canvas');
+        canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;';
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const glints = [];
+        function spawnGlint() {
+            glints.push({
+                x: Math.random() * canvas.width,
+                y: -20,
+                len: 40 + Math.random() * 80,
+                speed: 0.8 + Math.random() * 1.6,
+                opacity: 0.06 + Math.random() * 0.10,
+                width: 0.5 + Math.random() * 1.2,
+                hue: Math.random() > 0.5 ? '0,255,135' : '96,239,255',
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (Math.random() < 0.04) spawnGlint();
+            for (let i = glints.length - 1; i >= 0; i--) {
+                const g = glints[i];
+                g.y += g.speed;
+                if (g.y > canvas.height + g.len) { glints.splice(i, 1); continue; }
+                const grad = ctx.createLinearGradient(g.x, g.y - g.len, g.x, g.y);
+                grad.addColorStop(0, `rgba(${g.hue},0)`);
+                grad.addColorStop(0.5, `rgba(${g.hue},${g.opacity})`);
+                grad.addColorStop(1, `rgba(${g.hue},0)`);
+                ctx.beginPath();
+                ctx.moveTo(g.x, g.y - g.len);
+                ctx.lineTo(g.x, g.y);
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = g.width;
+                ctx.stroke();
+            }
+            requestAnimationFrame(draw);
+        }
+        draw();
+    })();
+    </script>
 </body>
 </html>
 

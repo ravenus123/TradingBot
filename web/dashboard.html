@@ -9,8 +9,8 @@
     <link rel="apple-touch-icon" href="/favicon.svg?v=20260225-2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="css/style.css?v=20260226-17">
-    <link rel="stylesheet" href="css/dashboard.css?v=20260226-19">
+    <link rel="stylesheet" href="css/style.css?v=20260427-7">
+    <link rel="stylesheet" href="css/dashboard.css?v=20260427-7">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -53,7 +53,7 @@
         </nav>
 
         <div class="sidebar-footer">
-            <a href="profile.html" class="sidebar-link"><i class="fas fa-user"></i><span>Profile</span></a>
+            <a href="#" class="sidebar-link" data-section="profile"><i class="fas fa-user"></i><span>Profile</span></a>
             <a href="index.html" class="sidebar-link"><i class="fas fa-home"></i><span>Home</span></a>
             <button id="logoutBtn" class="sidebar-link" style="border: none; background: none; width: 100%; text-align: left; padding: 12px 16px; cursor: pointer;"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
         </div>
@@ -61,26 +61,27 @@
 
     <!-- Main Content -->
     <main class="dashboard-main">
-        <!-- Top Bar -->
-        <div class="top-bar glass-card">
-            <div class="top-bar-left">
-                <button class="mobile-nav-toggle" id="mobileNavToggle" style="display: none; background: none; border: none; color: var(--z-green); font-size: 20px; cursor: pointer; padding: 8px;"><i class="fas fa-bars"></i></button>
-                <h1>Dashboard</h1>
-                <div class="bot-status">
-                    <span class="status-indicator status-inactive" id="botIndicator"></span>
-                    <span id="botStatusText">Bot Stopped</span>
-                </div>
-            </div>
-            <div class="top-bar-right">
-                <button class="btn btn-outline btn-sm" id="refreshBtn" title="Refresh all data"><i class="fas fa-sync-alt"></i></button>
-                <button class="btn btn-glow btn-sm" id="downloadBotPackageBtnTop" title="Download"><i class="fas fa-download"></i> Download</button>
-                <button class="btn btn-outline btn-sm" id="showCredsBtn" title="My Bot Credentials"><i class="fas fa-key"></i> My Credentials</button>
-                <a href="profile.html" class="btn btn-outline btn-sm" title="Profile"><i class="fas fa-user"></i></a>
-            </div>
+        <!-- Floating Action Bar (no panel, just buttons) -->
+        <div class="floating-actions">
+            <button class="btn btn-outline btn-sm" id="refreshBtn" title="Refresh all data"><i class="fas fa-sync-alt"></i></button>
+            <button class="btn btn-glow btn-sm" id="downloadBotPackageBtnTop" title="Download Bot Package"><i class="fas fa-download"></i> Download</button>
+            <button class="btn btn-outline btn-sm" id="showCredsBtn" title="My Bot Credentials"><i class="fas fa-key"></i> My Credentials</button>
+            <a href="profile.html" class="btn btn-outline btn-sm" title="Profile"><i class="fas fa-user"></i></a>
+            <!-- hidden elements kept for JS compatibility -->
+            <span id="botIndicator" style="display:none;"></span>
+            <span id="botStatusText" style="display:none;"></span>
         </div>
 
         <!-- Overview Section -->
         <section id="overview" class="dashboard-section">
+            <div class="section-glow"></div>
+            <div class="bg-glyphs section-glyphs" aria-hidden="true">
+                <span class="bg-glyph glyph-geo" style="top:14%;left:10%;--rot:-6deg;--sz:1.3rem;--op:0.08;--fd:9s;--fi:0">✦</span>
+                <span class="bg-glyph" style="top:24%;left:20%;--rot:3deg;--sz:1.05rem;--op:0.05;--fd:10s;--fi:1">EUR</span>
+                <span class="bg-glyph glyph-geo" style="top:20%;right:12%;--rot:7deg;--sz:1.2rem;--op:0.08;--fd:8s;--fi:2">◇</span>
+                <span class="bg-glyph" style="top:34%;right:16%;--rot:-4deg;--sz:1rem;--op:0.05;--fd:11s;--fi:3">XAU</span>
+                <span class="bg-glyph" style="bottom:20%;left:11%;--rot:4deg;--sz:1.1rem;--op:0.05;--fd:10s;--fi:4">NAS</span>
+            </div>
             <div class="section-header-dash">
                 <h2><i class="fas fa-chart-bar"></i> Account Overview</h2>
                 <span class="section-timestamp">Last updated: <span id="lastUpdate">Just now</span></span>
@@ -132,55 +133,44 @@
 
             <div class="bot-activity glass-card reveal-up" data-delay="50">
                 <div class="activity-header">
-                    <div>
-                        <h3><i class="fas fa-bolt"></i> Bot Activity</h3>
-                        <p>Live status and engine heartbeat from the trading bot.</p>
-                    </div>
+                    <h3><i class="fas fa-bolt"></i> Bot Activity</h3>
                     <span class="activity-pill" id="botActivityState">Idle</span>
                 </div>
-                <div class="activity-grid">
-                    <div class="activity-item">
-                        <span class="activity-label">Engine Status</span>
-                        <span class="activity-value" id="botEngineStatus">Stopped</span>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:4px;">
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px;">
+                        <div style="font-size:0.7rem;color:var(--z-text-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;"><i class="fas fa-microchip" style="margin-right:5px;"></i>Engine</div>
+                        <div style="font-size:0.95rem;font-weight:600;color:var(--z-text-1);" id="botEngineStatus">Stopped</div>
                     </div>
-                    <div class="activity-item">
-                        <span class="activity-label">Process</span>
-                        <span class="activity-value" id="botProcessStatus">Not running</span>
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px;">
+                        <div style="font-size:0.7rem;color:var(--z-text-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;"><i class="fas fa-chart-line" style="margin-right:5px;"></i>Strategy</div>
+                        <div style="font-size:0.95rem;font-weight:600;color:var(--z-text-1);" id="botStrategy">—</div>
                     </div>
-                    <div class="activity-item">
-                        <span class="activity-label">Strategy</span>
-                        <span class="activity-value" id="botStrategy">—</span>
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px;">
+                        <div style="font-size:0.7rem;color:var(--z-text-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;"><i class="fas fa-layer-group" style="margin-right:5px;"></i>Symbols</div>
+                        <div style="font-size:0.95rem;font-weight:600;color:var(--z-green);" id="botSymbols">—</div>
                     </div>
-                    <div class="activity-item">
-                        <span class="activity-label">Heartbeat</span>
-                        <span class="activity-value" id="botHeartbeat">—</span>
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px;">
+                        <div style="font-size:0.7rem;color:var(--z-text-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;"><i class="fas fa-heartbeat" style="margin-right:5px;"></i>Process</div>
+                        <div style="font-size:0.85rem;color:var(--z-text-2);" id="botProcessStatus">Not running</div>
                     </div>
-                    <div class="activity-item">
-                        <span class="activity-label">PID</span>
-                        <span class="activity-value" id="botPid">—</span>
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px;">
+                        <div style="font-size:0.7rem;color:var(--z-text-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;"><i class="fas fa-comment-dots" style="margin-right:5px;"></i>Status Message</div>
+                        <div style="font-size:0.82rem;color:var(--z-text-2);line-height:1.4;" id="botMessage">—</div>
                     </div>
-                    <div class="activity-item">
-                        <span class="activity-label">Symbols</span>
-                        <span class="activity-value" id="botSymbols">—</span>
-                    </div>
-                    <div class="activity-item">
-                        <span class="activity-label">Message</span>
-                        <span class="activity-value" id="botMessage">—</span>
-                    </div>
-                    <div class="activity-item">
-                        <span class="activity-label">Last Update</span>
-                        <span class="activity-value" id="botLastUpdate">—</span>
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:14px 16px;">
+                        <div style="font-size:0.7rem;color:var(--z-text-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;"><i class="fas fa-clock" style="margin-right:5px;"></i>Last Updated</div>
+                        <div style="font-size:0.85rem;color:var(--z-text-2);" id="botLastUpdate">—</div>
                     </div>
                 </div>
-                <div class="activity-hint"><i class="fas fa-info-circle"></i> If the bot is running, the heartbeat should update every few seconds and trades will appear in the Trades table.</div>
+                <div style="display:none;" id="botPid"></div>
+                <div style="display:none;" id="botHeartbeat"></div>
             </div>
 
             <div class="form-card glass-card reveal-up" data-delay="70">
                 <div class="table-toolbar">
                     <div class="table-toolbar-left">
                         <h3><i class="fas fa-sliders"></i> Live Bot Settings (Telegram parity)</h3>
-                        <span class="table-subtitle">Risk, active symbols, and runtime insights</span>
-                    </div>
+                                            </div>
                     <div class="table-toolbar-right">
                         <button class="btn btn-outline btn-sm" id="reloadBotConfigBtn"><i class="fas fa-rotate"></i> Reload</button>
                     </div>
@@ -190,8 +180,7 @@
                     <div class="form-group">
                         <label><i class="fas fa-percent" style="color:var(--z-green);margin-right:6px;font-size:0.75rem;"></i>Risk per Trade (%)</label>
                         <input id="botRiskInput" type="number" class="text-input" min="0.10" max="2.00" step="0.01" placeholder="e.g. 0.50" />
-                        <span class="form-hint">Equivalent to Telegram <strong>/risk</strong></span>
-                    </div>
+                                            </div>
                     <div class="form-group" style="display:flex;align-items:flex-end;gap:10px;">
                         <button class="btn btn-glow" id="saveBotRiskBtn"><i class="fas fa-save"></i> Save Risk</button>
                         <button class="btn btn-outline" id="enableAllSymbolsBtn"><i class="fas fa-check-double"></i> Enable All</button>
@@ -203,21 +192,18 @@
                     <div class="form-group">
                         <label><i class="fas fa-shield-halved" style="color:var(--z-green);margin-right:6px;font-size:0.75rem;"></i>Daily Drawdown Limit (%)</label>
                         <input id="botDailyDdInput" type="number" class="text-input" min="0.5" max="25" step="0.1" placeholder="e.g. 5.0" />
-                        <span class="form-hint">Blocks new trades when adjusted daily loss exceeds this value.</span>
-                    </div>
+                                            </div>
                     <div class="form-group">
                         <label><i class="fas fa-layer-group" style="color:var(--z-green);margin-right:6px;font-size:0.75rem;"></i>Margin Usage Cap (%)</label>
                         <input id="botMarginCapInput" type="number" class="text-input" min="5" max="95" step="0.5" placeholder="e.g. 20" />
-                        <span class="form-hint">Blocks new orders when margin usage is above this cap.</span>
-                    </div>
+                                            </div>
                 </div>
 
                 <div class="form-group-grid" style="margin-top:12px;">
                     <div class="form-group">
                         <label><i class="fas fa-sliders" style="color:var(--z-green);margin-right:6px;font-size:0.75rem;"></i>Daily Drawdown Adjustment (USD)</label>
                         <input id="botDdAdjustmentInput" type="number" class="text-input" step="0.01" placeholder="e.g. 0 or 250" />
-                        <span class="form-hint">Manual offset applied to daily PnL for circuit-breaker calculation.</span>
-                    </div>
+                                            </div>
                     <div class="form-group" style="display:flex;align-items:flex-end;gap:10px;">
                         <button class="btn btn-glow" id="saveBotGuardsBtn"><i class="fas fa-save"></i> Save Guards</button>
                         <button class="btn btn-outline" id="resetDrawdownAdjBtn"><i class="fas fa-rotate-left"></i> Reset Daily DD</button>
@@ -232,21 +218,18 @@
                 <div class="table-toolbar">
                     <div class="table-toolbar-left">
                         <h3><i class="fab fa-telegram-plane"></i> Telegram Login</h3>
-                        <span class="table-subtitle">Connect your Telegram bot token and chat ID</span>
-                    </div>
+                                            </div>
                 </div>
 
                 <div class="form-group-grid telegram-grid">
                     <div class="form-group">
                         <label><i class="fas fa-key" style="color:var(--z-green);margin-right:6px;font-size:0.75rem;"></i>Bot Token</label>
                         <input id="telegramBotToken" type="password" class="text-input" placeholder="123456789:AA..." autocomplete="off" />
-                        <span class="form-hint">Create token in @BotFather</span>
-                    </div>
+                                            </div>
                     <div class="form-group">
                         <label><i class="fas fa-hashtag" style="color:var(--z-green);margin-right:6px;font-size:0.75rem;"></i>Chat ID</label>
                         <input id="telegramChatId" type="text" class="text-input" placeholder="e.g. 123456789" autocomplete="off" />
-                        <span class="form-hint">Your personal or group chat ID</span>
-                    </div>
+                                            </div>
                     <div class="form-group telegram-actions">
                         <button class="btn btn-glow" id="saveTelegramConfigBtn"><i class="fas fa-link"></i> Save Telegram Login</button>
                     </div>
@@ -258,8 +241,7 @@
                 <div class="table-toolbar">
                     <div class="table-toolbar-left">
                         <h3><i class="fas fa-satellite-dish"></i> Remote Bot Connection</h3>
-                        <span class="table-subtitle">Connect a bot running on a VPS or remote server</span>
-                    </div>
+                                            </div>
                 </div>
 
                 <div class="form-group" style="margin-bottom:12px;">
@@ -268,8 +250,7 @@
                         <input id="botApiKeyDisplay" type="text" class="text-input" placeholder="No key generated yet" readonly style="flex:1;" />
                         <button class="btn btn-outline btn-sm" id="copyBotApiKeyBtn" title="Copy key"><i class="fas fa-copy"></i></button>
                     </div>
-                    <span class="form-hint" id="botApiKeyHint">Generate a key, then paste it into the <strong>DashboardAPIKey</strong> input in your Zenith EA settings.</span>
-                </div>
+                                    </div>
 
                 <div class="form-group" style="margin-bottom:12px;">
                     <label><i class="fas fa-globe" style="color:var(--z-green);margin-right:6px;font-size:0.75rem;"></i>Dashboard URL (for bot config)</label>
@@ -277,8 +258,7 @@
                         <input id="dashboardUrlDisplay" type="text" class="text-input" readonly style="flex:1;" />
                         <button class="btn btn-outline btn-sm" id="copyDashUrlBtn" title="Copy URL"><i class="fas fa-copy"></i></button>
                     </div>
-                    <span class="form-hint">The URL your remote bot should push data to.</span>
-                </div>
+                                    </div>
 
                 <div style="display:flex;gap:10px;margin-top:8px;">
                     <button class="btn btn-glow" id="generateBotApiKeyBtn"><i class="fas fa-wand-magic-sparkles"></i> Generate New Key</button>
@@ -291,8 +271,7 @@
                 <div class="table-toolbar">
                     <div class="table-toolbar-left">
                         <h3><i class="fas fa-wave-square"></i> Live Trade Monitor</h3>
-                        <span class="table-subtitle">Signals, opened/failed orders, open positions, and engine log</span>
-                    </div>
+                                            </div>
                     <div class="table-toolbar-right">
                         <button class="btn btn-outline btn-sm" id="toggleLiveMonitorAutoBtn" title="Toggle auto updates">
                             <i class="fas fa-bolt"></i> Auto: <span id="liveMonitorAutoState">On</span>
@@ -339,48 +318,21 @@
                     </table>
                 </div>
 
-                <details class="dash-details" style="margin-top:16px;" open>
-                    <summary class="dash-details-summary"><i class="fas fa-scroll"></i> Activity Feed</summary>
-                    <div class="table-scroll-wrap" style="margin-top:12px;">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Type</th>
-                                    <th>Symbol</th>
-                                    <th>Message</th>
-                                </tr>
-                            </thead>
-                            <tbody id="botActivityTable">
-                                <tr class="empty-state-row"><td colspan="3">No activity events yet</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </details>
-
-                <details class="dash-details" style="margin-top:14px;">
-                    <summary class="dash-details-summary"><i class="fas fa-file-lines"></i> Raw Engine Log</summary>
-                    <div class="form-group" style="margin-top:12px;">
-                        <pre id="botRawLog" class="bot-raw-log">No logs yet.</pre>
-                    </div>
-                </details>
-            </div>
+                            </div>
 
             <!-- Trading Activity Timeline -->
             <div class="trading-activity glass-card reveal-up">
                 <div class="card-glow"></div>
-                <div class="activity-header">
-                    <div>
-                        <h3><i class="fas fa-chart-line"></i> Trading Activity</h3>
-                        <p>Recent signal triggers and position management</p>
-                    </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                    <h3 style="margin:0;"><i class="fas fa-wave-square"></i> Trading Activity</h3>
+                    <span style="font-size:0.72rem;color:var(--z-text-3);">Last 8 events · live</span>
                 </div>
                 <div class="timeline" id="tradingTimeline">
                     <div class="timeline-item">
-                        <div class="timeline-marker"></div>
+                        <div class="timeline-marker" style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);"><i class="fas fa-clock" style="color:var(--z-text-3);font-size:0.75rem;"></i></div>
                         <div class="timeline-content">
-                            <div class="timeline-time">—</div>
-                            <div class="timeline-title">Waiting for Bot</div>
-                            <div class="timeline-desc">Start the bot to see live trading events</div>
+                            <div class="timeline-title" style="color:var(--z-text-2);">Waiting for Bot Activity</div>
+                            <div class="timeline-time" style="color:var(--z-text-3);font-size:0.75rem;">Start the bot to see live events</div>
                         </div>
                     </div>
                 </div>
@@ -533,34 +485,21 @@
                         <span class="pair-change" id="mktXAUUSDchg">—</span>
                     </div>
                 </div>
-                <div class="market-note">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Prices update when the bot is connected and pushing data</span>
-                </div>
-            </div>
+                            </div>
         </section>
 
         <!-- ═══════════ BACKTEST RUNNER ═══════════ -->
         <section id="backtest" class="dashboard-section">
+            <div class="section-glow"></div>
+            <div class="bg-glyphs section-glyphs" aria-hidden="true">
+                <span class="bg-glyph glyph-geo" style="top:10%;right:15%;--rot:5deg;--sz:1.4rem;--op:0.07;--fd:12s;--fi:0">◆</span>
+                <span class="bg-glyph" style="top:30%;left:8%;--rot:-3deg;--sz:1.1rem;--op:0.06;--fd:9s;--fi:1">TEST</span>
+                <span class="bg-glyph glyph-geo" style="bottom:25%;right:10%;--rot:8deg;--sz:1.2rem;--op:0.08;--fd:11s;--fi:2">▲</span>
+            </div>
             <div class="section-header-dash">
                 <h2><i class="fas fa-flask"></i> Backtest Runner</h2>
-                <p>Watch your strategy trade on historical price data in real-time</p>
-            </div>
+                            </div>
 
-            <div class="info-banner glass-card" style="margin-bottom:16px;">
-                <div class="info-banner-icon"><i class="fas fa-folder-open"></i></div>
-                <div class="info-banner-content">
-                    All stored results are now managed in the <strong>Runs</strong> section where each run can be expanded for full details.
-                </div>
-            </div>
-
-            <!-- Quick-Start Guide -->
-            <div class="info-banner glass-card">
-                <div class="info-banner-icon"><i class="fas fa-lightbulb"></i></div>
-                <div class="info-banner-content">
-                    <strong>How it works:</strong> Select a symbol and time period, then hit <strong>Run</strong>. Zenith will replay historical candles and execute its strategy live — you'll see every entry, exit, SL and TP drawn on the chart in real time.
-                </div>
-            </div>
 
             <!-- Controls -->
             <div class="bt-controls glass-card">
@@ -568,19 +507,43 @@
                     <div class="bt-control">
                         <label>Symbol</label>
                         <select id="btSymbol" class="select-input">
-                            <option value="XAUUSD">XAUUSD ★ trend</option>
-                            <option value="NAS100">NAS100 ★ fade</option>
-                            <option value="EURUSD">EURUSD ★ fade</option>
+                            <option value="XAUUSD">XAUUSD</option>
+                            <option value="NAS100">NAS100</option>
+                            <option value="EURUSD">EURUSD</option>
                         </select>
                     </div>
-                    <div class="bt-control">
+                    <div class="bt-control" style="position:relative;">
                         <label>Date Range</label>
-                        <div style="display:flex; gap:8px; align-items:center;">
-                            <input type="date" id="btStartDate" class="text-input" style="width:130px" />
-                            <span style="color:var(--z-muted)">to</span>
-                            <input type="date" id="btEndDate" class="text-input" style="width:130px" />
+                        <!-- Custom date range picker -->
+                        <div class="drp-trigger" id="drpTrigger">
+                            <i class="fas fa-calendar-alt drp-icon"></i>
+                            <span id="drpLabel">Select range</span>
+                            <i class="fas fa-chevron-down drp-chevron"></i>
                         </div>
-                        <span class="form-hint" style="font-size:0.7rem; margin-top:4px;">Leave empty for last 60 days</span>
+                        <!-- hidden real inputs for JS compatibility -->
+                        <input type="hidden" id="btStartDate" />
+                        <input type="hidden" id="btEndDate" />
+                        <!-- Picker popup -->
+                        <div class="drp-popup glass-card" id="drpPopup" style="display:none;">
+                            <div class="drp-presets">
+                                <button class="drp-preset" data-days="7">7 days</button>
+                                <button class="drp-preset" data-days="14">14 days</button>
+                                <button class="drp-preset" data-days="30">30 days</button>
+                                <button class="drp-preset" data-days="60">60 days</button>
+                                <button class="drp-preset" data-days="90">90 days</button>
+                                <button class="drp-preset" data-days="180">6 months</button>
+                            </div>
+                            <div class="drp-divider"></div>
+                            <div class="drp-calendars">
+                                <div class="drp-cal" id="drpCalLeft"></div>
+                                <div class="drp-cal" id="drpCalRight"></div>
+                            </div>
+                            <div class="drp-footer">
+                                <span class="drp-selected-label" id="drpSelectedLabel">Pick start date</span>
+                                <button class="btn btn-outline btn-sm" id="drpClear">Clear</button>
+                                <button class="btn btn-glow btn-sm" id="drpApply">Apply</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="bt-control">
                         <label>Risk %</label>
@@ -668,106 +631,19 @@
                 </div>
             </div>
 
-            <!-- Backtest Strategy Info -->
-            <div class="bt-strategy-info glass-card">
-                <h3><i class="fas fa-brain"></i> Strategy Details</h3>
-                <div class="strategy-detail-grid">
-                    <div class="strategy-detail-item">
-                        <div class="strategy-detail-icon"><i class="fas fa-clock"></i></div>
-                        <div>
-                            <div class="strategy-detail-label">Timeframe</div>
-                            <div class="strategy-detail-value">M15 (15 minute)</div>
-                        </div>
-                    </div>
-                    <div class="strategy-detail-item">
-                        <div class="strategy-detail-icon"><i class="fas fa-crosshairs"></i></div>
-                        <div>
-                            <div class="strategy-detail-label">Entry Logic</div>
-                            <div class="strategy-detail-value">Multi-indicator confluence</div>
-                        </div>
-                    </div>
-                    <div class="strategy-detail-item">
-                        <div class="strategy-detail-icon"><i class="fas fa-shield-halved"></i></div>
-                        <div>
-                            <div class="strategy-detail-label">Risk per Trade</div>
-                            <div class="strategy-detail-value">1-2% of account</div>
-                        </div>
-                    </div>
-                    <div class="strategy-detail-item">
-                        <div class="strategy-detail-icon"><i class="fas fa-arrows-left-right-to-line"></i></div>
-                        <div>
-                            <div class="strategy-detail-label">SL / TP</div>
-                            <div class="strategy-detail-value">ATR-based dynamic</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Backtest Tips -->
-            <div class="bt-tips glass-card">
-                <h3><i class="fas fa-graduation-cap"></i> Backtest Tips</h3>
-                <div class="tips-grid">
-                    <div class="tip-item">
-                        <div class="tip-number">01</div>
-                        <div class="tip-content">
-                            <div class="tip-title">Use 60+ Days</div>
-                            <div class="tip-desc">Longer periods give more statistically significant results and reveal how the strategy handles different market regimes.</div>
-                        </div>
-                    </div>
-                    <div class="tip-item">
-                        <div class="tip-number">02</div>
-                        <div class="tip-content">
-                            <div class="tip-title">Test Multiple Pairs</div>
-                            <div class="tip-desc">A robust strategy performs well across correlated and uncorrelated instruments. The bot is tuned for EUR/USD (fade), NAS100 (fade), and XAU/USD (trend) — try the calendar-walk + portfolio modes to see all 3 stacked.</div>
-                        </div>
-                    </div>
-                    <div class="tip-item">
-                        <div class="tip-number">03</div>
-                        <div class="tip-content">
-                            <div class="tip-title">Watch the Drawdown</div>
-                            <div class="tip-desc">Win rate alone means nothing — focus on max drawdown and profit factor. Aim for PF &gt; 1.5 and DD &lt; 15%.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Monte Carlo Simulation -->
             <div class="mc-panel glass-card">
                 <div class="mc-header">
-                    <div>
-                        <h3><i class="fas fa-dice"></i> Monte Carlo Simulation</h3>
-                        <p>Stress-test your strategy by shuffling trade order across 200 iterations to gauge outcome stability</p>
-                    </div>
-                    <button class="btn btn-glow btn-sm" id="runMonteCarloBtn"><i class="fas fa-dice"></i> Run Simulation</button>
-                </div>
-
-                <!-- MC Explanation -->
-                <div class="mc-explainer">
-                    <div class="mc-explainer-item">
-                        <div class="mc-explainer-icon"><i class="fas fa-shuffle"></i></div>
-                        <div>
-                            <strong>What it does</strong>
-                            <p>Takes your backtest trades and randomly re-orders them 200 times, producing 200 different equity curves from the same trades.</p>
-                        </div>
-                    </div>
-                    <div class="mc-explainer-item">
-                        <div class="mc-explainer-icon"><i class="fas fa-chart-bar"></i></div>
-                        <div>
-                            <strong>Why it matters</strong>
-                            <p>Shows the range of possible outcomes. A tight distribution means consistent results regardless of trade order — a loose one signals luck-dependency.</p>
-                        </div>
-                    </div>
-                    <div class="mc-explainer-item">
-                        <div class="mc-explainer-icon"><i class="fas fa-bullseye"></i></div>
-                        <div>
-                            <strong>Key metrics</strong>
-                            <p>P10 (worst 10%), P50 (median), P90 (best 10%). If P10 is still profitable, your strategy is genuinely robust.</p>
-                        </div>
-                    </div>
+                    <h3><i class="fas fa-dice" style="color:var(--z-green);"></i> Monte Carlo</h3>
+                    <button class="btn btn-glow btn-sm" id="runMonteCarloBtn"><i class="fas fa-play"></i> Run</button>
                 </div>
 
                 <!-- MC Results (hidden until simulation runs) -->
                 <div class="mc-results" id="mcResults" style="display: none;">
+                    <!-- Debug Info -->
+                    <div id="mcDebugInfo" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(0,255,135,0.2); border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 0.7rem; color: var(--z-text-2); font-family: monospace;">
+                        Trades: <span id="mcDebugTrades">-</span> | Profit range: <span id="mcDebugRange">-</span> | Min: <span id="mcDebugMin">-</span> | Max: <span id="mcDebugMax">-</span> | Balance range: <span id="mcDebugBalRange">-</span>
+                    </div>
                     <div class="mc-percentile-strip">
                         <div class="mc-percentile mc-p10">
                             <div class="mc-percentile-label">P10 <span class="mc-tag worst">Worst 10%</span></div>
@@ -826,6 +702,9 @@
                             <span>Ending Balance</span>
                             <span id="mcHistMax">$0</span>
                         </div>
+                        <div class="mc-low-variance-warning" id="mcLowVarianceWarning" style="display: none; margin-top: 8px; padding: 6px 10px; background: rgba(255,193,7,0.15); border-left: 2px solid var(--z-yellow); border-radius: 4px; font-size: 0.75rem; color: var(--z-yellow);">
+                            <i class="fas fa-exclamation-triangle"></i> Low variance in trades - all outcomes are similar
+                        </div>
                     </div>
                 </div>
 
@@ -833,15 +712,12 @@
                 <div class="mc-loading" id="mcLoading" style="display: none;">
                     <div class="mc-loading-spinner"></div>
                     <div class="mc-loading-text">Running 200 iterations...</div>
-                    <div class="mc-loading-sub">Shuffling trade order and building equity curves</div>
-                </div>
+                                    </div>
 
                 <!-- MC Empty State -->
                 <div class="mc-empty" id="mcEmpty">
-                    <div class="empty-state-icon"><i class="fas fa-dice"></i></div>
                     <div class="empty-state-title">No Simulation Data</div>
-                    <div class="empty-state-desc">Run a backtest first, then click <strong>"Run Simulation"</strong> to stress-test the results with Monte Carlo analysis.</div>
-                </div>
+                                    </div>
             </div>
 
             <div class="form-status" id="btStatus"></div>
@@ -849,35 +725,28 @@
 
         <!-- ═══════════ ROBUSTNESS ═══════════ -->
         <section id="robustness" class="dashboard-section">
+            <div class="section-glow"></div>
             <div class="section-header-dash">
                 <h2><i class="fas fa-shield-halved"></i> Robustness Analysis</h2>
-                <p>Overfitting detection &amp; multi-mode validation summary</p>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-                    <button class="btn btn-glow btn-sm" id="runRobustness20Btn"><i class="fas fa-layer-group"></i> Run 20-Period Robustness</button>
-                    <button class="btn btn-outline btn-sm" id="downloadPresentationBtn"><i class="fas fa-download"></i> Download Presentation Package</button>
-                    <button class="btn btn-outline btn-sm" id="downloadOverfitProofBtn"><i class="fas fa-shield"></i> Download Overfit-Proof ZIP</button>
-                    <button class="btn btn-outline btn-sm" id="downloadBotPackageBtn"><i class="fas fa-download"></i> Download</button>
-                    <button class="btn btn-outline btn-sm" id="showCredsBtn2" title="My Bot Credentials"><i class="fas fa-key"></i> My Credentials</button>
-                </div>
             </div>
-
-            <div class="robust-card glass-card">
-                <div id="robustnessResult">
-                    <div class="empty-state-block">
-                        <div class="empty-state-icon"><i class="fas fa-shield-halved"></i></div>
-                        <div class="empty-state-title">No Robustness Data Yet</div>
-                        <div class="empty-state-desc">Run a backtest first — Zenith will automatically analyse walk-forward consistency, split-sample validation, and overfitting risk.</div>
-                    </div>
-                </div>
+            <div class="robust-card glass-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:320px;text-align:center;gap:18px;">
+                <div style="font-size:3rem;opacity:0.5;">🛡️</div>
+                <div style="font-size:1.5rem;font-weight:700;letter-spacing:0.08em;background:linear-gradient(90deg,#60efff,#00ff87);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Coming Soon</div>
+                <div style="color:var(--text-muted);font-size:0.95rem;max-width:380px;">Advanced robustness testing — calendar walk, Monte Carlo, overfit analysis — is under development and will be available in the next release.</div>
             </div>
         </section>
 
         <!-- ═══════════ BOT CONTROL ═══════════ -->
         <section id="botcontrol" class="dashboard-section">
+            <div class="section-glow"></div>
+            <div class="bg-glyphs section-glyphs" aria-hidden="true">
+                <span class="bg-glyph glyph-geo" style="top:15%;left:12%;--rot:-5deg;--sz:1.3rem;--op:0.08;--fd:10s;--fi:0">⚡</span>
+                <span class="bg-glyph" style="top:35%;right:15%;--rot:4deg;--sz:1.2rem;--op:0.06;--fd:8s;--fi:1">LIVE</span>
+                <span class="bg-glyph glyph-geo" style="bottom:30%;left:18%;--rot:6deg;--sz:1.1rem;--op:0.07;--fd:12s;--fi:2">●</span>
+            </div>
             <div class="section-header-dash">
                 <h2><i class="fas fa-robot"></i> Bot Control</h2>
-                <p>Monitor your trading bot running on this machine via MetaTrader 5</p>
-            </div>
+                            </div>
 
             <!-- Bot Status Banner -->
             <div class="mt5-status-banner glass-card" id="mt5StatusBanner">
@@ -891,11 +760,7 @@
                 <div class="mt5-status-badge disconnected" id="mt5StatusBadge">
                     <span class="status-dot"></span> Checking
                 </div>
-            </div>
-
-            <!-- Start / Stop Button -->
-            <div style="display:flex;justify-content:center;margin-bottom:20px;">
-                <button id="startStopBtn" class="btn btn-primary start-stop-btn" style="min-width:220px;padding:14px 32px;font-size:1.05rem;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:10px;">
+                <button id="startStopBtn" class="btn btn-primary start-stop-btn" style="margin-left:auto;min-width:140px;padding:10px 22px;font-size:0.95rem;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;flex-shrink:0;">
                     <span class="btn-icon"><i class="fas fa-play"></i></span>
                     <span class="btn-label">Start Bot</span>
                     <span class="btn-loader" aria-hidden="true"></span>
@@ -917,36 +782,19 @@
             </div>
 
             <!-- Feature Grid -->
-            <div class="mt5-features-grid">
-                <div class="mt5-feature-card glass-card">
-                    <div class="mt5-feature-icon"><i class="fas fa-bolt"></i></div>
-                    <h4>Auto Execution</h4>
-                    <p>Trades are placed automatically when the strategy detects a valid signal — no manual intervention needed.</p>
-                </div>
-                <div class="mt5-feature-card glass-card">
-                    <div class="mt5-feature-icon"><i class="fas fa-shield-alt"></i></div>
-                    <h4>Risk Management</h4>
-                    <p>Every trade uses dynamic SL/TP based on ATR. Position sizing respects your configured risk percentage.</p>
-                </div>
-                <div class="mt5-feature-card glass-card">
-                    <div class="mt5-feature-icon"><i class="fas fa-clock-rotate-left"></i></div>
-                    <h4>24/5 Monitoring</h4>
-                    <p>Zenith watches the markets around the clock during trading hours. Positions are managed even if you're away.</p>
-                </div>
-                <div class="mt5-feature-card glass-card">
-                    <div class="mt5-feature-icon"><i class="fas fa-brain"></i></div>
-                    <h4>AI-Enhanced</h4>
-                    <p>Advanced AI and neural learning validate every signal before execution and learn from past trades.</p>
-                </div>
-            </div>
         </section>
 
         <!-- ═══════════ BACKTEST RUNS ═══════════ -->
         <section id="runs" class="dashboard-section">
+            <div class="section-glow"></div>
+            <div class="bg-glyphs section-glyphs" aria-hidden="true">
+                <span class="bg-glyph glyph-geo" style="top:18%;left:15%;--rot:3deg;--sz:1.2rem;--op:0.07;--fd:9s;--fi:0">◈</span>
+                <span class="bg-glyph" style="top:45%;right:12%;--rot:-6deg;--sz:1.1rem;--op:0.06;--fd:11s;--fi:1">RUNS</span>
+                <span class="bg-glyph glyph-geo" style="bottom:25%;left:20%;--rot:4deg;--sz:1.3rem;--op:0.08;--fd:10s;--fi:2">◎</span>
+            </div>
             <div class="section-header-dash">
                 <h2><i class="fas fa-history"></i> Backtest Runs</h2>
-                <p>View all completed and in-progress backtests with detailed results</p>
-            </div>
+                            </div>
 
             <!-- Runs Summary Stats -->
             <div class="runs-summary-strip">
@@ -987,16 +835,17 @@
                         <h3><i class="fas fa-table"></i> All Runs</h3>
                     </div>
                     <div class="table-toolbar-right">
+                        <button class="btn btn-outline btn-sm" id="clearRunsBtn" style="color:#ff6b6b;border-color:rgba(255,107,107,0.3);"><i class="fas fa-trash"></i> Clear All</button>
                         <a href="#backtest" class="btn btn-outline btn-sm" data-section="backtest"><i class="fas fa-plus"></i> New Backtest</a>
                     </div>
                 </div>
+                <div class="data-table-wrap">
                 <table class="data-table">
                     <thead>
                         <tr>
                             <th>Run ID</th>
-                            <th>Source</th>
                             <th>Symbol</th>
-                            <th>Mode</th>
+                            <th>Type</th>
                             <th>Status</th>
                             <th>Date</th>
                             <th>Action</th>
@@ -1004,16 +853,16 @@
                     </thead>
                     <tbody id="runsTable">
                         <tr class="empty-state-row">
-                            <td colspan="7">
+                            <td colspan="6">
                                 <div class="empty-state-block">
                                     <div class="empty-state-icon"><i class="fas fa-flask"></i></div>
                                     <div class="empty-state-title">No Backtest Runs Yet</div>
-                                    <div class="empty-state-desc">Head to the <strong>Backtest</strong> section and run your first strategy test to see results here.</div>
                                 </div>
                             </td>
                         </tr>
                     </tbody>
                 </table>
+                </div>
             </div>
 
             <!-- Run Detail Panel (populated by JS) -->
@@ -1023,12 +872,53 @@
             </div>
         </section>
 
+        <!-- ═══════════ PROFILE ═══════════ -->
+        <section id="profile" class="dashboard-section" style="display:none;">
+            <div class="section-header-dash"><h2><i class="fas fa-user"></i> Profile</h2></div>
+            <div class="profile-grid">
+                <div class="profile-card">
+                    <h3 class="card-title">Account Info</h3>
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" id="profileName" class="form-input" placeholder="Your name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="profileEmail" class="form-input" placeholder="your@email.com" readonly>
+                    </div>
+                    <button class="btn btn-glow" id="saveProfileBtn"><i class="fas fa-save"></i> Save Changes</button>
+                </div>
+                <div class="profile-card">
+                    <h3 class="card-title">Change Password</h3>
+                    <div class="form-group">
+                        <label>Current Password</label>
+                        <input type="password" id="currentPassword" class="form-input" placeholder="Current password">
+                    </div>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" id="newPassword" class="form-input" placeholder="New password">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm New Password</label>
+                        <input type="password" id="confirmPassword" class="form-input" placeholder="Confirm new password">
+                    </div>
+                    <button class="btn btn-glow" id="changePasswordBtn"><i class="fas fa-lock"></i> Change Password</button>
+                    <div id="profileMsg" style="margin-top:12px;font-size:0.85rem;"></div>
+                </div>
+            </div>
+        </section>
+
         <!-- ═══════════ TRADE HISTORY ═══════════ -->
         <section id="history" class="dashboard-section">
+            <div class="section-glow"></div>
+            <div class="bg-glyphs section-glyphs" aria-hidden="true">
+                <span class="bg-glyph glyph-geo" style="top:14%;right:18%;--rot:5deg;--sz:1.3rem;--op:0.08;--fd:10s;--fi:0">◉</span>
+                <span class="bg-glyph" style="top:38%;left:12%;--rot:-3deg;--sz:1.1rem;--op:0.06;--fd:9s;--fi:1">TRADES</span>
+                <span class="bg-glyph glyph-geo" style="bottom:22%;right:15%;--rot:7deg;--sz:1.2rem;--op:0.07;--fd:11s;--fi:2">◆</span>
+            </div>
             <div class="section-header-dash">
                 <h2><i class="fas fa-list"></i> Trade History</h2>
-                <p>All executed trades from live sessions and backtests</p>
-            </div>
+                            </div>
 
             <!-- History Summary -->
             <div class="history-summary-strip">
@@ -1067,8 +957,7 @@
                 <div class="table-toolbar">
                     <div class="table-toolbar-left">
                         <h3><i class="fas fa-scroll"></i> Trade Log</h3>
-                        <span class="table-subtitle">Last 50 trades from all sessions</span>
-                    </div>
+                                            </div>
                 </div>
                 <div class="table-scroll-wrap">
                     <table class="data-table">
@@ -1090,8 +979,7 @@
                                     <div class="empty-state-block">
                                         <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
                                         <div class="empty-state-title">No Trades Yet</div>
-                                        <div class="empty-state-desc">Start the bot or run a backtest to see your trades logged here with full entry/exit details.</div>
-                                    </div>
+                                                                            </div>
                                 </td>
                             </tr>
                         </tbody>
@@ -1146,11 +1034,12 @@
 
 
 
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
     <script src="js/main.js?v=20260226-5"></script>
-    <script src="js/dashboard-app.js?v=20260226-14"></script>
+    <script src="js/dashboard-app.js?v=20260427-7"></script>
 </body>
 </html>
 

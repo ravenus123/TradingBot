@@ -1,19 +1,5 @@
 {
-  "timestamp": "2026-04-26T20:09:47.129853+00:00",
-  "state": "running",
-  "message": "Scan cycle completed",
-  "enabled_symbols": [
-    "EURUSD",
-    "NAS100",
-    "XAUUSD"
-  ],
-  "open_positions": 0,
-  "position_details": [],
-  "signals_detected": 0,
-  "positions_opened": 0,
-  "failed_orders": 0,
-  "status_line": "EURUSD:NOCFG | NAS100:NOCFG | XAUUSD:NOCFG",
-  "balance": 76.6,
-  "equity": 76.6,
-  "floating_pnl": 0.0
+  "timestamp": "2026-04-27T19:15:21.218078+00:00",
+  "state": "stopped",
+  "message": "MT5 disconnected"
 }
