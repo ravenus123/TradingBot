@@ -2,6 +2,9 @@
 # Documentation: Automatizovaný obchodný systém s Python + MetaTrader 5
 # State machine: IDLE → SCANNING → ZONING → MONITORING → EXECUTION → MANAGEMENT
 
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import argparse
 import csv
 import json
@@ -28,21 +31,21 @@ try:
 except ImportError:
     pass  # python-dotenv optional; falls back to json configs
 
-from OLDBOT.mt5_bot.strategy import get_instrument_settings
-from OLDBOT.mt5_bot.smart_money_strategy import SmartMoneyStrategy, should_trade, SYMBOL_RULES as SMC_SYMBOL_RULES
-from OLDBOT.mt5_bot.portfolio_engine import (
+from mt5_bot.strategy import get_instrument_settings
+from mt5_bot.smart_money_strategy import SmartMoneyStrategy, should_trade, SYMBOL_RULES as SMC_SYMBOL_RULES
+from mt5_bot.portfolio_engine import (
     PortfolioOrchestrator,
     PortfolioRiskManager,
     StrategyRegistry,
     StrategySpec,
 )
-from OLDBOT.mt5_bot.trend_momentum import generate_trend_momentum_signal
-from OLDBOT.mt5_bot.mean_reversion import generate_mean_reversion_signal
-from OLDBOT.mt5_bot.breakout import generate_breakout_signal
-from OLDBOT.mt5_bot.telegram_bot import send_telegram_message, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+from mt5_bot.trend_momentum import generate_trend_momentum_signal
+from mt5_bot.mean_reversion import generate_mean_reversion_signal
+from mt5_bot.breakout import generate_breakout_signal
+from mt5_bot.telegram_bot import send_telegram_message, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 # SQLite database (trades, order_blocks, logs)
-from OLDBOT.mt5_bot.db import (
+from mt5_bot.db import (
     init_trading_db, insert_trade, close_trade, get_daily_pnl,
     insert_order_block, mitigate_order_block, get_active_order_blocks,
     log_event, get_trades,
@@ -1226,7 +1229,7 @@ def generate_smart_money_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame,
     Smart Money Strategy - Liquidity Sweep + MSS + Pullback Entry
     HTF Bias (1H) → LTF Entry (5m)
     """
-    from OLDBOT.mt5_bot.smart_money_strategy import SmartMoneyStrategy, should_trade
+    from mt5_bot.smart_money_strategy import SmartMoneyStrategy, should_trade
     
     # NOTE: No outer session gate here — backtest has none.
     # Session filtering is done per-symbol inside SmartMoneyStrategy._in_session()
@@ -2221,7 +2224,7 @@ def scan_markets(cfg: dict, verbose: bool = False):
         # Backtest uses _atr(df_m5) — resampled M5 data, NOT raw M15.
         # ratio>1.6 → scale risk to 0.6x (high vol), ratio<0.7 → scale to 0.8x (low vol)
         try:
-            from OLDBOT.mt5_bot.smart_money_strategy import _atr as _smc_atr
+            from mt5_bot.smart_money_strategy import _atr as _smc_atr
             _df_m15_vf = fetch_live_candles(symbol, timeframe=mt5.TIMEFRAME_M15, bars=100)
             if _df_m15_vf is not None and len(_df_m15_vf) >= 20:
                 if not isinstance(_df_m15_vf.index, pd.DatetimeIndex):

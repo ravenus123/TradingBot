@@ -4,14 +4,17 @@ and persist the top candidates to best_settings.json for later portfolio tests.
 Usage: run from repo root with PYTHONPATH set. This performs short in-sample
 validations (fast) to surface promising parameter variants.
 """
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import json
 import random
 import copy
 from pathlib import Path
 from typing import List
 
-import OLDBOT.mt5_bot.smart_money_strategy as sm
-import OLDBOT.mt5_bot.backtest_improved as bt
+import mt5_bot.smart_money_strategy as sm
+import mt5_bot.backtest_improved as bt
 
 BEST_FILE = Path(__file__).parent / 'best_settings.json'
 

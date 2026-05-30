@@ -3,7 +3,10 @@
 Robustness Test - 10 Random Periods with Live SMC Engine (Fast)
 Shows true performance across different market conditions
 """
-from OLDBOT.mt5_bot.backtest_improved import run_live_smc_engine_backtest, fetch_data
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+from mt5_bot.backtest_improved import run_live_smc_engine_backtest, fetch_data
 import numpy as np
 
 def robustness_smc_10periods(symbol, periods=10):

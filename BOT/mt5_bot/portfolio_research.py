@@ -1,4 +1,7 @@
 from __future__ import annotations
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 
 import argparse
 import json
@@ -12,8 +15,8 @@ if __package__ in (None, ''):
     if str(_ROOT) not in sys.path:
         sys.path.insert(0, str(_ROOT))
 
-from OLDBOT.mt5_bot.db import get_db, init_trading_db
-from OLDBOT.mt5_bot.portfolio_engine import build_trade_correlation_matrix
+from mt5_bot.db import get_db, init_trading_db
+from mt5_bot.portfolio_engine import build_trade_correlation_matrix
 
 
 def load_closed_trades(limit: int = 5000) -> pd.DataFrame:

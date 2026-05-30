@@ -2,12 +2,15 @@
 Tries a small grid of structural toggles (require_fvg, pullback_min, min_score)
 and keeps any setting that improves average return in a short validation.
 """
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import json
 import itertools
 from pathlib import Path
 
-import OLDBOT.mt5_bot.smart_money_strategy as sm
-import OLDBOT.mt5_bot.backtest_improved as bt
+import mt5_bot.smart_money_strategy as sm
+import mt5_bot.backtest_improved as bt
 
 BEST_FILE = Path(__file__).parent / 'best_settings.json'
 

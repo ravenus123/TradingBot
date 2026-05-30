@@ -23,9 +23,12 @@ from email.mime.text import MIMEText
 
 WEB_DIR = Path(__file__).resolve().parent
 BASE_DIR = WEB_DIR.parent
+# Bot package lives under BOT/mt5_bot; add BOT/ to sys.path so `import mt5_bot...` works.
+BOT_DIR = BASE_DIR / "BOT"
 
-if str(BASE_DIR) not in sys.path:
-    sys.path.insert(0, str(BASE_DIR))
+for _p in (BASE_DIR, BOT_DIR):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 
 def _utcnow():
@@ -36,18 +39,18 @@ def _utcnow():
 DB_DIR = WEB_DIR / "data"
 DB_PATH = DB_DIR / "app.db"
 
-TRADES_FILE = BASE_DIR / "mt5_bot" / "liverun" / "live_trades.csv"
-TRADES_DB_FILE = BASE_DIR / "mt5_bot" / "liverun" / "trading.db"
+TRADES_FILE = BOT_DIR / "mt5_bot" / "liverun" / "live_trades.csv"
+TRADES_DB_FILE = BOT_DIR / "mt5_bot" / "liverun" / "trading.db"
 TELEGRAM_STATE_FILE = BASE_DIR / "telegram_state.json"
-BACKTEST_RESULTS_DIR = BASE_DIR / "mt5_bot" / "backtest_results"
-BOT_RUNTIME_FILE = BASE_DIR / "mt5_bot" / "liverun" / "runtime_status.json"
-BOT_LOG_FILE = BASE_DIR / "mt5_bot" / "liverun" / "bot_engine.log"
+BACKTEST_RESULTS_DIR = BOT_DIR / "mt5_bot" / "backtest_results"
+BOT_RUNTIME_FILE = BOT_DIR / "mt5_bot" / "liverun" / "runtime_status.json"
+BOT_LOG_FILE = BOT_DIR / "mt5_bot" / "liverun" / "bot_engine.log"
 BOT_VENV_PYTHON = BASE_DIR / ".venv" / "Scripts" / "python.exe"
-BOT_RUNTIME_CONFIG_FILE = BASE_DIR / "mt5_bot" / "runtime_config.json"
-TELEGRAM_CONFIG_FILE = BASE_DIR / "mt5_bot" / "telegram_config.json"
-BOT_LEARNED_PARAMS_FILE = BASE_DIR / "mt5_bot" / "liverun" / "learned_params.json"
-OVERFIT_PROOF_DIR = BASE_DIR / "mt5_bot" / "backtest_results" / "overfit_proof_20"
-OVERFIT_PROOF_ZIP = BASE_DIR / "mt5_bot" / "backtest_results" / "overfit_proof_20_package.zip"
+BOT_RUNTIME_CONFIG_FILE = BOT_DIR / "mt5_bot" / "runtime_config.json"
+TELEGRAM_CONFIG_FILE = BOT_DIR / "mt5_bot" / "telegram_config.json"
+BOT_LEARNED_PARAMS_FILE = BOT_DIR / "mt5_bot" / "liverun" / "learned_params.json"
+OVERFIT_PROOF_DIR = BOT_DIR / "mt5_bot" / "backtest_results" / "overfit_proof_20"
+OVERFIT_PROOF_ZIP = BOT_DIR / "mt5_bot" / "backtest_results" / "overfit_proof_20_package.zip"
 MT5_BRIDGE_DIR = DB_DIR / "mt5_bridge"
 MT5_INSTALL_URL = "https://www.metatrader5.com/en/download"
 BACKTEST_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -572,7 +575,7 @@ def _start_bot_engine(trigger: str = "api"):
     if BOT_PROCESS is not None and BOT_PROCESS.poll() is None:
         return {"success": True, "message": "Bot already running", "pid": BOT_PROCESS.pid}, 200
 
-    bot_script = BASE_DIR / "mt5_bot" / "main.py"
+    bot_script = BOT_DIR / "mt5_bot" / "main.py"
     python_exe = resolve_bot_python()
 
     try:
@@ -1059,7 +1062,7 @@ def run_backtest_process(
     periods: int = 20,
 ):
     output_file = BACKTEST_RESULTS_DIR / f"{run_id}.json"
-    script_path = BASE_DIR / "mt5_bot" / "backtest_improved.py"
+    script_path = BOT_DIR / "mt5_bot" / "backtest_improved.py"
     python_exe = resolve_bot_python()
 
     args = [
@@ -1486,7 +1489,7 @@ def generate_backtest_data(symbol, days=None, risk_pct=1.0, start_date=None, end
     
     Supports both 'days' (backward from now) or exact 'start_date' to 'end_date' range.
     """
-    from OLDBOT.mt5_bot.backtest_improved import initialize_mt5, fetch_data, run_live_smc_engine_backtest
+    from mt5_bot.backtest_improved import initialize_mt5, fetch_data, run_live_smc_engine_backtest
 
     if not initialize_mt5():
         return {
@@ -1780,7 +1783,7 @@ def _extract_metrics_from_payload(payload: dict) -> dict:
 @app.route("/api/symbols", methods=["GET"])
 def api_symbols():
     """Return all tradeable symbols with recommendation status."""
-    cfg_path = BASE_DIR / "mt5_bot" / "runtime_config.json"
+    cfg_path = BOT_DIR / "mt5_bot" / "runtime_config.json"
     recommended = ["EURUSD", "NAS100", "XAUUSD"]
     not_rec = []
     try:
@@ -3264,7 +3267,7 @@ def _build_bot_package_zip() -> io.BytesIO:
         )
 
         # Python bot files - CORE STRATEGY
-        bot_dir = BASE_DIR / "mt5_bot"
+        bot_dir = BOT_DIR / "mt5_bot"
         key_files = [
             "main.py",
             "smart_money_strategy.py",

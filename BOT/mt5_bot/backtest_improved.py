@@ -14,6 +14,9 @@
 # ATR-based stop sizing for consistent risk  ->  RR-based take-profit
 # ===============================================================================
 
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import os, sys, argparse, json, time, warnings, random
 from pathlib import Path
 from itertools import product
@@ -1607,9 +1610,9 @@ def _slice_live_engine_window(df: pd.DataFrame, end_time, bars: int) -> pd.DataF
 
 def run_live_smc_engine_backtest(df_m15: pd.DataFrame, symbol: str, risk_pct: float = 1.0) -> dict:
     try:
-        from OLDBOT.mt5_bot.smart_money_strategy import SmartMoneyStrategy, SYMBOL_RULES, _atr
+        from mt5_bot.smart_money_strategy import SmartMoneyStrategy, SYMBOL_RULES, _atr
     except ModuleNotFoundError:
-        from OLDBOT.mt5_bot.smart_money_strategy import SmartMoneyStrategy, SYMBOL_RULES, _atr
+        from mt5_bot.smart_money_strategy import SmartMoneyStrategy, SYMBOL_RULES, _atr
 
     df = _standardize_ohlc_columns(df_m15)
     if not isinstance(df.index, pd.DatetimeIndex):

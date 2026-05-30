@@ -1,6 +1,9 @@
 """Quick evaluator for arbitrary strategy generators.
 Runs short randomized window simulations and reports avg return_pct, avg trades, win rate.
 """
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import random
 import json
 from pathlib import Path
@@ -9,7 +12,7 @@ from typing import Callable
 import pandas as pd
 import numpy as np
 
-from OLDBOT.mt5_bot.backtest_improved import fetch_data
+from mt5_bot.backtest_improved import fetch_data
 
 
 def _resample_ohlc_for_live_engine(df: pd.DataFrame, rule: str) -> pd.DataFrame:
@@ -101,9 +104,9 @@ def simulate_strategy(generator: Callable, symbol: str, periods: int = 20, perio
 
 
 def main():
-    from OLDBOT.mt5_bot.trend_momentum import generate_trend_momentum_signal
-    from OLDBOT.mt5_bot.mean_reversion import generate_mean_reversion_signal
-    from OLDBOT.mt5_bot.breakout import generate_breakout_signal
+    from mt5_bot.trend_momentum import generate_trend_momentum_signal
+    from mt5_bot.mean_reversion import generate_mean_reversion_signal
+    from mt5_bot.breakout import generate_breakout_signal
 
     symbols = ['EURUSD', 'NAS100', 'XAUUSD']
     strategies = [
