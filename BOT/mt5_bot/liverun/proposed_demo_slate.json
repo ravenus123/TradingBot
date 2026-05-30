@@ -1,0 +1,90 @@
+{
+  "final_slate": [
+    {
+      "label": "trend_momentum:NAS100:5",
+      "candidate": {
+        "symbol": "NAS100",
+        "strategy": "trend_momentum",
+        "params": {
+          "h1_ema_period": 34,
+          "m5_ema_period": 20,
+          "stop_atr_mult": 1.0
+        }
+      },
+      "mean_return": 0.6449999999999928
+    },
+    {
+      "label": "trend_momentum:EURUSD:2",
+      "candidate": {
+        "symbol": "EURUSD",
+        "strategy": "trend_momentum",
+        "params": {
+          "h1_ema_period": 50,
+          "m5_ema_period": 20,
+          "stop_atr_mult": 1.0
+        }
+      },
+      "mean_return": 0.5950000000000227
+    },
+    {
+      "label": "mean_reversion:NAS100:4",
+      "candidate": {
+        "symbol": "NAS100",
+        "strategy": "mean_reversion",
+        "params": {
+          "window": 30,
+          "z_threshold": 1.5,
+          "stop_atr_mult": 0.8
+        }
+      },
+      "mean_return": 0.43036394618997664
+    },
+    {
+      "label": "mean_reversion:EURUSD:1",
+      "candidate": {
+        "symbol": "EURUSD",
+        "strategy": "mean_reversion",
+        "params": {
+          "window": 30,
+          "z_threshold": 2.0,
+          "stop_atr_mult": 0.8
+        }
+      },
+      "mean_return": 0.4023014985367025
+    },
+    {
+      "label": "trend_momentum:XAUUSD:8",
+      "candidate": {
+        "symbol": "XAUUSD",
+        "strategy": "trend_momentum",
+        "params": {
+          "h1_ema_period": 34,
+          "m5_ema_period": 12,
+          "stop_atr_mult": 1.0
+        }
+      },
+      "mean_return": 0.2750000000000096
+    },
+    {
+      "label": "mean_reversion:XAUUSD:7",
+      "candidate": {
+        "symbol": "XAUUSD",
+        "strategy": "mean_reversion",
+        "params": {
+          "window": 30,
+          "z_threshold": 2.5,
+          "stop_atr_mult": 1.0
+        }
+      },
+      "mean_return": 0.024164294178979712
+    }
+  ],
+  "weights": {
+    "trend_momentum:NAS100:5": 0.08106656597068479,
+    "trend_momentum:EURUSD:2": 0.08389666313227649,
+    "mean_reversion:NAS100:4": 0.11398654148388439,
+    "mean_reversion:EURUSD:1": 0.1178933409505383,
+    "trend_momentum:XAUUSD:8": 0.08861132951630772,
+    "mean_reversion:XAUUSD:7": 0.5145455589463084
+  }
+}
