@@ -3,6 +3,9 @@
 PHASE 1: ENGINE VERIFICATION & OUT-OF-SAMPLE TEST
 Proves system is honest for $10k deployment
 """
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 
 import sys
 import json

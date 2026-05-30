@@ -3,6 +3,9 @@ Find 2 new instruments to complete the trio with EURUSD
 Test: GBPUSD, USDJPY, US30, US100, GER30, UK100
 Keep EURUSD as anchor, find best 2 generalizers
 """
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 
 import sys
 import json

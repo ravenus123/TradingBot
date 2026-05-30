@@ -1,4 +1,7 @@
 from __future__ import annotations
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 
 import argparse
 import copy
@@ -14,8 +17,8 @@ if __package__ in (None, ''):
     if str(_ROOT) not in sys.path:
         sys.path.insert(0, str(_ROOT))
 
-from OLDBOT.mt5_bot import backtest_improved as bt
-from OLDBOT.mt5_bot import smart_money_strategy as sm
+from mt5_bot import backtest_improved as bt
+from mt5_bot import smart_money_strategy as sm
 
 
 DEFAULT_INSTRUMENTS = ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'NAS100', 'GBPJPY']
@@ -209,7 +212,7 @@ def main() -> None:
     parser.add_argument('--risk-pct', type=float, default=1.0)
     parser.add_argument('--presets', type=str, default=','.join(STRATEGY_PRESETS.keys()))
     parser.add_argument('--max-months', type=int, default=0, help='Optional cap on number of most recent months to test')
-    parser.add_argument('--out-dir', type=str, default='OLDBOT/mt5_bot/liverun/research')
+    parser.add_argument('--out-dir', type=str, default='BOT/mt5_bot/liverun/research')
     args = parser.parse_args()
 
     instruments = [s.strip().upper() for s in args.instruments.split(',') if s.strip()]

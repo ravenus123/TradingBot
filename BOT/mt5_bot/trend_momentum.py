@@ -7,7 +7,7 @@ from typing import Optional
 import pandas as pd
 import numpy as np
 
-from OLDBOT.mt5_bot.backtest_improved import add_indicators
+from mt5_bot.backtest_improved import add_indicators
 
 
 def generate_trend_momentum_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame, symbol: str, sym_info: dict, params: dict | None = None) -> Optional[dict]:

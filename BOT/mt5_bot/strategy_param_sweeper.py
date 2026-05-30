@@ -1,14 +1,17 @@
 """Parameter sweeper for new strategies (breakout, mean_reversion, trend_momentum).
 Runs short validations to surface promising parameter combos and saves results.
 """
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import json
 from pathlib import Path
 from itertools import product
 
-from OLDBOT.mt5_bot.strategy_eval import simulate_strategy
-from OLDBOT.mt5_bot.trend_momentum import generate_trend_momentum_signal
-from OLDBOT.mt5_bot.mean_reversion import generate_mean_reversion_signal
-from OLDBOT.mt5_bot.breakout import generate_breakout_signal
+from mt5_bot.strategy_eval import simulate_strategy
+from mt5_bot.trend_momentum import generate_trend_momentum_signal
+from mt5_bot.mean_reversion import generate_mean_reversion_signal
+from mt5_bot.breakout import generate_breakout_signal
 
 
 def sweep_breakout(symbol: str):

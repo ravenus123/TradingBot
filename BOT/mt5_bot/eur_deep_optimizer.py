@@ -1,13 +1,16 @@
 """Deeper optimizer for EURUSD: grid search over key numeric params
 followed by a small hill-climb. Saves best result to best_settings.json.
 """
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import json
 import random
 import copy
 from pathlib import Path
 
-import OLDBOT.mt5_bot.smart_money_strategy as sm
-import OLDBOT.mt5_bot.backtest_improved as bt
+import mt5_bot.smart_money_strategy as sm
+import mt5_bot.backtest_improved as bt
 
 BEST_FILE = Path(__file__).parent / 'best_settings.json'
 

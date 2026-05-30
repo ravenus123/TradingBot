@@ -11,7 +11,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-from OLDBOT.mt5_bot.smart_money_strategy import SYMBOL_RULES
+from mt5_bot.smart_money_strategy import SYMBOL_RULES
 
 
 _BASE_DIR = Path(__file__).resolve().parent

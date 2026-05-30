@@ -3,6 +3,9 @@
 PERFORMANCE ANALYSIS & PORTFOLIO STRESS TEST
 Real improvements without optimization
 """
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 
 import json
 import os
@@ -15,7 +18,7 @@ import pandas as pd
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from OLDBOT.mt5_bot.smart_money_strategy import SmartMoneyStrategy, SYMBOL_RULES
+from mt5_bot.smart_money_strategy import SmartMoneyStrategy, SYMBOL_RULES
 
 print("="*80)
 print("PORTFOLIO STRESS TEST - REAL IMPROVEMENT ANALYSIS")

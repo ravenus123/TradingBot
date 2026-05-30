@@ -1,16 +1,19 @@
 """Assemble candidate slate from retested top variants, evaluate each with 200 randomized periods,
 compute correlation matrix, cull highly correlated candidates, and propose a demo-forward slate.
 """
+# --- path bootstrap (allow running as a script: add BOT/ to sys.path) ---
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 import json
 from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from OLDBOT.mt5_bot.trend_momentum import generate_trend_momentum_signal
-from OLDBOT.mt5_bot.mean_reversion import generate_mean_reversion_signal
-from OLDBOT.mt5_bot.breakout import generate_breakout_signal
+from mt5_bot.trend_momentum import generate_trend_momentum_signal
+from mt5_bot.mean_reversion import generate_mean_reversion_signal
+from mt5_bot.breakout import generate_breakout_signal
 
-from OLDBOT.mt5_bot.backtest_improved import fetch_data
+from mt5_bot.backtest_improved import fetch_data
 
 
 STR_FN = {
@@ -108,7 +111,7 @@ def cull_correlated(corr, candidates, returns_dict, thresh=0.8):
 
 if __name__ == '__main__':
     # Load retested top candidates
-    candidates = load_candidates('OLDBOT/mt5_bot/liverun/retest_top_variants.json')
+    candidates = load_candidates('BOT/mt5_bot/liverun/retest_top_variants.json')
     if not candidates:
         print('No candidates found.')
         raise SystemExit(1)
@@ -126,7 +129,7 @@ if __name__ == '__main__':
 
     # Build correlation matrix from per-period returns
     corr = compute_correlation_matrix(returns_dict)
-    out_dir = Path('OLDBOT/mt5_bot/liverun')
+    out_dir = Path('BOT/mt5_bot/liverun')
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / 'slate_returns.json').write_text(json.dumps({k: v for k,v in returns_dict.items()}, indent=2))
     if not corr.empty:
