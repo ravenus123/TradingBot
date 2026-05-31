@@ -1,0 +1,36 @@
+{
+  "monte_carlo_config": {
+    "num_simulations": 1000,
+    "risk_per_trade_pct": 0.2,
+    "min_lot_size": 0.01,
+    "max_lot_size": 5.0,
+    "max_leverage": 10.0,
+    "initial_balance": 10000.0
+  },
+  "base_metrics": {
+    "total_trades": 512,
+    "win_rate": 0.291015625,
+    "avg_return_pct": 0.0071030843823360335
+  },
+  "simulation_results": {
+    "num_simulations": 1000,
+    "return_mean_pct": 0.3604605056122664,
+    "return_median_pct": 0.36046050561226367,
+    "return_std_pct": 1.237754685332866e-13,
+    "return_min_pct": 0.3604605056118817,
+    "return_max_pct": 0.36046050561264564,
+    "return_5th_pct": 0.36046050561206355,
+    "return_95th_pct": 0.36046050561248194,
+    "drawdown_mean_pct": 0.8346681803603911,
+    "drawdown_median_pct": 0.7933200076397577,
+    "drawdown_std_pct": 0.2270850085117367,
+    "drawdown_min_pct": 0.3976616433955954,
+    "drawdown_max_pct": 2.0634298200313936,
+    "drawdown_95th_pct": 1.2619897681394838
+  },
+  "probability_analysis": {
+    "p_drawdown_acceptable": 1.0,
+    "p_return_acceptable": 0.0,
+    "p_both_acceptable": 0.0
+  }
+}

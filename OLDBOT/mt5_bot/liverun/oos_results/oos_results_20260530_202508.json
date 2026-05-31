@@ -1,0 +1,204 @@
+{
+  "config": {
+    "train_pct": 0.75,
+    "test_pct": 0.25,
+    "initial_balance": 10000.0,
+    "risk_per_trade": 0.01
+  },
+  "total_tests": 24,
+  "passing": 0,
+  "failing": 24,
+  "results": [
+    {
+      "symbol": "EURUSD",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 50,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.0
+      },
+      "train_metrics": {
+        "total_trades": 1192,
+        "win_rate": 0.25671140939597314,
+        "avg_return_pct": 0.004034173361054587,
+        "total_return_pct": 4.853448925468996,
+        "max_drawdown_pct": 12.962837082300332,
+        "sharpe_ratio": 0.5936073828851157
+      },
+      "test_metrics": {
+        "total_trades": 0,
+        "win_rate": 0.0,
+        "avg_return_pct": 0.0,
+        "total_return_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "sharpe_ratio": 0.0
+      },
+      "oos_ratio": 0.0,
+      "oos_pass": false
+    },
+    {
+      "symbol": "EURUSD",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "train_metrics": {
+        "total_trades": 1186,
+        "win_rate": 0.23946037099494097,
+        "avg_return_pct": 0.000528024048967938,
+        "total_return_pct": 0.55964468868126,
+        "max_drawdown_pct": 10.967330264068002,
+        "sharpe_ratio": 0.07814552865885323
+      },
+      "test_metrics": {
+        "total_trades": 0,
+        "win_rate": 0.0,
+        "avg_return_pct": 0.0,
+        "total_return_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "sharpe_ratio": 0.0
+      },
+      "oos_ratio": 0.0,
+      "oos_pass": false
+    },
+    {
+      "symbol": "EURUSD",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 100,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.5
+      },
+      "train_metrics": {
+        "total_trades": 1193,
+        "win_rate": 0.30930427493713325,
+        "avg_return_pct": -0.002009336071755822,
+        "total_return_pct": -2.4622691319746224,
+        "max_drawdown_pct": 15.863085059540607,
+        "sharpe_ratio": -0.2514289914454517
+      },
+      "test_metrics": {
+        "total_trades": 0,
+        "win_rate": 0.0,
+        "avg_return_pct": 0.0,
+        "total_return_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "sharpe_ratio": 0.0
+      },
+      "oos_ratio": -0.0,
+      "oos_pass": false
+    },
+    {
+      "symbol": "EURUSD",
+      "strategy": "mean_reversion",
+      "params": {
+        "window": 20,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 0.8
+      },
+      "train_metrics": {
+        "total_trades": 259,
+        "win_rate": 0.3166023166023166,
+        "avg_return_pct": 0.009524176608706834,
+        "total_return_pct": 2.484567865912936,
+        "max_drawdown_pct": 3.300939531749763,
+        "sharpe_ratio": 1.5414429447966138
+      },
+      "test_metrics": {
+        "total_trades": 0,
+        "win_rate": 0.0,
+        "avg_return_pct": 0.0,
+        "total_return_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "sharpe_ratio": 0.0
+      },
+      "oos_ratio": 0.0,
+      "oos_pass": false
+    },
+    {
+      "symbol": "EURUSD",
+      "strategy": "mean_reversion",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 1.0
+      },
+      "train_metrics": {
+        "total_trades": 310,
+        "win_rate": 0.2838709677419355,
+        "avg_return_pct": -0.001736742810647642,
+        "total_return_pct": -0.5566027737018828,
+        "max_drawdown_pct": 2.6129312632538735,
+        "sharpe_ratio": -0.24397190266163282
+      },
+      "test_metrics": {
+        "total_trades": 0,
+        "win_rate": 0.0,
+        "avg_return_pct": 0.0,
+        "total_return_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "sharpe_ratio": 0.0
+      },
+      "oos_ratio": -0.0,
+      "oos_pass": false
+    },
+    {
+      "symbol": "EURUSD",
+      "strategy": "mean_reversion",
+      "params": {
+        "window": 20,
+        "z_threshold": 1.5,
+        "stop_atr_mult": 0.8
+      },
+      "train_metrics": {
+        "total_trades": 649,
+        "win_rate": 0.33436055469953774,
+        "avg_return_pct": 0.004230321107709248,
+        "total_return_pct": 2.7585546040864415,
+        "max_drawdown_pct": 3.3892131046079617,
+        "sharpe_ratio": 0.7767469843289553
+      },
+      "test_metrics": {
+        "total_trades": 0,
+        "win_rate": 0.0,
+        "avg_return_pct": 0.0,
+        "total_return_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "sharpe_ratio": 0.0
+      },
+      "oos_ratio": 0.0,
+      "oos_pass": false
+    },
+    {
+      "symbol": "EURUSD",
+      "strategy": "volatility_breakout",
+      "params": {
+        "bb_period": 20,
+        "bb_std": 2.0,
+        "kc_period": 20,
+        "kc_mult": 1.5,
+        "squeeze_bars": 5,
+        "lookback": 10,
+        "stop_atr_mult": 1.5,
+        "rr_ratio": 2.0
+      },
+      "train_metrics": {
+        "total_trades": 123,
+        "win_rate": 0.18699186991869918,
+        "avg_return_pct": -0.013445669789837179,
+        "total_return_pct": -1.6680573148054236,
+        "max_drawdown_pct": 4.329100108845086,
+        "sharpe_ratio": -0.9961597406794405
+      },
+      "test_metrics": {
+        "total_trades": 0,
+        "win_rate": 0.0,
+        "avg_return_pct": 0.0,
+        "total_return_pct": 0.0,
+        "max_drawdown_pct": 0.0,
+        "sharpe_ratio": 0.0
+      },
+      "oos_ratio": -0.0,
+      "oos_pass": 

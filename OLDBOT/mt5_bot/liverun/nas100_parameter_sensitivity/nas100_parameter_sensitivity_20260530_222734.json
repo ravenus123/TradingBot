@@ -1,0 +1,255 @@
+{
+  "current_params": {
+    "h1_ema_period": 34,
+    "m5_ema_period": 12,
+    "stop_atr_mult": 1.0
+  },
+  "current_metrics": {
+    "total_trades": 512,
+    "win_rate": 0.291015625,
+    "avg_return_pct": 0.03281249999999939,
+    "total_return_pct": 17.892347234993778,
+    "max_drawdown_pct": 23.87906308481812
+  },
+  "best_params": {
+    "h1_ema_period": 34,
+    "m5_ema_period": 12,
+    "stop_atr_mult": 0.8
+  },
+  "best_metrics": {
+    "total_trades": 512,
+    "win_rate": 0.259765625,
+    "avg_return_pct": 0.046777343750000436,
+    "total_return_pct": 26.493275335351846,
+    "max_drawdown_pct": 23.624960952836883
+  },
+  "best_return_dd_ratio": 1.1214103332590075,
+  "recommendation": "adjust",
+  "all_results": [
+    {
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.291015625,
+        "avg_return_pct": 0.03281249999999939,
+        "total_return_pct": 17.892347234993778,
+        "max_drawdown_pct": 23.87906308481812
+      },
+      "is_current": true
+    },
+    {
+      "params": {
+        "h1_ema_period": 28,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 519,
+        "win_rate": 0.2947976878612717,
+        "avg_return_pct": 0.035838150289016796,
+        "total_return_pct": 20.02429434743339,
+        "max_drawdown_pct": 23.11510542460394
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 30,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 514,
+        "win_rate": 0.29766536964980544,
+        "avg_return_pct": 0.03813229571984377,
+        "total_return_pct": 21.23177249028393,
+        "max_drawdown_pct": 23.11510542460374
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 32,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 516,
+        "win_rate": 0.29457364341085274,
+        "avg_return_pct": 0.03565891472868161,
+        "total_return_pct": 19.7871129888251,
+        "max_drawdown_pct": 23.575492788400418
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 36,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 516,
+        "win_rate": 0.2868217054263566,
+        "avg_return_pct": 0.02945736434108467,
+        "total_return_pct": 16.021998046295085,
+        "max_drawdown_pct": 24.48439856724514
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 38,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 518,
+        "win_rate": 0.2857142857142857,
+        "avg_return_pct": 0.02857142857142793,
+        "total_return_pct": 15.55837414210213,
+        "max_drawdown_pct": 24.48439856724512
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 40,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 517,
+        "win_rate": 0.2862669245647969,
+        "avg_return_pct": 0.029013539651836878,
+        "total_return_pct": 15.789954050202468,
+        "max_drawdown_pct": 24.33306469663844
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 8,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 0,
+        "win_rate": 0.0,
+        "avg_return_pct": 0.0,
+        "total_return_pct": 0.0,
+        "max_drawdown_pct": 0.0
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 10,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 517,
+        "win_rate": 0.2765957446808511,
+        "avg_return_pct": 0.02127659574468017,
+        "total_return_pct": 11.258623989165699,
+        "max_drawdown_pct": 24.033123348979686
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 14,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 509,
+        "win_rate": 0.3025540275049116,
+        "avg_return_pct": 0.04204322200392875,
+        "total_return_pct": 23.432972536992494,
+        "max_drawdown_pct": 22.961027479563047
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 16,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 499,
+        "win_rate": 0.30060120240480964,
+        "avg_return_pct": 0.04048096192384712,
+        "total_return_pct": 21.9708407055355,
+        "max_drawdown_pct": 23.42050445284594
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.259765625,
+        "avg_return_pct": 0.046777343750000436,
+        "total_return_pct": 26.493275335351846,
+        "max_drawdown_pct": 23.624960952836883
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.9
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.271484375,
+        "avg_return_pct": 0.035286458333332965,
+        "total_return_pct": 19.344542838511316,
+        "max_drawdown_pct": 24.790239463811798
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.1
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.3046875,
+        "avg_return_pct": 0.02713068181818181,
+        "total_return_pct": 14.554886861832767,
+        "max_drawdown_pct": 24.302228945295546
+      },
+      "is_current": false
+    },
+    {
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.2
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.326171875,
+        "avg_return_pct": 0.028320312500000326,
+        "total_return_pct": 15.284005502943874,
+        "max_drawdown_pct": 22.4911679467692
+      },
+      "is_current": false
+    }
+  ]
+}

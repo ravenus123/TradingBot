@@ -1,0 +1,454 @@
+{
+  "config": {
+    "train_months": 6,
+    "test_months": 1,
+    "initial_balance": 10000.0,
+    "risk_per_trade": 0.02,
+    "commission_per_lot": 7.0,
+    "slippage_pips": 0.5
+  },
+  "windows_tested": 6,
+  "symbols_tested": [
+    "EURUSD",
+    "NAS100",
+    "XAUUSD"
+  ],
+  "strategy_summary": {
+    "trend_momentum:EURUSD:2": {
+      "total_trades": 2828,
+      "total_profit": -182009.55629562397,
+      "wins": 628,
+      "losses": 2200,
+      "windows_tested": 4
+    },
+    "mean_reversion:EURUSD:1": {
+      "total_trades": 724,
+      "total_profit": 14623.002877724306,
+      "wins": 228,
+      "losses": 496,
+      "windows_tested": 4
+    },
+    "trend_momentum:NAS100:5": {
+      "total_trades": 3543,
+      "total_profit": 117264.8763350379,
+      "wins": 1073,
+      "losses": 2470,
+      "windows_tested": 5
+    },
+    "mean_reversion:NAS100:4": {
+      "total_trades": 1940,
+      "total_profit": 37022.00695628066,
+      "wins": 545,
+      "losses": 1395,
+      "windows_tested": 5
+    },
+    "trend_momentum:XAUUSD:8": {
+      "total_trades": 3336,
+      "total_profit": -49845.43225514602,
+      "wins": 785,
+      "losses": 2551,
+      "windows_tested": 5
+    },
+    "mean_reversion:XAUUSD:7": {
+      "total_trades": 340,
+      "total_profit": 1670.8251464669424,
+      "wins": 87,
+      "losses": 253,
+      "windows_tested": 5
+    }
+  },
+  "detailed_results": [
+    {
+      "symbol": "EURUSD",
+      "train_start": "2025-11-01T19:43:51.867383",
+      "test_start": "2026-04-30T19:43:51.867383",
+      "test_end": "2026-05-30T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:EURUSD:2": {
+          "total_trades": 689,
+          "win_rate": 0.23076923076923078,
+          "total_profit": -44249.805321630716,
+          "avg_profit": -64.22322978465999,
+          "max_drawdown": -265.77181208050786,
+          "final_balance": -34249.80532163074,
+          "profit_factor": 0.6333916023635453,
+          "weight": 0.08389666313227649
+        },
+        "mean_reversion:EURUSD:1": {
+          "total_trades": 178,
+          "win_rate": 0.33707865168539325,
+          "total_profit": 2784.810183327392,
+          "avg_profit": 15.645001029929173,
+          "max_drawdown": -270.91172214182376,
+          "final_balance": 12784.810183327405,
+          "profit_factor": 1.101422760325989,
+          "weight": 0.1178933409505383
+        }
+      }
+    },
+    {
+      "symbol": "NAS100",
+      "train_start": "2025-11-01T19:43:51.867383",
+      "test_start": "2026-04-30T19:43:51.867383",
+      "test_end": "2026-05-30T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:NAS100:5": {
+          "total_trades": 750,
+          "win_rate": 0.25733333333333336,
+          "total_profit": -2678.204775446501,
+          "avg_profit": -3.5709397005953116,
+          "max_drawdown": -210.1871101871101,
+          "final_balance": 7321.795224553497,
+          "profit_factor": 0.9763949156328675,
+          "weight": 0.08106656597068479
+        },
+        "mean_reversion:NAS100:4": {
+          "total_trades": 389,
+          "win_rate": 0.3444730077120823,
+          "total_profit": 26996.71727507801,
+          "avg_profit": 69.40030147834963,
+          "max_drawdown": -208.68024800708497,
+          "final_balance": 36996.71727507801,
+          "profit_factor": 1.5191831473491597,
+          "weight": 0.11398654148388439
+        }
+      }
+    },
+    {
+      "symbol": "XAUUSD",
+      "train_start": "2025-11-01T19:43:51.867383",
+      "test_start": "2026-04-30T19:43:51.867383",
+      "test_end": "2026-05-30T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:XAUUSD:8": {
+          "total_trades": 524,
+          "win_rate": 0.17748091603053434,
+          "total_profit": -32810.05893494376,
+          "avg_profit": -62.614616288060645,
+          "max_drawdown": -203.58187134502867,
+          "final_balance": -22810.058934943765,
+          "profit_factor": 0.620357208600377,
+          "weight": 0.08861132951630772
+        },
+        "mean_reversion:XAUUSD:7": {
+          "total_trades": 76,
+          "win_rate": 0.32894736842105265,
+          "total_profit": 2894.6776949824102,
+          "avg_profit": 38.08786440766332,
+          "max_drawdown": -202.51992800205713,
+          "final_balance": 12894.677694982418,
+          "profit_factor": 1.2817704208680498,
+          "weight": 0.5145455589463084
+        }
+      }
+    },
+    {
+      "symbol": "EURUSD",
+      "train_start": "2025-10-02T19:43:51.867383",
+      "test_start": "2026-03-31T19:43:51.867383",
+      "test_end": "2026-04-30T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:EURUSD:2": {
+          "total_trades": 608,
+          "win_rate": 0.14638157894736842,
+          "total_profit": -73041.79095790867,
+          "avg_profit": -120.13452460182344,
+          "max_drawdown": -246.11764705881055,
+          "final_balance": -63041.79095790868,
+          "profit_factor": 0.37872607832996896,
+          "weight": 0.08389666313227649
+        },
+        "mean_reversion:EURUSD:1": {
+          "total_trades": 193,
+          "win_rate": 0.31088082901554404,
+          "total_profit": 3542.1578762540535,
+          "avg_profit": 18.35314961789668,
+          "max_drawdown": -251.41657922348176,
+          "final_balance": 13542.157876254058,
+          "profit_factor": 1.1170109520374831,
+          "weight": 0.1178933409505383
+        }
+      }
+    },
+    {
+      "symbol": "NAS100",
+      "train_start": "2025-10-02T19:43:51.867383",
+      "test_start": "2026-03-31T19:43:51.867383",
+      "test_end": "2026-04-30T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:NAS100:5": {
+          "total_trades": 878,
+          "win_rate": 0.38610478359908884,
+          "total_profit": 86362.4186519809,
+          "avg_profit": 98.36266361273435,
+          "max_drawdown": -212.7712256467043,
+          "final_balance": 96362.4186519809,
+          "profit_factor": 1.780411862391699,
+          "weight": 0.08106656597068479
+        },
+        "mean_reversion:NAS100:4": {
+          "total_trades": 397,
+          "win_rate": 0.3198992443324937,
+          "total_profit": 22992.172327821972,
+          "avg_profit": 57.91479175773797,
+          "max_drawdown": -215.75360082304465,
+          "final_balance": 32992.172327821936,
+          "profit_factor": 1.4148750517756075,
+          "weight": 0.11398654148388439
+        }
+      }
+    },
+    {
+      "symbol": "XAUUSD",
+      "train_start": "2025-10-02T19:43:51.867383",
+      "test_start": "2026-03-31T19:43:51.867383",
+      "test_end": "2026-04-30T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:XAUUSD:8": {
+          "total_trades": 683,
+          "win_rate": 0.23865300146412885,
+          "total_profit": -7969.600191471109,
+          "avg_profit": -11.668521510206622,
+          "max_drawdown": -203.9556004036323,
+          "final_balance": 2030.3998085288717,
+          "profit_factor": 0.9238918485893655,
+          "weight": 0.08861132951630772
+        },
+        "mean_reversion:XAUUSD:7": {
+          "total_trades": 57,
+          "win_rate": 0.3157894736842105,
+          "total_profit": 4759.493510104843,
+          "avg_profit": 83.49988614219025,
+          "max_drawdown": -202.20820189274443,
+          "final_balance": 14759.493510104841,
+          "profit_factor": 1.6055054901231434,
+          "weight": 0.5145455589463084
+        }
+      }
+    },
+    {
+      "symbol": "EURUSD",
+      "train_start": "2025-09-02T19:43:51.867383",
+      "test_start": "2026-03-01T19:43:51.867383",
+      "test_end": "2026-03-31T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:EURUSD:2": {
+          "total_trades": 709,
+          "win_rate": 0.22708039492242596,
+          "total_profit": -35692.668285314205,
+          "avg_profit": -50.34226838549256,
+          "max_drawdown": -237.05103969753617,
+          "final_balance": -25692.66828531421,
+          "profit_factor": 0.7039444270972902,
+          "weight": 0.08389666313227649
+        },
+        "mean_reversion:EURUSD:1": {
+          "total_trades": 178,
+          "win_rate": 0.29775280898876405,
+          "total_profit": 5341.18704497892,
+          "avg_profit": 30.006668792016406,
+          "max_drawdown": -251.6332982086298,
+          "final_balance": 15341.187044978922,
+          "profit_factor": 1.1934928389577637,
+          "weight": 0.1178933409505383
+        }
+      }
+    },
+    {
+      "symbol": "NAS100",
+      "train_start": "2025-09-02T19:43:51.867383",
+      "test_start": "2026-03-01T19:43:51.867383",
+      "test_end": "2026-03-31T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:NAS100:5": {
+          "total_trades": 628,
+          "win_rate": 0.3184713375796178,
+          "total_profit": 29860.948378122117,
+          "avg_profit": 47.549280856882405,
+          "max_drawdown": -210.20833333333294,
+          "final_balance": 39860.94837812214,
+          "profit_factor": 1.3430841108295133,
+          "weight": 0.08106656597068479
+        },
+        "mean_reversion:NAS100:4": {
+          "total_trades": 428,
+          "win_rate": 0.20327102803738317,
+          "total_profit": -19505.909066203807,
+          "avg_profit": -45.574553892999546,
+          "max_drawdown": -210.8335175768292,
+          "final_balance": -9505.909066203807,
+          "profit_factor": 0.7197062937580512,
+          "weight": 0.11398654148388439
+        }
+      }
+    },
+    {
+      "symbol": "XAUUSD",
+      "train_start": "2025-09-02T19:43:51.867383",
+      "test_start": "2026-03-01T19:43:51.867383",
+      "test_end": "2026-03-31T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:XAUUSD:8": {
+          "total_trades": 709,
+          "win_rate": 0.29055007052186177,
+          "total_profit": 20913.490840147377,
+          "avg_profit": 29.497166206131705,
+          "max_drawdown": -202.70009643201521,
+          "final_balance": 30913.490840147388,
+          "profit_factor": 1.207189538260709,
+          "weight": 0.08861132951630772
+        },
+        "mean_reversion:XAUUSD:7": {
+          "total_trades": 71,
+          "win_rate": 0.19718309859154928,
+          "total_profit": -3121.9187937442466,
+          "avg_profit": -43.97068723583446,
+          "max_drawdown": -201.7197508116171,
+          "final_balance": 6878.081206255753,
+          "profit_factor": 0.7273640638459359,
+          "weight": 0.5145455589463084
+        }
+      }
+    },
+    {
+      "symbol": "EURUSD",
+      "train_start": "2025-08-03T19:43:51.867383",
+      "test_start": "2026-01-30T19:43:51.867383",
+      "test_end": "2026-03-01T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:EURUSD:2": {
+          "total_trades": 822,
+          "win_rate": 0.2664233576642336,
+          "total_profit": -29025.291730770376,
+          "avg_profit": -35.31057388171571,
+          "max_drawdown": -264.9006622516122,
+          "final_balance": -19025.291730770306,
+          "profit_factor": 0.7853683881624688,
+          "weight": 0.08389666313227649
+        },
+        "mean_reversion:EURUSD:1": {
+          "total_trades": 175,
+          "win_rate": 0.3142857142857143,
+          "total_profit": 2954.8477731639405,
+          "avg_profit": 16.884844418079663,
+          "max_drawdown": -252.63157894734874,
+          "final_balance": 12954.847773163938,
+          "profit_factor": 1.10719346577795,
+          "weight": 0.1178933409505383
+        }
+      }
+    },
+    {
+      "symbol": "NAS100",
+      "train_start": "2025-08-03T19:43:51.867383",
+      "test_start": "2026-01-30T19:43:51.867383",
+      "test_end": "2026-03-01T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:NAS100:5": {
+          "total_trades": 647,
+          "win_rate": 0.2782071097372488,
+          "total_profit": 8901.355644571835,
+          "avg_profit": 13.75789125899822,
+          "max_drawdown": -208.63055922501078,
+          "final_balance": 18901.355644571857,
+          "profit_factor": 1.0937765876642893,
+          "weight": 0.08106656597068479
+        },
+        "mean_reversion:NAS100:4": {
+          "total_trades": 351,
+          "win_rate": 0.2962962962962963,
+          "total_profit": 5194.88031671477,
+          "avg_profit": 14.800228822549187,
+          "max_drawdown": -209.90899898887642,
+          "final_balance": 15194.880316714767,
+          "profit_factor": 1.1024186682356716,
+          "weight": 0.11398654148388439
+        }
+      }
+    },
+    {
+      "symbol": "XAUUSD",
+      "train_start": "2025-08-03T19:43:51.867383",
+      "test_start": "2026-01-30T19:43:51.867383",
+      "test_end": "2026-03-01T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:XAUUSD:8": {
+          "total_trades": 732,
+          "win_rate": 0.2185792349726776,
+          "total_profit": -20705.21468290792,
+          "avg_profit": -28.285812408344114,
+          "max_drawdown": -202.21293891836964,
+          "final_balance": -10705.214682907881,
+          "profit_factor": 0.8201607009243463,
+          "weight": 0.08861132951630772
+        },
+        "mean_reversion:XAUUSD:7": {
+          "total_trades": 55,
+          "win_rate": 0.2545454545454545,
+          "total_profit": 433.58431204732386,
+          "avg_profit": 7.883351128133174,
+          "max_drawdown": -201.78295278813786,
+          "final_balance": 10433.584312047318,
+          "profit_factor": 1.0525339111071192,
+          "weight": 0.5145455589463084
+        }
+      }
+    },
+    {
+      "symbol": "NAS100",
+      "train_start": "2025-07-04T19:43:51.867383",
+      "test_start": "2025-12-31T19:43:51.867383",
+      "test_end": "2026-01-30T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:NAS100:5": {
+          "total_trades": 640,
+          "win_rate": 0.2515625,
+          "total_profit": -5181.641564190453,
+          "avg_profit": -8.096314944047586,
+          "max_drawdown": -212.14750542299197,
+          "final_balance": 4818.358435809551,
+          "profit_factor": 0.9472032510224061,
+          "weight": 0.08106656597068479
+        },
+        "mean_reversion:NAS100:4": {
+          "total_trades": 375,
+          "win_rate": 0.248,
+          "total_profit": 1344.146102869713,
+          "avg_profit": 3.5843896076525903,
+          "max_drawdown": -212.78372032350643,
+          "final_balance": 11344.146102869716,
+          "profit_factor": 1.0231577533493603,
+          "weight": 0.11398654148388439
+        }
+      }
+    },
+    {
+      "symbol": "XAUUSD",
+      "train_start": "2025-07-04T19:43:51.867383",
+      "test_start": "2025-12-31T19:43:51.867383",
+      "test_end": "2026-01-30T19:43:51.867383",
+      "strategies": {
+        "trend_momentum:XAUUSD:8": {
+          "total_trades": 688,
+          "win_rate": 0.2369186046511628,
+          "total_profit": -9274.049285970616,
+          "avg_profit": -13.479722799375871,
+          "max_drawdown": -203.45496210118105,
+          "final_balance": 725.9507140293956,
+          "profit_factor": 0.9122836463150598,
+          "weight": 0.08861132951630772
+        },
+        "mean_reversion:XAUUSD:7": {
+          "total_trades": 81,
+          "win_rate": 0.2222222222222222,
+          "total_profit": -3295.0115769233885,
+          "avg_profit": -40.67915527065912,
+          "max_drawdown": -202.29535074364685,
+          "final_balance": 6704.988423076611,
+          "profit_factor": 0.736453646627071,
+          "weight": 0.5145455589463084
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "risk_config": {
+    "risk_per_trade_pct": 0.5,
+    "max_position_lots": 3.0,
+    "max_leverage": 10.0,
+    "max_daily_loss_pct": 2.0,
+    "max_drawdown_pct": 15.0,
+    "initial_balance": 10000.0
+  },
+  "portfolio_return_pct": 17.406672010652642,
+  "portfolio_drawdown_pct": 15.258343517149267,
+  "results": [
+    {
+      "symbol": "EURUSD",
+      "strategy": "trend_momentum",
+      "risk_config": {
+        "risk_per_trade_pct": 0.5,
+        "max_position_lots": 3.0,
+        "max_leverage": 10.0,
+        "max_daily_loss_pct": 2.0,
+        "max_drawdown_pct": 15.0,
+        "initial_balance": 10000.0
+      },
+      "metrics": {
+        "total_trades": 597,
+        "win_rate": 0.34673366834170855,
+        "avg_return_pct": 6.307006175744631e-06,
+        "total_return_pct": 0.0037653428570956745,
+        "avg_position_size": 3.0,
+        "max_drawdown_pct": 0.005089447734010805
+      }
+    },
+    {
+      "symbol": "EURUSD",
+      "strategy": "mean_reversion",
+      "risk_config": {
+        "risk_per_trade_pct": 0.5,
+        "max_position_lots": 3.0,
+        "max_leverage": 10.0,
+        "max_daily_loss_pct": 2.0,
+        "max_drawdown_pct": 15.0,
+        "initial_balance": 10000.0
+      },
+      "metrics": {
+        "total_trades": 319,
+        "win_rate": 0.34796238244514105,
+        "avg_return_pct": 3.784229830642105e-06,
+        "total_return_pct": 0.001207174285682413,
+        "avg_position_size": 3.0,
+        "max_drawdown_pct": 0.000726485350370237
+      }
+    },
+    {
+      "symbol": "NAS100",
+      "strategy": "trend_momentum",
+      "risk_config": {
+        "risk_per_trade_pct": 0.5,
+        "max_position_lots": 3.0,
+        "max_leverage": 10.0,
+        "max_daily_loss_pct": 2.0,
+        "max_drawdown_pct": 15.0,
+        "initial_balance": 10000.0
+      },
+      "metrics": {
+        "total_trades": 162,
+        "win_rate": 0.38271604938271603,
+        "avg_return_pct": 0.2643580619189603,
+        "total_return_pct": 52.21504351481515,
+        "avg_position_size": 1.7015054723813519,
+        "max_drawdown_pct": 15.258343517149267
+      }
+    }
+  ]
+}

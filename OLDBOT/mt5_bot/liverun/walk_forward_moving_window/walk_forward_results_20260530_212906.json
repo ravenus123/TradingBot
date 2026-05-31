@@ -1,0 +1,11 @@
+{
+  "config": {
+    "train_months": 3,
+    "test_months": 1,
+    "step_months": 1,
+    "initial_balance": 10000.0,
+    "risk_per_trade": 0.01
+  },
+  "total_tests": 0,
+  "results": []
+}

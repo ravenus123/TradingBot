@@ -1,0 +1,82 @@
+{
+  "walk_forward_config": {
+    "train_months": 3,
+    "test_months": 1,
+    "step_months": 1,
+    "num_windows": 6,
+    "initial_balance": 10000.0,
+    "risk_per_trade": 0.2,
+    "min_lot_size": 0.01,
+    "max_lot_size": 5.0,
+    "max_leverage": 10.0
+  },
+  "portfolio_config": {
+    "instrument": "NAS100",
+    "strategy": "trend_momentum",
+    "optimized_params": {
+      "h1_ema_period": 34,
+      "m5_ema_period": 12,
+      "stop_atr_mult": 0.8
+    }
+  },
+  "total_windows": 3,
+  "cumulative_return_pct": 133.36655217656295,
+  "avg_return_per_window_pct": 44.45551739218765,
+  "max_drawdown_pct": 9.39258442789975,
+  "window_results": [
+    {
+      "window": 1,
+      "train_period": "2025-12-26 11:45:00-2026-03-16 03:45:00",
+      "test_period": "2026-03-16 03:45:00-2026-04-09 14:15:00",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 181,
+        "win_rate": 0.287292817679558,
+        "avg_return_pct": 0.0729281767955808,
+        "total_return_pct": 13.915462135034923,
+        "avg_position_size": 0.7095794356909095,
+        "max_drawdown_pct": 9.39258442789975
+      }
+    },
+    {
+      "window": 2,
+      "train_period": "2026-01-22 18:00:00-2026-04-09 14:15:00",
+      "test_period": "2026-04-09 14:15:00-2026-05-05 16:45:00",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 221,
+        "win_rate": 0.4479638009049774,
+        "avg_return_pct": 0.225565610859731,
+        "total_return_pct": 64.12943087258562,
+        "avg_position_size": 1.3266514414105954,
+        "max_drawdown_pct": 4.11705448877101
+      }
+    },
+    {
+      "window": 3,
+      "train_period": "2026-02-18 01:15:00-2026-05-05 16:45:00",
+      "test_period": "2026-05-05 16:45:00-2026-05-29 23:00:00",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 230,
+        "win_rate": 0.3130434782608696,
+        "avg_return_pct": 0.09739130434782697,
+        "total_return_pct": 24.815772780450096,
+        "avg_position_size": 0.8503661131290342,
+        "max_drawdown_pct": 8.797887231143655
+      }
+    }
+  ]
+}

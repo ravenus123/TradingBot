@@ -1,0 +1,11 @@
+{
+  "run": 7,
+  "final_balance": 1340952.5402557547,
+  "max_drawdown_pct": 20.492710299745134,
+  "trades_total": 2297,
+  "per_instrument_trades": {
+    "NAS100": 1000,
+    "EURUSD": 260,
+    "XAUUSD": 1037
+  }
+}

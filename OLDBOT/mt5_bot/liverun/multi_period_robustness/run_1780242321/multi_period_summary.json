@@ -1,0 +1,162 @@
+{
+  "test_configs": [
+    [
+      30,
+      700,
+      "Jan 2024 (1 month)"
+    ],
+    [
+      30,
+      610,
+      "Feb 2024 (1 month)"
+    ],
+    [
+      30,
+      520,
+      "Mar 2024 (1 month)"
+    ],
+    [
+      30,
+      335,
+      "Jan 2025 (1 month)"
+    ],
+    [
+      30,
+      245,
+      "Feb 2025 (1 month)"
+    ],
+    [
+      30,
+      155,
+      "Mar 2025 (1 month)"
+    ],
+    [
+      30,
+      30,
+      "Jan 2026 (1 month)"
+    ],
+    [
+      30,
+      120,
+      "Feb 2026 (1 month)"
+    ],
+    [
+      30,
+      210,
+      "Mar 2026 (1 month)"
+    ]
+  ],
+  "results": [
+    {
+      "label": "Jan 2024 (1 month)",
+      "period_days": 30,
+      "start_date_offset": 700,
+      "metrics": {
+        "final_balance": 172921.72861127596,
+        "total_return_pct": 72.92172861127594,
+        "max_drawdown_pct": 8.977283160678704,
+        "trades": 1343,
+        "win_rate": 0.2486969471332837
+      }
+    },
+    {
+      "label": "Feb 2024 (1 month)",
+      "period_days": 30,
+      "start_date_offset": 610,
+      "metrics": {
+        "final_balance": 169088.53657577332,
+        "total_return_pct": 69.08853657577329,
+        "max_drawdown_pct": 15.373817969245177,
+        "trades": 1287,
+        "win_rate": 0.2634032634032634
+      }
+    },
+    {
+      "label": "Mar 2024 (1 month)",
+      "period_days": 30,
+      "start_date_offset": 520,
+      "metrics": {
+        "final_balance": 334285.43379257387,
+        "total_return_pct": 234.28543379257385,
+        "max_drawdown_pct": 12.853445748716688,
+        "trades": 1384,
+        "win_rate": 0.2680635838150289
+      }
+    },
+    {
+      "label": "Jan 2025 (1 month)",
+      "period_days": 30,
+      "start_date_offset": 335,
+      "metrics": {
+        "final_balance": 208719.8365034934,
+        "total_return_pct": 108.71983650349337,
+        "max_drawdown_pct": 6.580074645327411,
+        "trades": 1413,
+        "win_rate": 0.254069355980184
+      }
+    },
+    {
+      "label": "Feb 2025 (1 month)",
+      "period_days": 30,
+      "start_date_offset": 245,
+      "metrics": {
+        "final_balance": 164701.20476296745,
+        "total_return_pct": 64.70120476296742,
+        "max_drawdown_pct": 12.175427550269994,
+        "trades": 1256,
+        "win_rate": 0.23646496815286625
+      }
+    },
+    {
+      "label": "Mar 2025 (1 month)",
+      "period_days": 30,
+      "start_date_offset": 155,
+      "metrics": {
+        "final_balance": 320121.79574595706,
+        "total_return_pct": 220.12179574595706,
+        "max_drawdown_pct": 5.763998795074104,
+        "trades": 1231,
+        "win_rate": 0.29000812347684807
+      }
+    },
+    {
+      "label": "Jan 2026 (1 month)",
+      "period_days": 30,
+      "start_date_offset": 30,
+      "metrics": {
+        "final_balance": 391253.57260365825,
+        "total_return_pct": 291.2535726036582,
+        "max_drawdown_pct": 19.986342517472142,
+        "trades": 1284,
+        "win_rate": 0.24454828660436137
+      }
+    },
+    {
+      "label": "Feb 2026 (1 month)",
+      "period_days": 30,
+      "start_date_offset": 120,
+      "metrics": {
+        "final_balance": 133303.6586130645,
+        "total_return_pct": 33.30365861306448,
+        "max_drawdown_pct": 19.650282470210684,
+        "trades": 1352,
+        "win_rate": 0.1863905325443787
+      }
+    },
+    {
+      "label": "Mar 2026 (1 month)",
+      "period_days": 30,
+      "start_date_offset": 210,
+      "metrics": {
+        "final_balance": 253097.7931602382,
+        "total_return_pct": 153.09779316023818,
+        "max_drawdown_pct": 5.671345153836494,
+        "trades": 1365,
+        "win_rate": 0.27692307692307694
+      }
+    }
+  ],
+  "avg_return": 138.61039559655575,
+  "avg_drawdown": 11.892446445647934,
+  "pass_rate": 0.1111111111111111
+}

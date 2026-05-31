@@ -1,0 +1,138 @@
+{
+  "source": "hedge_fund_portfolio_v5",
+  "mode": "multi_strategy_portfolio",
+  "strategies": [
+    {
+      "symbol": "EURUSD",
+      "strategy": "mean_reversion",
+      "label": "mean_reversion:EURUSD:1",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 0.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "EURUSD",
+      "strategy": "volatility",
+      "label": "volatility:EURUSD:1",
+      "params": {
+        "vol_window": 20,
+        "vol_expansion_threshold": 1.5,
+        "mode": "expansion"
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "GBPUSD",
+      "strategy": "mean_reversion",
+      "label": "mean_reversion:GBPUSD:1",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 0.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "GBPUSD",
+      "strategy": "mean_reversion",
+      "label": "mean_reversion:GBPUSD:2",
+      "params": {
+        "window": 20,
+        "z_threshold": 1.5,
+        "stop_atr_mult": 0.6
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "USDJPY",
+      "strategy": "mean_reversion",
+      "label": "mean_reversion:USDJPY:1",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 0.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "USDJPY",
+      "strategy": "volatility",
+      "label": "volatility:USDJPY:1",
+      "params": {
+        "vol_window": 20,
+        "vol_expansion_threshold": 1.5,
+        "mode": "expansion"
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "NAS100",
+      "strategy": "trend_momentum",
+      "label": "trend_momentum:NAS100:1",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "NAS100",
+      "strategy": "mean_reversion",
+      "label": "mean_reversion:NAS100:1",
+      "params": {
+        "window": 20,
+        "z_threshold": 1.5,
+        "stop_atr_mult": 0.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "trend_momentum",
+      "label": "trend_momentum:XAUUSD:1",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "volatility",
+      "label": "volatility:XAUUSD:1",
+      "params": {
+        "vol_window": 15,
+        "vol_expansion_threshold": 1.3,
+        "mode": "reversion"
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "trend_momentum",
+      "label": "trend_momentum:BTCUSD:1",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.6
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "volatility",
+      "label": "volatility:BTCUSD:1",
+      "params": {
+        "vol_window": 15,
+        "vol_expansion_threshold": 1.3,
+        "mode": "reversion"
+      },
+      "enabled": true
+    }
+  ]
+}

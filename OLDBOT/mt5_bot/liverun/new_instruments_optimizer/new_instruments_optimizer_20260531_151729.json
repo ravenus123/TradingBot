@@ -1,0 +1,488 @@
+{
+  "new_instruments": [
+    "GBPUSD",
+    "USDJPY",
+    "BTCUSD"
+  ],
+  "strategies_tested": [
+    "trend_momentum",
+    "mean_reversion",
+    "volatility_breakout"
+  ],
+  "profitable_combinations": [
+    {
+      "instrument": "BTCUSD",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.6
+      },
+      "metrics": {
+        "total_trades": 696,
+        "win_rate": 0.19827586206896552,
+        "avg_return_pct": 0.036669920793617534,
+        "total_return_pct": 28.050575530619916,
+        "max_drawdown_pct": 19.062929536149863
+      }
+    }
+  ],
+  "all_results": [
+    {
+      "instrument": "GBPUSD",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.6
+      },
+      "metrics": {
+        "total_trades": 610,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.060702997687285876,
+        "total_return_pct": -30.954329792857116,
+        "max_drawdown_pct": 30.954329792857116
+      }
+    },
+    {
+      "instrument": "GBPUSD",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 610,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.060704059295812574,
+        "total_return_pct": -30.9547773714285,
+        "max_drawdown_pct": 30.9547773714285
+      }
+    },
+    {
+      "instrument": "GBPUSD",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 610,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.06070531206557134,
+        "total_return_pct": -30.95530539285712,
+        "max_drawdown_pct": 30.95530539285712
+      }
+    },
+    {
+      "instrument": "GBPUSD",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 601,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.060512989582256926,
+        "total_return_pct": -30.496590321428513,
+        "max_drawdown_pct": 30.496590321428513
+      }
+    },
+    {
+      "instrument": "GBPUSD",
+      "strategy": "mean_reversion",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 140,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.05262432069853284,
+        "total_return_pct": -7.104357819047509,
+        "max_drawdown_pct": 7.104357819047509
+      }
+    },
+    {
+      "instrument": "GBPUSD",
+      "strategy": "mean_reversion",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.5,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 59,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.05152179812023055,
+        "total_return_pct": -2.99480914761898,
+        "max_drawdown_pct": 2.99480914761898
+      }
+    },
+    {
+      "instrument": "GBPUSD",
+      "strategy": "mean_reversion",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 140,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.05263281527697036,
+        "total_return_pct": -7.1054631476192665,
+        "max_drawdown_pct": 7.1054631476192665
+      }
+    },
+    {
+      "instrument": "GBPUSD",
+      "strategy": "volatility_breakout",
+      "params": {
+        "bb_period": 20,
+        "bb_std": 2.0,
+        "kc_period": 20,
+        "kc_mult": 1.5,
+        "squeeze_bars": 5,
+        "stop_atr_mult": 1.5,
+        "rr_ratio": 2.0
+      },
+      "metrics": {
+        "total_trades": 61,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.05158865036599209,
+        "total_return_pct": -3.0986948035715067,
+        "max_drawdown_pct": 3.0986948035715067
+      }
+    },
+    {
+      "instrument": "GBPUSD",
+      "strategy": "volatility_breakout",
+      "params": {
+        "bb_period": 20,
+        "bb_std": 2.0,
+        "kc_period": 20,
+        "kc_mult": 1.5,
+        "squeeze_bars": 5,
+        "stop_atr_mult": 2.0,
+        "rr_ratio": 2.0
+      },
+      "metrics": {
+        "total_trades": 61,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.05158865036599209,
+        "total_return_pct": -3.0986948035715067,
+        "max_drawdown_pct": 3.0986948035715067
+      }
+    },
+    {
+      "instrument": "USDJPY",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.6
+      },
+      "metrics": {
+        "total_trades": 589,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.06063111882718249,
+        "total_return_pct": -30.038773571428045,
+        "max_drawdown_pct": 30.038773571428045
+      }
+    },
+    {
+      "instrument": "USDJPY",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 589,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.06122412778753112,
+        "total_return_pct": -30.282890714285344,
+        "max_drawdown_pct": 30.282890714285344
+      }
+    },
+    {
+      "instrument": "USDJPY",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 589,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.06122160441462886,
+        "total_return_pct": -30.281907142856806,
+        "max_drawdown_pct": 30.281907142856806
+      }
+    },
+    {
+      "instrument": "USDJPY",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 586,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.060905488930190585,
+        "total_return_pct": -30.02411785714249,
+        "max_drawdown_pct": 30.02411785714249
+      }
+    },
+    {
+      "instrument": "USDJPY",
+      "strategy": "mean_reversion",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 140,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.05264623136178796,
+        "total_return_pct": -7.107253333333338,
+        "max_drawdown_pct": 7.107253333333338
+      }
+    },
+    {
+      "instrument": "USDJPY",
+      "strategy": "mean_reversion",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.5,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 47,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.05164643887997482,
+        "total_return_pct": -2.3987866666666378,
+        "max_drawdown_pct": 2.3987866666666378
+      }
+    },
+    {
+      "instrument": "USDJPY",
+      "strategy": "mean_reversion",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 140,
+        "win_rate": 0.0,
+        "avg_return_pct": -0.05245025303942256,
+        "total_return_pct": -7.081762619047585,
+        "max_drawdown_pct": 7.081762619047585
+      }
+    },
+    {
+      "instrument": "USDJPY",
+      "strategy": "volatility_breakout",
+      "params": {
+        "bb_period": 20,
+        "bb_std": 2.0,
+        "kc_period": 20,
+        "kc_mult": 1.5,
+        "squeeze_bars": 5,
+        "stop_atr_mult": 1.5,
+        "rr_ratio": 2.0
+      },
+      "metrics": {
+        "total_trades": 68,
+        "win_rate": 0.029411764705882353,
+        "avg_return_pct": -0.051227720286878935,
+        "total_return_pct": -3.424544642857236,
+        "max_drawdown_pct": 3.424765386250646
+      }
+    },
+    {
+      "instrument": "USDJPY",
+      "strategy": "volatility_breakout",
+      "params": {
+        "bb_period": 20,
+        "bb_std": 2.0,
+        "kc_period": 20,
+        "kc_mult": 1.5,
+        "squeeze_bars": 5,
+        "stop_atr_mult": 2.0,
+        "rr_ratio": 2.0
+      },
+      "metrics": {
+        "total_trades": 68,
+        "win_rate": 0.029411764705882353,
+        "avg_return_pct": -0.051227720286878935,
+        "total_return_pct": -3.424544642857236,
+        "max_drawdown_pct": 3.424765386250646
+      }
+    },
+    {
+      "instrument": "BTCUSD",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.6
+      },
+      "metrics": {
+        "total_trades": 696,
+        "win_rate": 0.19827586206896552,
+        "avg_return_pct": 0.036669920793617534,
+        "total_return_pct": 28.050575530619916,
+        "max_drawdown_pct": 19.062929536149863
+      }
+    },
+    {
+      "instrument": "BTCUSD",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 696,
+        "win_rate": 0.22413793103448276,
+        "avg_return_pct": 0.012631750940041408,
+        "total_return_pct": 8.59725286318113,
+        "max_drawdown_pct": 20.990507794079257
+      }
+    },
+    {
+      "instrument": "BTCUSD",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 696,
+        "win_rate": 0.2514367816091954,
+        "avg_return_pct": 0.0010824122462857275,
+        "total_return_pct": 0.3363659105093575,
+        "max_drawdown_pct": 22.654192656189583
+      }
+    },
+    {
+      "instrument": "BTCUSD",
+      "strategy": "trend_momentum",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 715,
+        "win_rate": 0.24055944055944056,
+        "avg_return_pct": -0.007654648255293944,
+        "total_return_pct": -5.719597877328598,
+        "max_drawdown_pct": 21.582729258263793
+      }
+    },
+    {
+      "instrument": "BTCUSD",
+      "strategy": "mean_reversion",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 156,
+        "win_rate": 0.2564102564102564,
+        "avg_return_pct": 0.007585764708039324,
+        "total_return_pct": 1.0848731620532455,
+        "max_drawdown_pct": 3.3956368069107192
+      }
+    },
+    {
+      "instrument": "BTCUSD",
+      "strategy": "mean_reversion",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.5,
+        "stop_atr_mult": 0.8
+      },
+      "metrics": {
+        "total_trades": 66,
+        "win_rate": 0.18181818181818182,
+        "avg_return_pct": -0.026241107110452692,
+        "total_return_pct": -1.762026830243303,
+        "max_drawdown_pct": 3.2118245912060766
+      }
+    },
+    {
+      "instrument": "BTCUSD",
+      "strategy": "mean_reversion",
+      "params": {
+        "window": 30,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 1.0
+      },
+      "metrics": {
+        "total_trades": 156,
+        "win_rate": 0.3141025641025641,
+        "avg_return_pct": 0.014990535981786821,
+        "total_return_pct": 2.2806828423524164,
+        "max_drawdown_pct": 2.772756917479983
+      }
+    },
+    {
+      "instrument": "BTCUSD",
+      "strategy": "volatility_breakout",
+      "params": {
+        "bb_period": 20,
+        "bb_std": 2.0,
+        "kc_period": 20,
+        "kc_mult": 1.5,
+        "squeeze_bars": 5,
+        "stop_atr_mult": 1.5,
+        "rr_ratio": 2.0
+      },
+      "metrics": {
+        "total_trades": 66,
+        "win_rate": 0.36363636363636365,
+        "avg_return_pct": 0.04511445667283073,
+        "total_return_pct": 2.9958111974653914,
+        "max_drawdown_pct": 4.50962222975601
+      }
+    },
+    {
+      "instrument": "BTCUSD",
+      "strategy": "volatility_breakout",
+      "params": {
+        "bb_period": 20,
+        "bb_std": 2.0,
+        "kc_period": 20,
+        "kc_mult": 1.5,
+        "squeeze_bars": 5,
+        "stop_atr_mult": 2.0,
+        "rr_ratio": 2.0
+      },
+      "metrics": {
+        "total_trades": 66,
+        "win_rate": 0.36363636363636365,
+        "avg_return_pct": 0.04511848743254811,
+        "total_return_pct": 2.9960857493929507,
+        "max_drawdown_pct": 4.509367684770424
+      }
+    }
+  ]
+}

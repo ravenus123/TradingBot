@@ -1,0 +1,64 @@
+{
+  "walk_forward_config": {
+    "train_months": 3,
+    "test_months": 1,
+    "step_months": 1,
+    "num_windows": 2,
+    "initial_balance": 10000.0,
+    "risk_per_trade": 0.2,
+    "min_lot_size": 0.01,
+    "max_lot_size": 5.0,
+    "max_leverage": 10.0
+  },
+  "portfolio_config": {
+    "instrument": "NAS100",
+    "strategy": "trend_momentum",
+    "optimized_params": {
+      "h1_ema_period": 34,
+      "m5_ema_period": 12,
+      "stop_atr_mult": 0.6
+    }
+  },
+  "total_windows": 2,
+  "cumulative_return_pct": 111.48804466390507,
+  "avg_return_per_window_pct": 55.744022331952536,
+  "max_drawdown_pct": 9.34941662693245,
+  "window_results": [
+    {
+      "window": 1,
+      "train_period": "2025-12-26 11:45:00-2026-03-16 03:45:00",
+      "test_period": "2026-03-16 03:45:00-2026-04-09 14:15:00",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.6
+      },
+      "metrics": {
+        "total_trades": 181,
+        "win_rate": 0.2541436464088398,
+        "avg_return_pct": 0.10497237569060669,
+        "total_return_pct": 20.61637381565721,
+        "avg_position_size": 0.9719759994362398,
+        "max_drawdown_pct": 9.34941662693245
+      }
+    },
+    {
+      "window": 2,
+      "train_period": "2026-01-22 18:00:00-2026-04-09 14:15:00",
+      "test_period": "2026-04-09 14:15:00-2026-05-05 16:45:00",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 0.6
+      },
+      "metrics": {
+        "total_trades": 221,
+        "win_rate": 0.38009049773755654,
+        "avg_return_pct": 0.2561085972850654,
+        "total_return_pct": 75.33941534930462,
+        "avg_position_size": 1.8058214667217836,
+        "max_drawdown_pct": 4.11705448877101
+      }
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "account_sizes": [
+    {
+      "name": "Small Account",
+      "balance": 1000.0
+    },
+    {
+      "name": "Medium Account",
+      "balance": 10000.0
+    },
+    {
+      "name": "Large Account",
+      "balance": 100000.0
+    }
+  ],
+  "trading_costs": {
+    "spread_pips": 1.0,
+    "slippage_pips": 0.5,
+    "commission_per_lot": 0.5
+  },
+  "all_results": [
+    {
+      "account_config": {
+        "name": "Small Account",
+        "balance": 1000.0
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.259765625,
+        "avg_return_pct": 0.04076862101890131,
+        "total_return_pct": 22.663213695555736,
+        "max_drawdown_pct": 24.49865111768875,
+        "total_commission": 33.658173547975714,
+        "avg_position_size": 0.06573862021089011
+      }
+    },
+    {
+      "account_config": {
+        "name": "Medium Account",
+        "balance": 10000.0
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.259765625,
+        "avg_return_pct": 0.0407686210189013,
+        "total_return_pct": 22.663213695555733,
+        "max_drawdown_pct": 24.498651117688787,
+        "total_commission": 336.581735479757,
+        "avg_position_size": 0.6573862021089003
+      }
+    },
+    {
+      "account_config": {
+        "name": "Large Account",
+        "balance": 100000.0
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.259765625,
+        "avg_return_pct": 0.03660353075924088,
+        "total_return_pct": 20.095547142941967,
+        "max_drawdown_pct": 24.53353296907011,
+        "total_commission": 3283.6616977565186,
+        "avg_position_size": 6.4134017534307075
+      }
+    }
+  ]
+}

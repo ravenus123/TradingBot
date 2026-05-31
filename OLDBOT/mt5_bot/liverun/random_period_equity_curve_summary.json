@@ -1,0 +1,62 @@
+{
+  "bars": 3000,
+  "period_bars": 300,
+  "risk_pct": 1.0,
+  "candidates": [
+    {
+      "symbol": "NAS100",
+      "strategy": "trend_momentum",
+      "label": "trend_momentum:NAS100:5",
+      "weight": 1.0,
+      "trades": 3,
+      "win_rate_pct": 0.0,
+      "avg_return_pct": -1.0,
+      "best_return_pct": -1.0,
+      "worst_return_pct": -1.0,
+      "final_balance": 9702.99,
+      "max_drawdown_pct": 2.970100000000002,
+      "random_start": 1190,
+      "random_window_bars": 300,
+      "attempt": 2,
+      "max_attempts": 25,
+      "min_trades_target": 1
+    },
+    {
+      "symbol": "EURUSD",
+      "strategy": "mean_reversion",
+      "label": "mean_reversion:EURUSD:1",
+      "weight": 1.0,
+      "trades": 1,
+      "win_rate_pct": 0.0,
+      "avg_return_pct": -1.0,
+      "best_return_pct": -1.0,
+      "worst_return_pct": -1.0,
+      "final_balance": 9900.0,
+      "max_drawdown_pct": 1.0,
+      "random_start": 1190,
+      "random_window_bars": 300,
+      "attempt": 2,
+      "max_attempts": 25,
+      "min_trades_target": 1
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "trend_momentum",
+      "label": "trend_momentum:XAUUSD:8",
+      "weight": 1.0,
+      "trades": 3,
+      "win_rate_pct": 100.0,
+      "avg_return_pct": 3.0000000000000493,
+      "best_return_pct": 3.0000000000001448,
+      "worst_return_pct": 2.9999999999998614,
+      "final_balance": 10927.270000000015,
+      "max_drawdown_pct": 0.0,
+      "random_start": 1060,
+      "random_window_bars": 300,
+      "attempt": 1,
+      "max_attempts": 25,
+      "min_trades_target": 1
+    }
+  ],
+  "plot_path": "D:\\RAVBOTGITHUB\\ULTIMA2.0\\TradingBot\\OLDBOT\\mt5_bot\\liverun\\random_period_equity_curve.png"
+}

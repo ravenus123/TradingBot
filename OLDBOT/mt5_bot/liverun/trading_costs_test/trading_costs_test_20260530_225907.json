@@ -1,0 +1,102 @@
+{
+  "trading_costs_configs": [
+    {
+      "name": "No Costs (Baseline)",
+      "spread_pips": 0.0,
+      "slippage_pips": 0.0,
+      "commission_per_lot": 0.0
+    },
+    {
+      "name": "Conservative Costs",
+      "spread_pips": 1.0,
+      "slippage_pips": 0.5,
+      "commission_per_lot": 0.5
+    },
+    {
+      "name": "Moderate Costs",
+      "spread_pips": 2.0,
+      "slippage_pips": 1.0,
+      "commission_per_lot": 1.0
+    },
+    {
+      "name": "High Costs",
+      "spread_pips": 3.0,
+      "slippage_pips": 2.0,
+      "commission_per_lot": 2.0
+    }
+  ],
+  "baseline_result": {
+    "total_trades": 512,
+    "win_rate": 0.259765625,
+    "avg_return_pct": 0.046777343750000436,
+    "total_return_pct": 26.493275335351846,
+    "max_drawdown_pct": 23.624960952836883,
+    "total_commission": 0.0
+  },
+  "all_results": [
+    {
+      "costs_config": {
+        "name": "No Costs (Baseline)",
+        "spread_pips": 0.0,
+        "slippage_pips": 0.0,
+        "commission_per_lot": 0.0
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.259765625,
+        "avg_return_pct": 0.046777343750000436,
+        "total_return_pct": 26.493275335351846,
+        "max_drawdown_pct": 23.624960952836883,
+        "total_commission": 0.0
+      }
+    },
+    {
+      "costs_config": {
+        "name": "Conservative Costs",
+        "spread_pips": 1.0,
+        "slippage_pips": 0.5,
+        "commission_per_lot": 0.5
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.259765625,
+        "avg_return_pct": 0.0407686210189013,
+        "total_return_pct": 22.663213695555733,
+        "max_drawdown_pct": 24.498651117688787,
+        "total_commission": 336.581735479757
+      }
+    },
+    {
+      "costs_config": {
+        "name": "Moderate Costs",
+        "spread_pips": 2.0,
+        "slippage_pips": 1.0,
+        "commission_per_lot": 1.0
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.259765625,
+        "avg_return_pct": 0.03475989828780215,
+        "total_return_pct": 18.948868699598098,
+        "max_drawdown_pct": 25.36239528412418,
+        "total_commission": 662.733939204745
+      }
+    },
+    {
+      "costs_config": {
+        "name": "High Costs",
+        "spread_pips": 3.0,
+        "slippage_pips": 2.0,
+        "commission_per_lot": 2.0
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.259765625,
+        "avg_return_pct": 0.022801652064324458,
+        "total_return_pct": 11.887375942775762,
+        "max_drawdown_pct": 27.052224969455047,
+        "total_commission": 1285.2140060251359
+      }
+    }
+  ]
+}

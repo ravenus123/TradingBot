@@ -1,0 +1,73 @@
+{
+  "risk_config": {
+    "risk_per_trade_pct": 1.0,
+    "min_lot_size": 0.01,
+    "max_lot_size": 10.0,
+    "max_leverage": 20.0,
+    "initial_balance": 10000.0
+  },
+  "portfolio_return_pct": 34.81340397740803,
+  "portfolio_drawdown_pct": 74.8687628020212,
+  "results": [
+    {
+      "symbol": "EURUSD",
+      "strategy": "trend_momentum",
+      "risk_config": {
+        "risk_per_trade_pct": 1.0,
+        "min_lot_size": 0.01,
+        "max_lot_size": 10.0,
+        "max_leverage": 20.0,
+        "initial_balance": 10000.0
+      },
+      "metrics": {
+        "total_trades": 597,
+        "win_rate": 0.34673366834170855,
+        "avg_return_pct": 2.102257007510773e-05,
+        "total_return_pct": 0.012551142857282685,
+        "avg_position_size": 10.0,
+        "avg_leverage": 0.0011543969256402268,
+        "max_drawdown_pct": 0.016963169497570183
+      }
+    },
+    {
+      "symbol": "EURUSD",
+      "strategy": "mean_reversion",
+      "risk_config": {
+        "risk_per_trade_pct": 1.0,
+        "min_lot_size": 0.01,
+        "max_lot_size": 10.0,
+        "max_leverage": 20.0,
+        "initial_balance": 10000.0
+      },
+      "metrics": {
+        "total_trades": 319,
+        "win_rate": 0.34796238244514105,
+        "avg_return_pct": 1.2613978266948118e-05,
+        "total_return_pct": 0.004023914285608043,
+        "avg_position_size": 10.0,
+        "avg_leverage": 0.0011540885412352957,
+        "max_drawdown_pct": 0.0024215261199248715
+      }
+    },
+    {
+      "symbol": "NAS100",
+      "strategy": "trend_momentum",
+      "risk_config": {
+        "risk_per_trade_pct": 1.0,
+        "min_lot_size": 0.01,
+        "max_lot_size": 10.0,
+        "max_leverage": 20.0,
+        "initial_balance": 10000.0
+      },
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.291015625,
+        "avg_return_pct": 0.15583701004721834,
+        "total_return_pct": 104.4236368750812,
+        "avg_position_size": 3.9879838295412533,
+        "avg_leverage": 5.682256282632347,
+        "max_drawdown_pct": 74.8687628020212
+      }
+    }
+  ]
+}

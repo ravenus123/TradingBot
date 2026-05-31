@@ -1,0 +1,262 @@
+{
+  "metrics": {
+    "total_engines": 9,
+    "total_weight": 1.1200000000000003,
+    "weighted_return_pct": 55.069107142857135,
+    "weighted_sensitivity": 0.9085714285714281,
+    "strategy_counts": {
+      "trend_momentum": 7,
+      "mean_reversion": 2
+    },
+    "symbol_counts": {
+      "NAS100": 4,
+      "EURUSD": 5
+    },
+    "timeframe_counts": {
+      "M15": 4,
+      "H1": 3,
+      "M30": 2
+    }
+  },
+  "engines": [
+    {
+      "engine_id": 1,
+      "symbol": "NAS100",
+      "strategy": "trend_momentum",
+      "timeframe": "M15",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "walk_forward_return_pct": 96.5,
+      "sensitivity_score": 0.89,
+      "weight": 0.4,
+      "risk_per_trade": 0.01,
+      "status": "extremely_profitable"
+    },
+    {
+      "engine_id": 2,
+      "symbol": "EURUSD",
+      "strategy": "trend_momentum",
+      "timeframe": "M15",
+      "params": {
+        "h1_ema_period": 100,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.5
+      },
+      "walk_forward_return_pct": 4.44,
+      "sensitivity_score": 1.0,
+      "weight": 0.2,
+      "risk_per_trade": 0.01,
+      "status": "profitable"
+    },
+    {
+      "engine_id": 3,
+      "symbol": "EURUSD",
+      "strategy": "mean_reversion",
+      "timeframe": "M15",
+      "params": {
+        "window": 20,
+        "z_threshold": 1.5,
+        "stop_atr_mult": 0.8
+      },
+      "walk_forward_return_pct": 2.37,
+      "sensitivity_score": 0.81,
+      "weight": 0.15,
+      "risk_per_trade": 0.01,
+      "status": "profitable"
+    },
+    {
+      "engine_id": 4,
+      "symbol": "NAS100",
+      "strategy": "trend_momentum",
+      "timeframe": "H1",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "walk_forward_return_pct": 96.5,
+      "sensitivity_score": 0.89,
+      "weight": 0.15,
+      "risk_per_trade": 0.01,
+      "status": "profitable"
+    },
+    {
+      "engine_id": 5,
+      "symbol": "EURUSD",
+      "strategy": "trend_momentum",
+      "timeframe": "H1",
+      "params": {
+        "h1_ema_period": 100,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.5
+      },
+      "walk_forward_return_pct": 4.44,
+      "sensitivity_score": 1.0,
+      "weight": 0.1,
+      "risk_per_trade": 0.01,
+      "status": "profitable"
+    },
+    {
+      "engine_id": 6,
+      "symbol": "NAS100",
+      "strategy": "trend_momentum",
+      "timeframe": "M15",
+      "params": {
+        "h1_ema_period": 50,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.0
+      },
+      "walk_forward_return_pct": 96.5,
+      "sensitivity_score": 0.89,
+      "weight": 0.05,
+      "risk_per_trade": 0.01,
+      "status": "profitable"
+    },
+    {
+      "engine_id": 7,
+      "symbol": "EURUSD",
+      "strategy": "mean_reversion",
+      "timeframe": "H1",
+      "params": {
+        "window": 20,
+        "z_threshold": 1.5,
+        "stop_atr_mult": 0.8
+      },
+      "walk_forward_return_pct": 2.37,
+      "sensitivity_score": 0.81,
+      "weight": 0.03,
+      "risk_per_trade": 0.01,
+      "status": "profitable"
+    },
+    {
+      "engine_id": 8,
+      "symbol": "NAS100",
+      "strategy": "trend_momentum",
+      "timeframe": "M30",
+      "params": {
+        "h1_ema_period": 34,
+        "m5_ema_period": 12,
+        "stop_atr_mult": 1.0
+      },
+      "walk_forward_return_pct": 96.5,
+      "sensitivity_score": 0.89,
+      "weight": 0.02,
+      "risk_per_trade": 0.01,
+      "status": "profitable"
+    },
+    {
+      "engine_id": 9,
+      "symbol": "EURUSD",
+      "strategy": "trend_momentum",
+      "timeframe": "M30",
+      "params": {
+        "h1_ema_period": 100,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.5
+      },
+      "walk_forward_return_pct": 4.44,
+      "sensitivity_score": 1.0,
+      "weight": 0.02,
+      "risk_per_trade": 0.01,
+      "status": "profitable"
+    }
+  ],
+  "walk_forward_results": {
+    "trend_momentum:EURUSD": {
+      "cumulative_return_pct": 4.44,
+      "avg_return_per_window": 1.48,
+      "status": "profitable"
+    },
+    "mean_reversion:EURUSD": {
+      "cumulative_return_pct": 2.37,
+      "avg_return_per_window": 0.79,
+      "status": "profitable"
+    },
+    "volatility_breakout:EURUSD": {
+      "cumulative_return_pct": -4.05,
+      "avg_return_per_window": -1.35,
+      "status": "losing"
+    },
+    "trend_momentum:NAS100": {
+      "cumulative_return_pct": 96.5,
+      "avg_return_per_window": 32.17,
+      "status": "extremely_profitable"
+    },
+    "mean_reversion:NAS100": {
+      "cumulative_return_pct": -1.79,
+      "avg_return_per_window": -0.6,
+      "status": "losing"
+    },
+    "volatility_breakout:NAS100": {
+      "cumulative_return_pct": 0.13,
+      "avg_return_per_window": 0.04,
+      "status": "flat"
+    },
+    "trend_momentum:XAUUSD": {
+      "cumulative_return_pct": -29.81,
+      "avg_return_per_window": -9.94,
+      "status": "terrible"
+    },
+    "mean_reversion:XAUUSD": {
+      "cumulative_return_pct": -0.48,
+      "avg_return_per_window": -0.16,
+      "status": "flat"
+    },
+    "volatility_breakout:XAUUSD": {
+      "cumulative_return_pct": -5.48,
+      "avg_return_per_window": -1.83,
+      "status": "losing"
+    }
+  },
+  "sensitivity_results": {
+    "trend_momentum:EURUSD": {
+      "sensitivity_score": 1.0,
+      "profitability_score": 1.0,
+      "status": "robust"
+    },
+    "mean_reversion:EURUSD": {
+      "sensitivity_score": 0.81,
+      "profitability_score": 1.0,
+      "status": "robust"
+    },
+    "volatility_breakout:EURUSD": {
+      "sensitivity_score": 0.59,
+      "profitability_score": 0.67,
+      "status": "robust"
+    },
+    "trend_momentum:NAS100": {
+      "sensitivity_score": 0.89,
+      "profitability_score": 1.0,
+      "status": "robust"
+    },
+    "mean_reversion:NAS100": {
+      "sensitivity_score": 0.0,
+      "profitability_score": 0.11,
+      "status": "fragile"
+    },
+    "volatility_breakout:NAS100": {
+      "sensitivity_score": 0.15,
+      "profitability_score": 0.26,
+      "status": "fragile"
+    },
+    "trend_momentum:XAUUSD": {
+      "sensitivity_score": 1.0,
+      "profitability_score": 1.0,
+      "status": "robust"
+    },
+    "mean_reversion:XAUUSD": {
+      "sensitivity_score": 0.0,
+      "profitability_score": 0.44,
+      "status": "fragile"
+    },
+    "volatility_breakout:XAUUSD": {
+      "sensitivity_score": 0.0,
+      "profitability_score": 0.52,
+      "status": "fragile"
+    }
+  },
+  "assembly_date": "2026-05-30T21:38:33.823986"
+}

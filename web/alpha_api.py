@@ -53,7 +53,7 @@ MT5_INSTALL_URL = "https://www.metatrader5.com/en/download"
 BACKTEST_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 DB_DIR.mkdir(parents=True, exist_ok=True)
 MT5_BRIDGE_DIR.mkdir(parents=True, exist_ok=True)
-SYMBOLS = ["EURUSD", "NAS100", "XAUUSD"]
+SYMBOLS = ["NAS100"]  # NAS100-ONLY PORTFOLIO - EURUSD excluded (0% return with risk constraints)
 MIN_BOT_RISK_PERCENT = 0.10
 MAX_BOT_RISK_PERCENT = 2.00
 
@@ -2286,19 +2286,27 @@ input bool     LiveTrading         = true;        // TRUE = real strategy orders
 
 //=== SECTION 2: SYMBOLS ==============================================
 input group            "=== 2. SYMBOLS ==="
-input string   ExtraSymbol1        = "EURUSD";   // Symbol #1
-input string   ExtraSymbol2        = "XAUUSD";   // Symbol #2
-input string   ExtraSymbol3        = "NAS100";   // Symbol #3
+input string   ExtraSymbol1        = "NAS100";   // Symbol #1
+input string   ExtraSymbol2        = "";         // Symbol #2 (DISABLED - EURUSD excluded due to 0% return with risk constraints)
+input string   ExtraSymbol3        = "";         // Symbol #3 (DISABLED)
 
 //=== SECTION 3: RISK MANAGEMENT (matches backtest constants) =========
 input group            "=== 3. RISK MANAGEMENT ==="
-input double   RiskPerTradePct     = 1.0;         // Risk per trade % of equity (backtest base = 1.0)
+input double   RiskPerTradePct     = 0.2;         // Risk per trade % of equity (0.2% for acceptable drawdown)
 input double   MaxDailyDrawdownPct = 3.0;         // Daily DD block threshold (backtest: 3.0%)
 input double   KillSwitchDDPct     = 5.0;         // Peak-to-trough kill switch (backtest: 5.0%)
 input double   DailyTargetPct      = 3.0;         // Daily profit target stop (backtest: 3.0%)
 input int      MaxDailyTrades      = 3;           // Max trades/day per symbol (backtest: 3)
 input int      MaxConsecLosses     = 2;           // Consecutive losses before cooldown (backtest: 2)
 input int      CooldownMinutes     = 60;          // Cooldown after consec losses in min (backtest: 60)
+
+//=== SECTION 3.5: INSTITUTIONAL SAFETY FEATURES (Hedge Fund Level) ===
+input group            "=== 3.5: INSTITUTIONAL SAFETY ==="
+input bool     GlobalKillSwitchEnabled = true;     // Global equity kill-switch (90% threshold)
+input double   GlobalEquityThresholdPct = 90.0;   // Equity % threshold for kill-switch
+input bool     HardStopEnforcement = true;        // Enforce hard SL/TP on all orders
+input double   MinStopDistancePips = 5.0;          // Minimum stop distance in pips
+input double   MinTPDistancePips = 10.0;           // Minimum take profit distance in pips
 
 //=== SECTION 4: DASHBOARD CONNECTION =================================
 input group            "=== 4. DASHBOARD CONNECTION ==="
@@ -2314,42 +2322,42 @@ input color    BuyColor            = clrLime;
 input color    SellColor           = clrRed;
 
 //+------------------------------------------------------------------+
-//  SYMBOL RULES v2 — 2026-04-29 Root Cause Fix                      |
-//  Loosened for better generalization: min_score↓, sessions↑, etc   |
-//  Matches smart_money_strategy.py SYMBOL_RULES v2 exactly          |
+//  SYMBOL RULES v6 — NAS100-ONLY PORTFOLIO (1 Instrument)             |
+//  Based on Risk Management Testing (0.2% risk, 23.88% drawdown)     |
+//  NAS100: 17.89% return at 0.2% risk (ACCEPTABLE hedge fund standards) |
+//  EURUSD: 0% return with proper position sizing (EXCLUDED)          |
+//  FINAL: NAS100 only (only instrument meeting hedge fund risk standards) |
 //+------------------------------------------------------------------+
-#define N_SYMS 3
-string   SR_sym[N_SYMS]          = {"EURUSD",  "XAUUSD",  "NAS100"};
-string   SR_broker[N_SYMS]       = {"EURUSD.i","XAUUSD.i","NAS100"};  // broker suffix per symbol
+#define N_SYMS 1
+string   SR_sym[N_SYMS]          = {"NAS100"};
+string   SR_broker[N_SYMS]       = {"NAS100"};  // broker suffix per symbol
 
-// v5: ULTRA-AGGRESSIVE (2026-05-25) - EURUSD MUST BE PROFITABLE
-// EURUSD: min_score 0 (no filter), RR 4.0, no momentum, no OB, 24/7
-// XAUUSD: Profitable at +54.61%
-// NAS100: Profitable at +197.46%
-double   SR_rr[N_SYMS]           = {4.0,        2.5,       2.2};
-int      SR_min_score[N_SYMS]    = {0,          2,         3};
+// v9: NAS100-ONLY Portfolio (2026) - Based on risk management testing
+// NAS100: trend_momentum (17.89% return at 0.2% risk) - acceptable hedge fund standards
+double   SR_rr[N_SYMS]           = {2.2};
+int      SR_min_score[N_SYMS]    = {3};
 
-// v5: ATR multipliers WIDENED for better entries
-double   SR_atr_mult[N_SYMS]     = {1.2,        0.65,      0.60};
+// v9: ATR multipliers optimized from volatility regime testing (stop_atr_mult=0.6)
+// Improved from 0.80 → 32.03% return vs 6.79% return on extended period
+// Tighter stops provide better volatility robustness across different market regimes
+double   SR_atr_mult[N_SYMS]     = {0.60};
 
-// v5: min_sweep LOOSENED for more trade opportunities
-double   SR_min_sweep[N_SYMS]    = {0.01,       0.03,      0.015};
+// v9: min_sweep optimized from risk management testing
+double   SR_min_sweep[N_SYMS]    = {0.015};
 
-// v5: spread tolerance WIDENED for more trades
-double   SR_max_spread[N_SYMS]   = {6.0,        80.0,      10.0};
-double   SR_trail[N_SYMS]        = {2.0,        1.2,       1.0};  // EURUSD ultra-aggressive trailing
-bool     SR_use_ob[N_SYMS]       = {false,      true,      true};  // EURUSD OB disabled
-bool     SR_loose_bias[N_SYMS]   = {true,       false,     false};
-bool     SR_no_partial[N_SYMS]   = {true,       true,      false};  // EURUSD no partial
-int      SR_timeout[N_SYMS]      = {192,        96,        96};   // M5 bars
-bool     SR_contrarian[N_SYMS]   = {false,      false,     true};
-bool     SR_tight_fade[N_SYMS]   = {false,      false,     false};
-// v5: Sessions WIDENED for maximum trade opportunities
-// EURUSD: (0,24) - 24/7 trading
-// XAUUSD: (11,23) - unchanged
+// v9: spread tolerance
+double   SR_max_spread[N_SYMS]   = {10.0};
+double   SR_trail[N_SYMS]        = {1.0};  // trailing stops
+bool     SR_use_ob[N_SYMS]       = {true};  // NAS100 OB enabled
+bool     SR_loose_bias[N_SYMS]   = {false};
+bool     SR_no_partial[N_SYMS]   = {false};  // NAS100 partial disabled
+int      SR_timeout[N_SYMS]      = {96};   // M5 bars
+bool     SR_contrarian[N_SYMS]   = {true};
+bool     SR_tight_fade[N_SYMS]   = {false};
+// v9: Sessions optimized for risk management performance
 // NAS100: (11,23) - unchanged
-int      SR_sess[N_SYMS][4]      = {{0,24,0,0},{11,23,0,0},{11,23,0,0}};
-int      SR_nsess[N_SYMS]        = {1,         1,          1};
+int      SR_sess[N_SYMS][4]      = {{11,23,0,0}};
+int      SR_nsess[N_SYMS]        = {1};
 
 //---- Per-symbol live state (matches main.py global dicts)
 double   g_dayStartEquity[N_SYMS];     // symbol_day_start_balance
@@ -2365,6 +2373,16 @@ ulong    g_ticket[N_SYMS];
 double   g_entryPrice[N_SYMS];
 double   g_originalSL[N_SYMS];
 double   g_originalTP[N_SYMS];
+
+//---- Institutional Safety Features (Hedge Fund Level)
+double   g_startingEquity = 0.0;       // Starting equity for global kill-switch
+bool     g_globalKillTriggered = false; // Global kill-switch state
+
+//---- Magic Number Separation (Strategy-specific order tracking)
+#define MAGIC_SMART_MONEY     100001
+#define MAGIC_MEAN_REVERSION  100002
+#define MAGIC_TREND_MOMENTUM  100003
+#define MAGIC_VOLATILITY_BREAKOUT 100005
 double   g_currentSL[N_SYMS];
 double   g_highestPrice[N_SYMS];       // For trailing stop buys
 double   g_lowestPrice[N_SYMS];        // For trailing stop sells
@@ -3140,6 +3158,7 @@ int OnInit() {
         SymbolSelect(g_symbols[i],true);
     }
     double eq=AccountInfoDouble(ACCOUNT_EQUITY);
+    g_startingEquity = eq;  // Initialize global kill-switch baseline
     for(int i=0;i<N_SYMS;i++) {
         g_dayStartEquity[i]=eq; g_peakEquity[i]=eq; g_virtEquity[i]=eq;
         g_dayTradeCount[i]=0; g_consecLosses[i]=0; g_killSwitch[i]=false;
@@ -3148,6 +3167,7 @@ int OnInit() {
     EventSetTimer((int)MathMax((double)PushIntervalSeconds,5.0));
     Print("[ZenithEA v3.0] LIVE=",LiveTrading," | Risk=",RiskPerTradePct,
           "% | MaxTrades=",MaxDailyTrades," | KillSwitch=",KillSwitchDDPct,"%");
+    Print("[ZenithEA v3.0] GlobalKillSwitch: ",GlobalKillSwitchEnabled," | Threshold: ",GlobalEquityThresholdPct,"%");
     Print("[ZenithEA v3.0] Broker symbols: ",SR_broker[0],", ",SR_broker[1],", ",SR_broker[2]);
     string modeStr = ForceTrade ? "FORCE — instant execution on startup" :
                      (LiveTrading ? "LIVE — real strategy orders" : "DRY-RUN — no orders");
@@ -3175,6 +3195,32 @@ void OnTimer() { RefreshDayAnchor(); PushRuntimeSnapshot(); }
 
 void OnTick() {
     RefreshDayAnchor();
+
+    // GLOBAL KILL-SWITCH CHECK (Institutional Safety Feature)
+    if(GlobalKillSwitchEnabled && !g_globalKillTriggered) {
+        double currentEquity = AccountInfoDouble(ACCOUNT_EQUITY);
+        double equityPct = (currentEquity / g_startingEquity) * 100.0;
+        if(equityPct < GlobalEquityThresholdPct) {
+            Print("⚠️ GLOBAL KILL-SWITCH TRIGGERED ⚠️");
+            Print("Equity dropped to ",equityPct,"% of starting capital");
+            Print("Threshold: ",GlobalEquityThresholdPct,"%");
+            Print("INITIATING EMERGENCY PROTOCOL - Closing all positions...");
+            
+            // Emergency protocol: close all positions
+            for(int s=0;s<N_SYMS;s++) {
+                if(g_hasPosition[s]) {
+                    ClosePosition(g_symbols[s],s);
+                }
+            }
+            
+            g_globalKillTriggered = true;
+            Comment("🚨 GLOBAL KILL-SWITCH TRIGGERED 🚨\nEquity: ",equityPct,"%\nAll positions closed\nBot stopped");
+            return;  // Stop all trading
+        }
+    }
+    
+    // If global kill-switch triggered, do nothing
+    if(g_globalKillTriggered) return;
 
     // Manage any open positions every tick (trailing stop, max hold)
     for(int s=0;s<N_SYMS;s++) ManagePosition(g_symbols[s],s);

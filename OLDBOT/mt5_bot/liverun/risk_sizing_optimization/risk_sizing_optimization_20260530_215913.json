@@ -1,0 +1,337 @@
+{
+  "risk_levels_tested": [
+    0.5,
+    1.0,
+    1.5,
+    2.0,
+    2.5,
+    3.0,
+    5.0
+  ],
+  "optimal_risk_level": 5.0,
+  "best_return_dd_ratio": 9.30133208452022,
+  "results": [
+    {
+      "risk_level": 0.5,
+      "portfolio_return_pct": 37.48212765967834,
+      "portfolio_drawdown_pct": 49.60519035495801,
+      "strategy_results": [
+        {
+          "symbol": "EURUSD",
+          "strategy": "trend_momentum",
+          "risk_level": 0.5,
+          "metrics": {
+            "total_trades": 597,
+            "win_rate": 0.34673366834170855,
+            "avg_return_pct": 0.02093802345058779,
+            "total_return_pct": 11.609916467484581,
+            "avg_position_size": 50988.294280920796,
+            "max_drawdown_pct": 49.231250645283104
+          }
+        },
+        {
+          "symbol": "EURUSD",
+          "strategy": "mean_reversion",
+          "risk_level": 0.5,
+          "metrics": {
+            "total_trades": 319,
+            "win_rate": 0.34796238244514105,
+            "avg_return_pct": 0.13514341525171697,
+            "total_return_pct": 51.82537160842537,
+            "avg_position_size": 97774.01798758481,
+            "max_drawdown_pct": 11.190295343937898
+          }
+        },
+        {
+          "symbol": "NAS100",
+          "strategy": "trend_momentum",
+          "risk_level": 0.5,
+          "metrics": {
+            "total_trades": 512,
+            "win_rate": 0.291015625,
+            "avg_return_pct": 0.08203124999999847,
+            "total_return_pct": 49.01109490312507,
+            "avg_position_size": 1.1839847746014995,
+            "max_drawdown_pct": 49.60519035495801
+          }
+        }
+      ]
+    },
+    {
+      "risk_level": 1.0,
+      "portfolio_return_pct": 86.09700798402109,
+      "portfolio_drawdown_pct": 74.86876280202124,
+      "strategy_results": [
+        {
+          "symbol": "EURUSD",
+          "strategy": "trend_momentum",
+          "risk_level": 1.0,
+          "metrics": {
+            "total_trades": 597,
+            "win_rate": 0.34673366834170855,
+            "avg_return_pct": 0.04187604690117558,
+            "total_return_pct": 20.872151676047224,
+            "avg_position_size": 101976.58856184159,
+            "max_drawdown_pct": 74.37403397736682
+          }
+        },
+        {
+          "symbol": "EURUSD",
+          "strategy": "mean_reversion",
+          "risk_level": 1.0,
+          "metrics": {
+            "total_trades": 319,
+            "win_rate": 0.34796238244514105,
+            "avg_return_pct": 0.27028683050343394,
+            "total_return_pct": 124.4470632079225,
+            "avg_position_size": 195548.03597516962,
+            "max_drawdown_pct": 21.36824199248853
+          }
+        },
+        {
+          "symbol": "NAS100",
+          "strategy": "trend_momentum",
+          "risk_level": 1.0,
+          "metrics": {
+            "total_trades": 512,
+            "win_rate": 0.291015625,
+            "avg_return_pct": 0.16406249999999695,
+            "total_return_pct": 112.9718090680935,
+            "avg_position_size": 2.367969549202999,
+            "max_drawdown_pct": 74.86876280202124
+          }
+        }
+      ]
+    },
+    {
+      "risk_level": 1.5,
+      "portfolio_return_pct": 147.5133294923984,
+      "portfolio_drawdown_pct": 87.5969951297446,
+      "strategy_results": [
+        {
+          "symbol": "EURUSD",
+          "strategy": "trend_momentum",
+          "risk_level": 1.5,
+          "metrics": {
+            "total_trades": 597,
+            "win_rate": 0.34673366834170855,
+            "avg_return_pct": 0.06281407035176337,
+            "total_return_pct": 27.05716990224782,
+            "avg_position_size": 152964.8828427624,
+            "max_drawdown_pct": 87.13984839558485
+          }
+        },
+        {
+          "symbol": "EURUSD",
+          "strategy": "mean_reversion",
+          "risk_level": 1.5,
+          "metrics": {
+            "total_trades": 319,
+            "win_rate": 0.34796238244514105,
+            "avg_return_pct": 0.4054302457551509,
+            "total_return_pct": 223.28366924874638,
+            "avg_position_size": 293322.0539627545,
+            "max_drawdown_pct": 30.61127328108377
+          }
+        },
+        {
+          "symbol": "NAS100",
+          "strategy": "trend_momentum",
+          "risk_level": 1.5,
+          "metrics": {
+            "total_trades": 512,
+            "win_rate": 0.291015625,
+            "avg_return_pct": 0.24609374999999536,
+            "total_return_pct": 192.199149326201,
+            "avg_position_size": 3.551954323804499,
+            "max_drawdown_pct": 87.5969951297446
+          }
+        }
+      ]
+    },
+    {
+      "risk_level": 2.0,
+      "portfolio_return_pct": 222.92844356366336,
+      "portfolio_drawdown_pct": 93.94150839568164,
+      "strategy_results": [
+        {
+          "symbol": "EURUSD",
+          "strategy": "trend_momentum",
+          "risk_level": 2.0,
+          "metrics": {
+            "total_trades": 597,
+            "win_rate": 0.34673366834170855,
+            "avg_return_pct": 0.08375209380235116,
+            "total_return_pct": 29.671543165364994,
+            "avg_position_size": 203953.17712368318,
+            "max_drawdown_pct": 93.58364965212928
+          }
+        },
+        {
+          "symbol": "EURUSD",
+          "strategy": "mean_reversion",
+          "risk_level": 2.0,
+          "metrics": {
+            "total_trades": 319,
+            "win_rate": 0.34796238244514105,
+            "avg_return_pct": 0.5405736610068679,
+            "total_return_pct": 353.9553636630576,
+            "avg_position_size": 391096.07195033925,
+            "max_drawdown_pct": 38.96115572987984
+          }
+        },
+        {
+          "symbol": "NAS100",
+          "strategy": "trend_momentum",
+          "risk_level": 2.0,
+          "metrics": {
+            "total_trades": 512,
+            "win_rate": 0.291015625,
+            "avg_return_pct": 0.3281249999999939,
+            "total_return_pct": 285.1584238625676,
+            "avg_position_size": 4.735939098405998,
+            "max_drawdown_pct": 93.94150839568164
+          }
+        }
+      ]
+    },
+    {
+      "risk_level": 2.5,
+      "portfolio_return_pct": 312.8161516563856,
+      "portfolio_drawdown_pct": 97.07070434552342,
+      "strategy_results": [
+        {
+          "symbol": "EURUSD",
+          "strategy": "trend_momentum",
+          "risk_level": 2.5,
+          "metrics": {
+            "total_trades": 597,
+            "win_rate": 0.34673366834170855,
+            "avg_return_pct": 0.10469011725293895,
+            "total_return_pct": 28.522869745369633,
+            "avg_position_size": 254941.47140460397,
+            "max_drawdown_pct": 96.8172713995838
+          }
+        },
+        {
+          "symbol": "EURUSD",
+          "strategy": "mean_reversion",
+          "risk_level": 2.5,
+          "metrics": {
+            "total_trades": 319,
+            "win_rate": 0.34796238244514105,
+            "avg_return_pct": 0.6757170762585849,
+            "total_return_pct": 521.7942676440489,
+            "avg_position_size": 488870.08993792406,
+            "max_drawdown_pct": 46.473116214573615
+          }
+        },
+        {
+          "symbol": "NAS100",
+          "strategy": "trend_momentum",
+          "risk_level": 2.5,
+          "metrics": {
+            "total_trades": 512,
+            "win_rate": 0.291015625,
+            "avg_return_pct": 0.41015624999999234,
+            "total_return_pct": 388.13131757973827,
+            "avg_position_size": 5.919923873007498,
+            "max_drawdown_pct": 97.07070434552342
+          }
+        }
+      ]
+    },
+    {
+      "risk_level": 3.0,
+      "portfolio_return_pct": 416.7318075966257,
+      "portfolio_drawdown_pct": 98.59797202934213,
+      "strategy_results": [
+        {
+          "symbol": "EURUSD",
+          "strategy": "trend_momentum",
+          "risk_level": 3.0,
+          "metrics": {
+            "total_trades": 597,
+            "win_rate": 0.34673366834170855,
+            "avg_return_pct": 0.12562814070352674,
+            "total_return_pct": 23.742458242843654,
+            "avg_position_size": 305929.7656855248,
+            "max_drawdown_pct": 98.43045610247144
+          }
+        },
+        {
+          "symbol": "EURUSD",
+          "strategy": "mean_reversion",
+          "risk_level": 3.0,
+          "metrics": {
+            "total_trades": 319,
+            "win_rate": 0.34796238244514105,
+            "avg_return_pct": 0.8108604915103018,
+            "total_return_pct": 731.2189625158962,
+            "avg_position_size": 586644.107925509,
+            "max_drawdown_pct": 53.20427145602721
+          }
+        },
+        {
+          "symbol": "NAS100",
+          "strategy": "trend_momentum",
+          "risk_level": 3.0,
+          "metrics": {
+            "total_trades": 512,
+            "win_rate": 0.291015625,
+            "avg_return_pct": 0.49218749999999073,
+            "total_return_pct": 495.23400203113715,
+            "avg_position_size": 7.103908647608998,
+            "max_drawdown_pct": 98.59797202934213
+          }
+        }
+      ]
+    },
+    {
+      "risk_level": 5.0,
+      "portfolio_return_pct": 929.514047985513,
+      "portfolio_drawdown_pct": 99.93343314044883,
+      "strategy_results": [
+        {
+          "symbol": "EURUSD",
+          "strategy": "trend_momentum",
+          "risk_level": 5.0,
+          "metrics": {
+            "total_trades": 597,
+            "win_rate": 0.34673366834170855,
+            "avg_return_pct": 0.2093802345058779,
+            "total_return_pct": -20.059237733046274,
+            "avg_position_size": 509882.94280920795,
+            "max_drawdown_pct": 99.91247642557128
+          }
+        },
+        {
+          "symbol": "EURUSD",
+          "strategy": "mean_reversion",
+          "risk_level": 5.0,
+          "metrics": {
+            "total_trades": 319,
+            "win_rate": 0.34796238244514105,
+            "avg_return_pct": 1.3514341525171698,
+            "total_return_pct": 2001.518580519069,
+            "avg_position_size": 977740.1798758481,
+            "max_drawdown_pct": 73.9492571951313
+          }
+        },
+        {
+          "symbol": "NAS100",
+          "strategy": "trend_momentum",
+          "risk_level": 5.0,
+          "metrics": {
+            "total_trades": 512,
+            "win_rate": 0.291015625,
+            "avg_return_pct": 0.8203124999999847,
+            "total_return_pct": 807.0828011705163,
+            "avg_position_size": 11.839847746014996,
+            "max_drawdown_pct": 99.93343314044883
+          }
+        }
+      ]
+    }
+  ]
+}

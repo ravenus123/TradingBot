@@ -1,0 +1,146 @@
+{
+  "metrics": {
+    "total_engines": 9,
+    "total_weight": 1.3,
+    "weighted_return_pct": 19.509615384615383,
+    "weighted_sensitivity": 0.9026923076923078,
+    "strategy_counts": {
+      "trend_momentum": 6,
+      "mean_reversion": 3
+    },
+    "symbol_counts": {
+      "EURUSD": 4,
+      "NAS100": 3,
+      "XAUUSD": 2
+    }
+  },
+  "engines": [
+    {
+      "engine_id": 1,
+      "symbol": "EURUSD",
+      "strategy": "trend_momentum",
+      "timeframe": "M15",
+      "params": {
+        "h1_ema_period": 50,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.0
+      },
+      "base_return_pct": 8.78,
+      "sensitivity_score": 1.0,
+      "weight": 0.2
+    },
+    {
+      "engine_id": 2,
+      "symbol": "EURUSD",
+      "strategy": "mean_reversion",
+      "timeframe": "M15",
+      "params": {
+        "window": 20,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 0.8
+      },
+      "base_return_pct": 2.01,
+      "sensitivity_score": 0.81,
+      "weight": 0.15
+    },
+    {
+      "engine_id": 3,
+      "symbol": "NAS100",
+      "strategy": "trend_momentum",
+      "timeframe": "M15",
+      "params": {
+        "h1_ema_period": 50,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.0
+      },
+      "base_return_pct": 22.59,
+      "sensitivity_score": 0.89,
+      "weight": 0.25
+    },
+    {
+      "engine_id": 4,
+      "symbol": "XAUUSD",
+      "strategy": "trend_momentum",
+      "timeframe": "M15",
+      "params": {
+        "h1_ema_period": 50,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.0
+      },
+      "base_return_pct": 36.65,
+      "sensitivity_score": 1.0,
+      "weight": 0.3
+    },
+    {
+      "engine_id": 5,
+      "symbol": "EURUSD",
+      "strategy": "trend_momentum",
+      "timeframe": "H1",
+      "params": {
+        "h1_ema_period": 50,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.0
+      },
+      "base_return_pct": 8.78,
+      "sensitivity_score": 1.0,
+      "weight": 0.1
+    },
+    {
+      "engine_id": 6,
+      "symbol": "NAS100",
+      "strategy": "trend_momentum",
+      "timeframe": "H1",
+      "params": {
+        "h1_ema_period": 50,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.0
+      },
+      "base_return_pct": 22.59,
+      "sensitivity_score": 0.89,
+      "weight": 0.1
+    },
+    {
+      "engine_id": 7,
+      "symbol": "XAUUSD",
+      "strategy": "trend_momentum",
+      "timeframe": "H1",
+      "params": {
+        "h1_ema_period": 50,
+        "m5_ema_period": 20,
+        "stop_atr_mult": 1.0
+      },
+      "base_return_pct": 36.65,
+      "sensitivity_score": 1.0,
+      "weight": 0.1
+    },
+    {
+      "engine_id": 8,
+      "symbol": "EURUSD",
+      "strategy": "mean_reversion",
+      "timeframe": "H1",
+      "params": {
+        "window": 20,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 0.8
+      },
+      "base_return_pct": 2.01,
+      "sensitivity_score": 0.81,
+      "weight": 0.05
+    },
+    {
+      "engine_id": 9,
+      "symbol": "NAS100",
+      "strategy": "mean_reversion",
+      "timeframe": "H1",
+      "params": {
+        "window": 20,
+        "z_threshold": 2.0,
+        "stop_atr_mult": 0.8
+      },
+      "base_return_pct": -4.8,
+      "sensitivity_score": 0.0,
+      "weight": 0.05
+    }
+  ],
+  "assembly_date": "2026-05-30T21:11:18.049326"
+}

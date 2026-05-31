@@ -1,0 +1,84 @@
+{
+  "risk_levels_tested": [
+    0.15,
+    0.18,
+    0.2,
+    0.22,
+    0.25
+  ],
+  "optimal_risk_level": 0.25,
+  "best_return_dd_ratio": 0.7855206579022072,
+  "best_status": "FAIL",
+  "current_assumption_0p2_result": {
+    "total_trades": 512,
+    "win_rate": 0.291015625,
+    "avg_return_pct": 0.03281249999999939,
+    "total_return_pct": 17.892347234993778,
+    "avg_position_size": 0.5249375649134909,
+    "avg_leverage": 1.1426925493998596,
+    "max_drawdown_pct": 23.87906308481812
+  },
+  "recommendation": "adjust",
+  "results": [
+    {
+      "risk_level": 0.15,
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.291015625,
+        "avg_return_pct": 0.024609374999999555,
+        "total_return_pct": 13.211447593605662,
+        "avg_position_size": 0.38360574857535734,
+        "avg_leverage": 0.8571291558551428,
+        "max_drawdown_pct": 18.492611035938864
+      }
+    },
+    {
+      "risk_level": 0.18,
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.291015625,
+        "avg_return_pct": 0.029531249999999457,
+        "total_return_pct": 16.003085342913927,
+        "avg_position_size": 0.4675500312782589,
+        "avg_leverage": 1.0284757556951853,
+        "max_drawdown_pct": 21.76757874211095
+      }
+    },
+    {
+      "risk_level": 0.2,
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.291015625,
+        "avg_return_pct": 0.03281249999999939,
+        "total_return_pct": 17.892347234993778,
+        "avg_position_size": 0.5249375649134909,
+        "avg_leverage": 1.1426925493998596,
+        "max_drawdown_pct": 23.87906308481812
+      }
+    },
+    {
+      "risk_level": 0.22,
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.291015625,
+        "avg_return_pct": 0.03609374999999932,
+        "total_return_pct": 19.804281540107095,
+        "avg_position_size": 0.5834904244215399,
+        "avg_leverage": 1.256898036170909,
+        "max_drawdown_pct": 25.934809718223267
+      }
+    },
+    {
+      "risk_level": 0.25,
+      "metrics": {
+        "total_trades": 512,
+        "win_rate": 0.291015625,
+        "avg_return_pct": 0.04101562499999924,
+        "total_return_pct": 22.714942832462093,
+        "avg_position_size": 0.6735537311645314,
+        "avg_leverage": 1.4281852741521184,
+        "max_drawdown_pct": 28.917053426862232
+      }
+    }
+  ]
+}

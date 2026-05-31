@@ -1,0 +1,86 @@
+{
+  "strategies_tested": 5,
+  "strategies_analyzed": 5,
+  "high_correlation_pairs": [
+    {
+      "strategy1": "mean_reversion:EURUSD",
+      "strategy2": "volatility_breakout:EURUSD",
+      "correlation": 0.9644996324654594
+    }
+  ],
+  "low_correlation_pairs": [
+    {
+      "strategy1": "trend_momentum:EURUSD",
+      "strategy2": "trend_momentum:NAS100",
+      "correlation": 0.006452720575849283
+    },
+    {
+      "strategy1": "trend_momentum:EURUSD",
+      "strategy2": "trend_momentum:XAUUSD",
+      "correlation": -0.019140463585425347
+    },
+    {
+      "strategy1": "mean_reversion:EURUSD",
+      "strategy2": "trend_momentum:NAS100",
+      "correlation": -0.005512616748369699
+    },
+    {
+      "strategy1": "mean_reversion:EURUSD",
+      "strategy2": "trend_momentum:XAUUSD",
+      "correlation": 0.01635186878035374
+    },
+    {
+      "strategy1": "volatility_breakout:EURUSD",
+      "strategy2": "trend_momentum:NAS100",
+      "correlation": -0.007909480189092133
+    },
+    {
+      "strategy1": "volatility_breakout:EURUSD",
+      "strategy2": "trend_momentum:XAUUSD",
+      "correlation": 0.02346159511471416
+    },
+    {
+      "strategy1": "trend_momentum:NAS100",
+      "strategy2": "trend_momentum:XAUUSD",
+      "correlation": 0.014288814675853589
+    }
+  ],
+  "average_correlation": 0.022514372229636356,
+  "correlation_matrix": {
+    "trend_momentum:EURUSD": {
+      "trend_momentum:EURUSD": 1.0,
+      "mean_reversion:EURUSD": -0.377,
+      "volatility_breakout:EURUSD": -0.39,
+      "trend_momentum:NAS100": 0.006,
+      "trend_momentum:XAUUSD": -0.019
+    },
+    "mean_reversion:EURUSD": {
+      "trend_momentum:EURUSD": -0.377,
+      "mean_reversion:EURUSD": 1.0,
+      "volatility_breakout:EURUSD": 0.964,
+      "trend_momentum:NAS100": -0.006,
+      "trend_momentum:XAUUSD": 0.016
+    },
+    "volatility_breakout:EURUSD": {
+      "trend_momentum:EURUSD": -0.39,
+      "mean_reversion:EURUSD": 0.964,
+      "volatility_breakout:EURUSD": 1.0,
+      "trend_momentum:NAS100": -0.008,
+      "trend_momentum:XAUUSD": 0.023
+    },
+    "trend_momentum:NAS100": {
+      "trend_momentum:EURUSD": 0.006,
+      "mean_reversion:EURUSD": -0.006,
+      "volatility_breakout:EURUSD": -0.008,
+      "trend_momentum:NAS100": 1.0,
+      "trend_momentum:XAUUSD": 0.014
+    },
+    "trend_momentum:XAUUSD": {
+      "trend_momentum:EURUSD": -0.019,
+      "mean_reversion:EURUSD": 0.016,
+      "volatility_breakout:EURUSD": 0.023,
+      "trend_momentum:NAS100": 0.014,
+      "trend_momentum:XAUUSD": 1.0
+    }
+  }
+}
