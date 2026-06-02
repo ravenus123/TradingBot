@@ -1,0 +1,281 @@
+[
+  {
+    "symbol": "NAS100",
+    "data_start": "2024-06-03 01:00:00",
+    "data_end": "2026-06-01 22:45:00",
+    "mean_return": 26.822891806309848,
+    "std_return": 7.683184948324563,
+    "mean_drawdown": 5.123681272347797,
+    "mean_trades": 148.5,
+    "positive_periods": 100.0,
+    "num_periods": 10,
+    "periods": [
+      {
+        "period_index": 1,
+        "start_date": "2024-06-03 01:00:00",
+        "end_date": "2024-08-14 01:45:00",
+        "return_pct": 20.204581662312883,
+        "drawdown_pct": 4.269751854214531,
+        "trades": 134
+      },
+      {
+        "period_index": 2,
+        "start_date": "2024-08-14 02:00:00",
+        "end_date": "2024-10-24 08:15:00",
+        "return_pct": 28.139498366946025,
+        "drawdown_pct": 4.7812322124309885,
+        "trades": 152
+      },
+      {
+        "period_index": 3,
+        "start_date": "2024-10-24 08:30:00",
+        "end_date": "2025-01-07 21:45:00",
+        "return_pct": 18.118663089741403,
+        "drawdown_pct": 5.429968712859893,
+        "trades": 141
+      },
+      {
+        "period_index": 4,
+        "start_date": "2025-01-07 22:00:00",
+        "end_date": "2025-03-20 16:15:00",
+        "return_pct": 24.025403365271213,
+        "drawdown_pct": 3.759131446670412,
+        "trades": 155
+      },
+      {
+        "period_index": 5,
+        "start_date": "2025-03-20 16:30:00",
+        "end_date": "2025-06-02 22:45:00",
+        "return_pct": 27.17531991414688,
+        "drawdown_pct": 5.755653857058117,
+        "trades": 145
+      },
+      {
+        "period_index": 6,
+        "start_date": "2025-06-02 23:00:00",
+        "end_date": "2025-08-13 13:30:00",
+        "return_pct": 22.460490531480993,
+        "drawdown_pct": 5.014245837084695,
+        "trades": 143
+      },
+      {
+        "period_index": 7,
+        "start_date": "2025-08-13 13:45:00",
+        "end_date": "2025-10-23 20:45:00",
+        "return_pct": 22.447290598481302,
+        "drawdown_pct": 3.9712319519044006,
+        "trades": 160
+      },
+      {
+        "period_index": 8,
+        "start_date": "2025-10-23 21:00:00",
+        "end_date": "2026-01-07 19:15:00",
+        "return_pct": 41.14733253328168,
+        "drawdown_pct": 5.076418805412559,
+        "trades": 153
+      },
+      {
+        "period_index": 9,
+        "start_date": "2026-01-07 19:30:00",
+        "end_date": "2026-03-20 06:30:00",
+        "return_pct": 41.162435102553445,
+        "drawdown_pct": 7.3851695993370425,
+        "trades": 148
+      },
+      {
+        "period_index": 10,
+        "start_date": "2026-03-20 06:45:00",
+        "end_date": "2026-06-01 21:00:00",
+        "return_pct": 23.34790289888271,
+        "drawdown_pct": 5.794008446505337,
+        "trades": 154
+      }
+    ]
+  },
+  {
+    "symbol": "XAUUSD",
+    "data_start": "2024-06-03 00:00:00",
+    "data_end": "2026-06-01 23:00:00",
+    "mean_return": 10.070104529741272,
+    "std_return": 7.467211824894726,
+    "mean_drawdown": 2.2832027884836275,
+    "mean_trades": 151.0,
+    "positive_periods": 90.0,
+    "num_periods": 10,
+    "periods": [
+      {
+        "period_index": 1,
+        "start_date": "2024-06-03 00:00:00",
+        "end_date": "2024-12-31 22:45:00",
+        "return_pct": 4.876287930118705,
+        "drawdown_pct": 2.31673540476011,
+        "trades": 153
+      },
+      {
+        "period_index": 2,
+        "start_date": "2024-12-31 23:00:00",
+        "end_date": "2025-02-27 11:00:00",
+        "return_pct": 3.247298144130727,
+        "drawdown_pct": 1.3507378860151398,
+        "trades": 158
+      },
+      {
+        "period_index": 3,
+        "start_date": "2025-02-27 11:15:00",
+        "end_date": "2025-04-25 17:45:00",
+        "return_pct": 6.9354831627792,
+        "drawdown_pct": 2.052335797975674,
+        "trades": 157
+      },
+      {
+        "period_index": 4,
+        "start_date": "2025-04-25 18:00:00",
+        "end_date": "2025-06-23 06:00:00",
+        "return_pct": -0.6417126467258277,
+        "drawdown_pct": 3.322489925543538,
+        "trades": 144
+      },
+      {
+        "period_index": 5,
+        "start_date": "2025-06-23 06:15:00",
+        "end_date": "2025-08-18 16:30:00",
+        "return_pct": 7.745874680072265,
+        "drawdown_pct": 1.0266719361190342,
+        "trades": 160
+      },
+      {
+        "period_index": 6,
+        "start_date": "2025-08-18 16:45:00",
+        "end_date": "2025-10-14 02:30:00",
+        "return_pct": 6.941413866038946,
+        "drawdown_pct": 1.8761834853453083,
+        "trades": 145
+      },
+      {
+        "period_index": 7,
+        "start_date": "2025-10-14 02:45:00",
+        "end_date": "2025-12-09 13:45:00",
+        "return_pct": 9.31092907309574,
+        "drawdown_pct": 2.395181059888975,
+        "trades": 145
+      },
+      {
+        "period_index": 8,
+        "start_date": "2025-12-09 14:00:00",
+        "end_date": "2026-02-06 02:30:00",
+        "return_pct": 20.734682228080636,
+        "drawdown_pct": 1.4312447835699336,
+        "trades": 152
+      },
+      {
+        "period_index": 9,
+        "start_date": "2026-02-06 02:45:00",
+        "end_date": "2026-04-06 11:45:00",
+        "return_pct": 21.404063652031564,
+        "drawdown_pct": 2.815439945812478,
+        "trades": 147
+      },
+      {
+        "period_index": 10,
+        "start_date": "2026-04-06 12:00:00",
+        "end_date": "2026-06-01 20:45:00",
+        "return_pct": 20.14672520779075,
+        "drawdown_pct": 4.2450076598060855,
+        "trades": 149
+      }
+    ]
+  },
+  {
+    "symbol": "BTCUSD",
+    "data_start": "2024-06-01 23:15:00",
+    "data_end": "2026-06-01 23:00:00",
+    "mean_return": 59.57663596406852,
+    "std_return": 27.734207100060566,
+    "mean_drawdown": 7.049441286529293,
+    "mean_trades": 152.2,
+    "positive_periods": 100.0,
+    "num_periods": 10,
+    "periods": [
+      {
+        "period_index": 1,
+        "start_date": "2024-06-01 23:15:00",
+        "end_date": "2024-08-14 18:30:00",
+        "return_pct": 36.87172731481832,
+        "drawdown_pct": 8.588658196025557,
+        "trades": 150
+      },
+      {
+        "period_index": 2,
+        "start_date": "2024-08-14 18:45:00",
+        "end_date": "2024-10-25 06:30:00",
+        "return_pct": 49.9562888531512,
+        "drawdown_pct": 9.722254161579121,
+        "trades": 149
+      },
+      {
+        "period_index": 3,
+        "start_date": "2024-10-25 06:45:00",
+        "end_date": "2025-01-06 15:45:00",
+        "return_pct": 41.287447607809504,
+        "drawdown_pct": 5.478619328856378,
+        "trades": 148
+      },
+      {
+        "period_index": 4,
+        "start_date": "2025-01-06 16:00:00",
+        "end_date": "2025-03-21 16:15:00",
+        "return_pct": 90.64351777004667,
+        "drawdown_pct": 7.030293612011912,
+        "trades": 161
+      },
+      {
+        "period_index": 5,
+        "start_date": "2025-03-21 16:30:00",
+        "end_date": "2025-06-05 03:30:00",
+        "return_pct": 38.95121088334918,
+        "drawdown_pct": 6.771845533709856,
+        "trades": 155
+      },
+      {
+        "period_index": 6,
+        "start_date": "2025-06-05 03:45:00",
+        "end_date": "2025-08-17 15:45:00",
+        "return_pct": 118.63185036322335,
+        "drawdown_pct": 4.866806049656544,
+        "trades": 153
+      },
+      {
+        "period_index": 7,
+        "start_date": "2025-08-17 16:00:00",
+        "end_date": "2025-10-29 09:00:00",
+        "return_pct": 35.147020328027885,
+        "drawdown_pct": 9.237351312872963,
+        "trades": 147
+      },
+      {
+        "period_index": 8,
+        "start_date": "2025-10-29 09:15:00",
+        "end_date": "2026-01-09 03:15:00",
+        "return_pct": 75.99856527467168,
+        "drawdown_pct": 8.349750656218498,
+        "trades": 158
+      },
+      {
+        "period_index": 9,
+        "start_date": "2026-01-09 03:30:00",
+        "end_date": "2026-03-22 03:15:00",
+        "return_pct": 32.39525474097128,
+        "drawdown_pct": 6.355153199571833,
+        "trades": 156
+      },
+      {
+        "period_index": 10,
+        "start_date": "2026-03-22 03:30:00",
+        "end_date": "2026-06-01 21:30:00",
+        "return_pct": 75.88347650461618,
+        "drawdown_pct": 4.093680814790264,
+        "trades": 145
+      }
+    ]
+  }
+]

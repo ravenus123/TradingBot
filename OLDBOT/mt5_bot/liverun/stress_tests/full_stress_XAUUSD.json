@@ -1,0 +1,14 @@
+{
+  "symbol": "XAUUSD",
+  "tests": [
+    "baseline",
+    "noise_small",
+    "noise_large",
+    "spread_x2",
+    "spread_x5",
+    "missing_1pct",
+    "exec_delay_1bar",
+    "worst_combined"
+  ],
+  "out_path": "D:\\RAVBOTGITHUB\\ULTIMA2.0\\TradingBot\\OLDBOT\\mt5_bot\\liverun\\stress_tests\\XAUUSD_stress.json"
+}

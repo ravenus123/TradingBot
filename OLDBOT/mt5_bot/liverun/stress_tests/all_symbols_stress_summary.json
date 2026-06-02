@@ -1,0 +1,97 @@
+{
+  "timestamp": "2026-06-01T19:56:22.418939",
+  "symbols": [
+    "EURUSD",
+    "NAS100",
+    "XAUUSD",
+    "GBPUSD",
+    "USDJPY",
+    "BTCUSD"
+  ],
+  "results": {
+    "EURUSD": {
+      "symbol": "EURUSD",
+      "tests": [
+        "baseline",
+        "noise_small",
+        "noise_large",
+        "spread_x2",
+        "spread_x5",
+        "missing_1pct",
+        "exec_delay_1bar",
+        "worst_combined"
+      ],
+      "out_path": "D:\\RAVBOTGITHUB\\ULTIMA2.0\\TradingBot\\OLDBOT\\mt5_bot\\liverun\\stress_tests\\EURUSD_stress.json"
+    },
+    "NAS100": {
+      "symbol": "NAS100",
+      "tests": [
+        "baseline",
+        "noise_small",
+        "noise_large",
+        "spread_x2",
+        "spread_x5",
+        "missing_1pct",
+        "exec_delay_1bar",
+        "worst_combined"
+      ],
+      "out_path": "D:\\RAVBOTGITHUB\\ULTIMA2.0\\TradingBot\\OLDBOT\\mt5_bot\\liverun\\stress_tests\\NAS100_stress.json"
+    },
+    "XAUUSD": {
+      "symbol": "XAUUSD",
+      "tests": [
+        "baseline",
+        "noise_small",
+        "noise_large",
+        "spread_x2",
+        "spread_x5",
+        "missing_1pct",
+        "exec_delay_1bar",
+        "worst_combined"
+      ],
+      "out_path": "D:\\RAVBOTGITHUB\\ULTIMA2.0\\TradingBot\\OLDBOT\\mt5_bot\\liverun\\stress_tests\\XAUUSD_stress.json"
+    },
+    "GBPUSD": {
+      "symbol": "GBPUSD",
+      "tests": [
+        "baseline",
+        "noise_small",
+        "noise_large",
+        "spread_x2",
+        "spread_x5",
+        "missing_1pct",
+        "exec_delay_1bar",
+        "worst_combined"
+      ],
+      "out_path": "D:\\RAVBOTGITHUB\\ULTIMA2.0\\TradingBot\\OLDBOT\\mt5_bot\\liverun\\stress_tests\\GBPUSD_stress.json"
+    },
+    "USDJPY": {
+      "symbol": "USDJPY",
+      "tests": [
+        "baseline",
+        "noise_small",
+        "noise_large",
+        "spread_x2",
+        "spread_x5",
+        "missing_1pct",
+        "exec_delay_1bar",
+        "worst_combined"
+      ],
+      "out_path": "D:\\RAVBOTGITHUB\\ULTIMA2.0\\TradingBot\\OLDBOT\\mt5_bot\\liverun\\stress_tests\\USDJPY_stress.json"
+    },
+    "BTCUSD": {
+      "symbol": "BTCUSD",
+      "tests": [
+        "baseline",
+        "noise_small",
+        "noise_large",
+        "spread_x2",
+        "spread_x5",
+        "missing_1pct",
+        "exec_delay_1bar",
+        "worst_combined"
+      ],
+      "out_path": "D:\\RAVBOTGITHUB\\ULTIMA2.0\\TradingBot\\OLDBOT\\mt5_bot\\liverun\\stress_tests\\BTCUSD_stress.json"
+    }
+  }
+}

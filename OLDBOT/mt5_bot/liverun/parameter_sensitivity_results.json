@@ -1,0 +1,41 @@
+[
+  {
+    "symbol": "BTCUSD",
+    "data_start": "2024-06-02 00:00:00",
+    "data_end": "2026-06-01 23:45:00",
+    "mean_return": 23.328169809449257,
+    "std_return": 31.437810848007864,
+    "min_return": -18.708836228494636,
+    "max_return": 109.29853556594855,
+    "mean_drawdown": 12.841022712049092,
+    "mean_trades": 150.9,
+    "positive_variations": 75.0,
+    "num_variations": 20
+  },
+  {
+    "symbol": "NAS100",
+    "data_start": "2024-06-03 01:00:00",
+    "data_end": "2026-06-01 23:45:00",
+    "mean_return": -8.355811822888914,
+    "std_return": 7.65931333445177,
+    "min_return": -20.062845993653244,
+    "max_return": 7.723632320499874,
+    "mean_drawdown": 15.32948702172197,
+    "mean_trades": 140.15,
+    "positive_variations": 10.0,
+    "num_variations": 20
+  },
+  {
+    "symbol": "XAUUSD",
+    "data_start": "2024-06-03 00:00:00",
+    "data_end": "2026-06-01 23:45:00",
+    "mean_return": 3.031345934771726,
+    "std_return": 3.076426411278159,
+    "min_return": -2.8195648134956355,
+    "max_return": 8.999909334563144,
+    "mean_drawdown": 2.7056972563341914,
+    "mean_trades": 149.05,
+    "positive_variations": 80.0,
+    "num_variations": 20
+  }
+]

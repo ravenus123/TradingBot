@@ -1,0 +1,158 @@
+{
+  "symbol": "USDJPY",
+  "timestamp": "2026-06-01T19:56:11.348556",
+  "tests": {
+    "baseline": {
+      "metrics": {
+        "total_trades": 5071,
+        "wins": 3663,
+        "losses": 1408,
+        "win_rate": 72.23427331887203,
+        "total_profit": 253219.2352429654,
+        "avg_profit": 49.934773268184856,
+        "avg_win": 149.70471633426038,
+        "avg_loss": -209.6229692396523,
+        "best_trade": 370.328661995332,
+        "worst_trade": -249.6453900709201,
+        "profit_factor": 1.8579365491340338,
+        "max_drawdown": 2077.741012499653,
+        "final_balance": 263219.2352429654,
+        "return_pct": 2532.192352429654
+      },
+      "robust_score": 3897.353769994879
+    },
+    "noise_small": {
+      "metrics": {
+        "total_trades": 5041,
+        "wins": 3649,
+        "losses": 1392,
+        "win_rate": 72.38643126363816,
+        "total_profit": 254691.56623424916,
+        "avg_profit": 50.524016313082555,
+        "avg_win": 151.1351805444722,
+        "avg_loss": -213.21889911819684,
+        "best_trade": 371.2868430655389,
+        "worst_trade": -249.83114891052665,
+        "profit_factor": 1.8581231773917162,
+        "max_drawdown": 1904.291596773939,
+        "final_balance": 264691.56623424916,
+        "return_pct": 2546.9156623424915
+      },
+      "robust_score": 3920.889095572643
+    },
+    "noise_large": {
+      "metrics": {
+        "total_trades": 4940,
+        "wins": 3567,
+        "losses": 1373,
+        "win_rate": 72.20647773279352,
+        "total_profit": 243433.7711854239,
+        "avg_profit": 49.27809133308176,
+        "avg_win": 149.36138450778438,
+        "avg_loss": -210.7343680654356,
+        "best_trade": 372.1508727667501,
+        "worst_trade": -249.36373442497342,
+        "profit_factor": 1.8413465546221304,
+        "max_drawdown": 2073.847693395466,
+        "final_balance": 253433.7711854239,
+        "return_pct": 2434.337711854239
+      },
+      "robust_score": 3749.0505522850167
+    },
+    "spread_x2": {
+      "metrics": {
+        "total_trades": 4419,
+        "wins": 3175,
+        "losses": 1244,
+        "win_rate": 71.84883457795881,
+        "total_profit": 152822.52473927132,
+        "avg_profit": 34.58305606229267,
+        "avg_win": 135.33082672297968,
+        "avg_loss": -222.55052259339962,
+        "best_trade": 365.6573239906607,
+        "worst_trade": -249.96431120628998,
+        "profit_factor": 1.5519991023413882,
+        "max_drawdown": 2749.4820249992044,
+        "final_balance": 162822.52473927132,
+        "return_pct": 1528.2252473927133
+      },
+      "robust_score": 2374.446147905805
+    },
+    "spread_x5": {
+      "metrics": {
+        "total_trades": 880,
+        "wins": 639,
+        "losses": 241,
+        "win_rate": 72.61363636363637,
+        "total_profit": 17118.325434184466,
+        "avg_profit": 19.452642538845986,
+        "avg_win": 99.99653049713004,
+        "avg_loss": -194.1056330019985,
+        "best_trade": 351.6433099766468,
+        "worst_trade": -249.77246871445058,
+        "profit_factor": 1.365936809220448,
+        "max_drawdown": 1689.4228226176128,
+        "final_balance": 27118.325434184466,
+        "return_pct": 171.18325434184464
+      },
+      "robust_score": 292.5599395740966
+    },
+    "missing_1pct": {
+      "metrics": {
+        "total_trades": 5014,
+        "wins": 3603,
+        "losses": 1411,
+        "win_rate": 71.85879537295573,
+        "total_profit": 243579.21677721536,
+        "avg_profit": 48.57981985983553,
+        "avg_win": 149.9090064734489,
+        "avg_loss": -210.1650840160319,
+        "best_trade": 370.328661995332,
+        "worst_trade": -248.20936639120256,
+        "profit_factor": 1.821396125896627,
+        "max_drawdown": 2207.9104190033686,
+        "final_balance": 253579.21677721536,
+        "return_pct": 2435.7921677721533
+      },
+      "robust_score": 3750.4092736043563
+    },
+    "exec_delay_1bar": {
+      "metrics": {
+        "total_trades": 5425,
+        "wins": 4499,
+        "losses": 926,
+        "win_rate": 82.93087557603687,
+        "total_profit": 620147.3864138613,
+        "avg_profit": 114.31288228826936,
+        "avg_win": 182.16271666314546,
+        "avg_loss": -215.33766290888786,
+        "best_trade": 372.1200526618952,
+        "worst_trade": -248.40940525586979,
+        "profit_factor": 4.110025398400747,
+        "max_drawdown": 1280.5554852815985,
+        "final_balance": 630147.3864138613,
+        "return_pct": 6201.473864138613
+      },
+      "robust_score": 9437.573569424241
+    },
+    "worst_combined": {
+      "metrics": {
+        "total_trades": 947,
+        "wins": 669,
+        "losses": 278,
+        "win_rate": 70.6441393875396,
+        "total_profit": 10170.301321579173,
+        "avg_profit": 10.73949453176259,
+        "avg_win": 87.20327612312114,
+        "avg_loss": -173.2686705208233,
+        "best_trade": 349.09071605754417,
+        "worst_trade": -247.6348068865987,
+        "profit_factor": 1.211139253239238,
+        "max_drawdown": 2034.5243308976387,
+        "final_balance": 20170.301321579173,
+        "return_pct": 101.70301321579171
+      },
+      "robust_score": 184.60954458489883
+    }
+  }
+}

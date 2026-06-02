@@ -39,6 +39,8 @@ from OLDBOT.mt5_bot.portfolio_engine import (
 from OLDBOT.mt5_bot.trend_momentum import generate_trend_momentum_signal
 from OLDBOT.mt5_bot.mean_reversion import generate_mean_reversion_signal
 from OLDBOT.mt5_bot.volatility_breakout import generate_volatility_breakout_signal
+from OLDBOT.mt5_bot.rsi_strategy import generate_rsi_signal
+from OLDBOT.mt5_bot.stochastic_strategy import generate_stochastic_signal
 from OLDBOT.mt5_bot.telegram_bot import send_telegram_message, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 # SQLite database (trades, order_blocks, logs)
@@ -207,34 +209,71 @@ def _get_locked_entry(symbol: str, strategy: str) -> dict | None:
             return item
     return None
 
-# Modular portfolio inputs - NAS100-ONLY PORTFOLIO
-# Based on Risk Management Testing (0.2% risk, 23.88% drawdown, 17.89% return)
-PORTFOLIO_STRATEGIES = {
-    'smart_money_v1': {
-        'enabled': False,  # Disabled
-        'weight': 0.0,
-        'style': 'hybrid',
-        'asset_class': 'multi_asset',
-    },
-    'mean_reversion_v1': {
-        'enabled': True,
-        'weight': 1.0,
-        'style': 'mean_reversion',
-        'asset_class': 'multi_asset',
-    },
-    'trend_momentum_v1': {
-        'enabled': True,
-        'weight': 1.0,
-        'style': 'trend_momentum',
-        'asset_class': 'multi_asset',
-    },
-    'volatility_breakout_v1': {
-        'enabled': False,  # Disabled (losing in walk-forward)
-        'weight': 0.0,
-        'style': 'breakout',
-        'asset_class': 'multi_asset',
-    },
-}
+
+def _build_portfolio_strategies_from_lock() -> dict:
+    """Build PORTFOLIO_STRATEGIES dynamically from production_strategy_lock.json.
+    This ensures main.py always uses the latest hedge fund configuration."""
+    strategies = {}
+    
+    # Strategy style mapping
+    style_map = {
+        'smart_money': 'hybrid',
+        'mean_reversion': 'mean_reversion',
+        'rsi': 'mean_reversion',
+        'stochastic': 'momentum',
+        'trend_momentum': 'trend_momentum',
+        'bollinger': 'mean_reversion',
+        'breakout': 'breakout',
+        'volatility': 'volatility',
+        'macd': 'momentum',
+    }
+    
+    # Build strategy list from lock file
+    for item in PRODUCTION_STRATEGY_LOCK:
+        if not bool(item.get('enabled', True)):
+            continue
+        
+        strategy_name = str(item.get('strategy', '')).strip()
+        symbol = str(item.get('symbol', '')).upper().strip()
+        
+        if not strategy_name or not symbol:
+            continue
+        
+        # Create strategy key (e.g., 'mean_reversion_v1')
+        strategy_key = f"{strategy_name}_v1"
+        
+        # If strategy not already in dict, add it
+        if strategy_key not in strategies:
+            strategies[strategy_key] = {
+                'enabled': True,
+                'weight': 1.0,
+                'style': style_map.get(strategy_name, 'unknown'),
+                'asset_class': 'multi_asset',
+            }
+    
+    # Ensure at least some strategies are enabled
+    if not strategies:
+        # Fallback to default if lock file is empty
+        strategies = {
+            'mean_reversion_v1': {
+                'enabled': True,
+                'weight': 1.0,
+                'style': 'mean_reversion',
+                'asset_class': 'multi_asset',
+            },
+            'rsi_v1': {
+                'enabled': True,
+                'weight': 1.0,
+                'style': 'mean_reversion',
+                'asset_class': 'multi_asset',
+            },
+        }
+    
+    return strategies
+
+
+# Build PORTFOLIO_STRATEGIES from production_strategy_lock.json
+PORTFOLIO_STRATEGIES = _build_portfolio_strategies_from_lock()
 
 # config
 
@@ -264,6 +303,10 @@ STRATEGY_MAGIC_NUMBERS = {
     'trend_momentum_v1': 100003,
     'breakout_v1': 100004,
     'volatility_breakout_v1': 100005,
+    'rsi_v1': 100006,
+    'stochastic_v1': 100007,
+    'bollinger_v1': 100008,
+    'macd_v1': 100009,
 }
 
 # Hard SL/TP Enforcement: Every order MUST have hard stops attached
@@ -570,13 +613,42 @@ def get_open_positions() -> list:
     return list(positions)
 
 
-def get_position_for_symbol(symbol: str) -> dict | None:
-    """Check if we have an open position for this symbol."""
+def get_position_for_symbol(symbol: str, strategy: str | None = None) -> dict | None:
+    """Check if we have an open position for this symbol.
+    If strategy is provided, check only positions with that strategy's magic number.
+    This allows multiple strategies to open positions on the same symbol."""
     broker_sym = get_broker_symbol(symbol)
     positions = mt5.positions_get(symbol=broker_sym)
     if positions is None or len(positions) == 0:
         return None
     
+    # If strategy specified, filter by magic number
+    if strategy:
+        strategy_key = f"{strategy}_v1"
+        magic_num = STRATEGY_MAGIC_NUMBERS.get(strategy_key)
+        if magic_num:
+            # Find position with matching magic number
+            for pos in positions:
+                if pos.magic == magic_num:
+                    return {
+                        'ticket': pos.ticket,
+                        'symbol': symbol,
+                        'broker_symbol': broker_sym,
+                        'direction': 'BUY' if pos.type == mt5.ORDER_TYPE_BUY else 'SELL',
+                        'volume': pos.volume,
+                        'open_price': pos.price_open,
+                        'current_price': pos.price_current,
+                        'sl': pos.sl,
+                        'tp': pos.tp,
+                        'profit': pos.profit,
+                        'open_time': datetime.fromtimestamp(pos.time, tz=timezone.utc),
+                        'magic': pos.magic,
+                        'strategy': strategy,
+                    }
+            # No position found for this specific strategy
+            return None
+    
+    # No strategy specified, return first position (backward compatibility)
     pos = positions[0]
     return {
         'ticket': pos.ticket,
@@ -590,6 +662,7 @@ def get_position_for_symbol(symbol: str) -> dict | None:
         'tp': pos.tp,
         'profit': pos.profit,
         'open_time': datetime.fromtimestamp(pos.time, tz=timezone.utc),
+        'magic': pos.magic,
     }
 
 
@@ -630,6 +703,11 @@ def place_order(signal: dict, sym_info: dict, lot_size: float) -> dict:
     """Place a market order with SL. Returns result dict."""
     broker_sym = signal['broker_symbol']
     
+    # Get magic number for this strategy
+    strategy = signal.get('strategy', 'mean_reversion')
+    strategy_key = f"{strategy}_v1"
+    magic_num = STRATEGY_MAGIC_NUMBERS.get(strategy_key, 123456)
+    
     # Determine order type
     if signal['direction'] == 'BUY':
         order_type = mt5.ORDER_TYPE_BUY
@@ -647,8 +725,8 @@ def place_order(signal: dict, sym_info: dict, lot_size: float) -> dict:
         'sl': signal['stop'],
         'tp': signal['tp'],
         'deviation': 20,  # slippage in points
-        'magic': 123456,  # EA magic number
-        'comment': 'TrendBot',
+        'magic': magic_num,  # Strategy-specific magic number
+        'comment': f'{strategy}',
         'type_time': mt5.ORDER_TIME_GTC,
         'type_filling': mt5.ORDER_FILLING_IOC,
     }
@@ -1397,44 +1475,138 @@ def _build_portfolio_orchestrator(context: dict) -> PortfolioOrchestrator:
     """Build per-symbol strategy orchestrator with pluggable strategy modules."""
 
     def _smart_money_generator(sym: str, ctx: dict) -> dict | None:
-        return generate_smart_money_signal(
+        # Check if this strategy already has an open position
+        if get_position_for_symbol(sym, 'smart_money'):
+            return None
+        signal = generate_smart_money_signal(
             ctx['df_1h'],
             ctx['df_5m'],
             sym,
             ctx['sym_info'],
             debug=ctx.get('debug', False),
         )
+        if signal:
+            signal['strategy'] = 'smart_money'
+        return signal
 
     def _mean_reversion_generator(sym: str, ctx: dict) -> dict | None:
+        # Check if this strategy already has an open position
+        if get_position_for_symbol(sym, 'mean_reversion'):
+            return None
         lock_entry = _get_locked_entry(sym, 'mean_reversion')
         if lock_entry is None:
             return None
         params = dict(lock_entry.get('params', {}))
-        return generate_mean_reversion_signal(
+        signal = generate_mean_reversion_signal(
             ctx['df_1h'],
             ctx['df_5m'],
             sym,
             ctx['sym_info'],
             params=params,
         )
+        if signal:
+            signal['strategy'] = 'mean_reversion'
+        return signal
 
     def _trend_momentum_generator(sym: str, ctx: dict) -> dict | None:
+        # Check if this strategy already has an open position
+        if get_position_for_symbol(sym, 'trend_momentum'):
+            return None
         lock_entry = _get_locked_entry(sym, 'trend_momentum')
         if lock_entry is None:
             return None
         params = dict(lock_entry.get('params', {}))
-        return generate_trend_momentum_signal(
+        signal = generate_trend_momentum_signal(
             ctx['df_1h'],
             ctx['df_5m'],
             sym,
             ctx['sym_info'],
             params=params,
         )
+        if signal:
+            signal['strategy'] = 'trend_momentum'
+        return signal
 
     def _volatility_breakout_generator(sym: str, ctx: dict) -> dict | None:
         # FINAL PORTFOLIO: DISABLE volatility_breakout (losing in walk-forward)
         # EURUSD: -4.05%, NAS100: 0.13% (flat), XAUUSD: -5.48%
         return None
+
+    def _rsi_generator(sym: str, ctx: dict) -> dict | None:
+        # Check if this strategy already has an open position
+        if get_position_for_symbol(sym, 'rsi'):
+            return None
+        lock_entry = _get_locked_entry(sym, 'rsi')
+        if lock_entry is None:
+            return None
+        params = dict(lock_entry.get('params', {}))
+        signal = generate_rsi_signal(
+            ctx['df_1h'],
+            ctx['df_5m'],
+            sym,
+            ctx['sym_info'],
+            params=params,
+        )
+        if signal:
+            signal['strategy'] = 'rsi'
+        return signal
+
+    def _stochastic_generator(sym: str, ctx: dict) -> dict | None:
+        # Check if this strategy already has an open position
+        if get_position_for_symbol(sym, 'stochastic'):
+            return None
+        lock_entry = _get_locked_entry(sym, 'stochastic')
+        if lock_entry is None:
+            return None
+        params = dict(lock_entry.get('params', {}))
+        signal = generate_stochastic_signal(
+            ctx['df_1h'],
+            ctx['df_5m'],
+            sym,
+            ctx['sym_info'],
+            params=params,
+        )
+        if signal:
+            signal['strategy'] = 'stochastic'
+        return signal
+
+    def _breakout_generator(sym: str, ctx: dict) -> dict | None:
+        # Check if this strategy already has an open position
+        if get_position_for_symbol(sym, 'breakout'):
+            return None
+        lock_entry = _get_locked_entry(sym, 'breakout')
+        if lock_entry is None:
+            return None
+        params = dict(lock_entry.get('params', {}))
+        signal = __import__('breakout_strategy').generate_breakout_signal(
+            ctx['df_1h'],
+            ctx['df_5m'],
+            sym,
+            ctx['sym_info'],
+            params=params,
+        )
+        if signal:
+            signal['strategy'] = 'breakout'
+        return signal
+
+    def _bollinger_generator(sym: str, ctx: dict) -> dict | None:
+        # Check if this strategy already has an open position
+        if get_position_for_symbol(sym, 'bollinger'):
+            return None
+        lock_entry = _get_locked_entry(sym, 'bollinger')
+        if lock_entry is None:
+            return None
+        params = dict(lock_entry.get('params', {}))
+        signal = __import__('bollinger_strategy').generate_bollinger_signal(
+            ctx['df_1h'],
+            ctx['df_5m'],
+            sym,
+            ctx['sym_info'],
+            params=params,
+        )
+        if signal:
+            signal['strategy'] = 'bollinger'
+        return signal
 
     def _disabled_placeholder(_sym: str, _ctx: dict) -> dict | None:
         return None
@@ -1444,6 +1616,10 @@ def _build_portfolio_orchestrator(context: dict) -> PortfolioOrchestrator:
         'mean_reversion_v1': _mean_reversion_generator,
         'trend_momentum_v1': _trend_momentum_generator,
         'volatility_breakout_v1': _volatility_breakout_generator,
+        'rsi_v1': _rsi_generator,
+        'stochastic_v1': _stochastic_generator,
+        'breakout_v1': _breakout_generator,
+        'bollinger_v1': _bollinger_generator,
     }
 
     registry = StrategyRegistry()
@@ -1833,8 +2009,10 @@ def process_single_symbol(symbol: str, enabled: set, risk: float) -> tuple:
     if not sym_info:
         return (symbol, f"{symbol}:ERR", None)
     
-    # Check if we already have an open position for this symbol
-    existing_pos = get_position_for_symbol(symbol)
+    # For hedge fund portfolio: DO NOT check for existing positions here
+    # The portfolio orchestrator handles per-strategy position checking
+    # Multiple strategies can have positions on the same symbol simultaneously
+    existing_pos = None  # Disabled for multi-strategy portfolio
     
     # Add entry_regime from tracked_positions if available
     if existing_pos and symbol in tracked_positions:
@@ -1868,6 +2046,7 @@ def process_single_symbol(symbol: str, enabled: set, risk: float) -> tuple:
             'debug': _DEBUG_MODE,
             'risk_percent': risk,
             'open_positions_count': len(get_open_positions()),
+            'symbol': symbol,  # Pass symbol for per-strategy position checking
         }
         orchestrator = _build_portfolio_orchestrator(context)
         signal = orchestrator.generate_signal(symbol, context)

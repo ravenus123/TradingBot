@@ -1,6 +1,7 @@
-"""Volatility-based strategy module.
-Generates signals based on volatility expansion/contraction and mean reversion in volatility.
-Uncorrelated with price-based strategies - exploits volatility regime changes.
+"""Volatility expansion strategy.
+Enters when volatility expands beyond a threshold, capturing momentum from volatility spikes.
+Edge: Volatility expansion often precedes sustained moves as institutional capital enters.
+Who loses: Traders who fade volatility expansion without understanding the underlying order flow.
 """
 from __future__ import annotations
 from datetime import datetime
@@ -13,9 +14,9 @@ from backtest_improved import add_indicators
 
 def generate_volatility_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame, symbol: str, sym_info: dict, params: dict | None = None) -> Optional[dict]:
     """
-    Volatility strategy: enters when volatility expands after contraction period.
-    Edge: Captures volatility mean reversion - volatility tends to return to mean after extreme expansion.
-    Who loses: Traders who enter during low volatility periods expecting continuation, get stopped out on expansion.
+    Volatility strategy: enters when realized volatility expands beyond threshold.
+    Edge: Captures momentum from volatility expansion as institutional capital enters.
+    Who loses: Traders who fade volatility expansion without understanding order flow.
     """
     try:
         p = params or {}
@@ -23,59 +24,56 @@ def generate_volatility_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame, symbol:
         # Use 5m data for volatility analysis
         m5 = add_indicators(df_5m, ema_period=20).fillna(0)
         close = m5['Close'].astype(float)
+        high = m5['High'].astype(float)
+        low = m5['Low'].astype(float)
         
         if len(close) < 50:
             return None
         
-        # Calculate realized volatility
-        returns = close.pct_change().dropna()
-        vol_window = int(p.get('vol_window', 20))
-        realized_vol = returns.rolling(vol_window).std() * np.sqrt(96)  # Annualized (96 15-min bars per day)
+        # Parameters
+        volatility_window = int(p.get('volatility_window', 20))
+        volatility_threshold = float(p.get('volatility_threshold', 1.5))
         
-        if len(realized_vol) < vol_window + 10:
+        # Calculate realized volatility (rolling std of returns)
+        returns = close.pct_change()
+        realized_vol = returns.rolling(window=volatility_window).std()
+        
+        # Calculate average volatility over longer period
+        avg_vol = realized_vol.rolling(window=volatility_window * 2).mean()
+        
+        if len(realized_vol) < volatility_window * 2 + 5:
             return None
         
-        current_vol = realized_vol.iloc[-1]
-        avg_vol = realized_vol.rolling(vol_window * 2).mean().iloc[-1]
-        vol_percentile = (realized_vol.rolling(vol_window * 3).rank(pct=True).iloc[-1] if len(realized_vol) > vol_window * 3 else 0.5)
+        # Current values
+        current_vol = float(realized_vol.iloc[-1])
+        avg_vol_current = float(avg_vol.iloc[-1])
+        vol_ratio = current_vol / max(1e-8, avg_vol_current)
         
-        # Parameters
-        vol_expansion_threshold = float(p.get('vol_expansion_threshold', 1.5))  # Vol must be 1.5x average
-        vol_contraction_threshold = float(p.get('vol_contraction_threshold', 0.7))  # Vol must be 0.7x average
+        # Generate signals based on volatility expansion
+        # Volatility expansion with price direction
+        price_change = float(close.iloc[-1] - close.iloc[-5])
         
-        # Strategy: Buy low vol, sell high vol (volatility mean reversion)
-        # Or: Follow volatility expansion (breakout in volatility)
-        mode = p.get('mode', 'expansion')  # 'expansion' or 'reversion'
-        
-        if mode == 'expansion':
-            # Enter when volatility expands significantly
-            if current_vol < avg_vol * vol_expansion_threshold:
-                return None
-            
-            # Direction based on price trend during expansion
-            price_change = (close.iloc[-1] - close.iloc[-vol_window]) / close.iloc[-vol_window]
-            direction = 'BUY' if price_change > 0 else 'SELL'
-            
-        else:  # reversion
-            # Enter when volatility is extreme (high or low percentile)
-            if not (vol_percentile > 0.8 or vol_percentile < 0.2):
-                return None
-            
-            # Buy low vol, sell high vol
-            direction = 'BUY' if vol_percentile < 0.2 else 'SELL'
+        if vol_ratio > volatility_threshold:
+            if price_change > 0:
+                direction = 'BUY'
+            else:
+                direction = 'SELL'
+        else:
+            return None
         
         # Risk management
         atr = float(m5['ATR'].iloc[-1]) if 'ATR' in m5.columns else max(0.0005, abs(close.iloc[-1]) * 0.001)
-        stop_mult = float(p.get('stop_atr_mult', 1.5))
+        stop_mult = float(p.get('stop_atr_mult', 0.7))
         tp_mult = float(p.get('tp_atr_mult', 2.0))
         
         entry = float(close.iloc[-1])
         stop = entry - atr * stop_mult if direction == 'BUY' else entry + atr * stop_mult
         tp = entry + atr * tp_mult if direction == 'BUY' else entry - atr * tp_mult
         
-        # Confluence based on volatility extreme
-        vol_extreme = abs(vol_percentile - 0.5) * 2  # 0 to 1
-        conf = min(0.9, 0.5 + vol_extreme * 0.4)
+        # Confluence based on volatility expansion strength and price momentum
+        vol_strength = min(1.0, (vol_ratio - 1.0) / volatility_threshold)
+        price_momentum = min(1.0, abs(price_change) / max(1e-8, atr))
+        conf = 0.4 + 0.4 * vol_strength + 0.2 * price_momentum
         
         return {
             'strategy_name': 'volatility_v1',
@@ -86,7 +84,7 @@ def generate_volatility_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame, symbol:
             'tp': float(tp),
             'confluence_score': float(conf),
             'timestamp': datetime.utcnow().isoformat(),
-            'params': f"volatility mode={mode} vol={current_vol:.6f} avg={avg_vol:.6f} pct={vol_percentile:.2f}",
+            'params': f"vol_ratio={vol_ratio:.2f} threshold={volatility_threshold} atr={atr:.6f}",
         }
     except Exception:
         return None

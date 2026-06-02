@@ -1,0 +1,81 @@
+{
+  "results": [
+    {
+      "final_balance": 10145.875853678175,
+      "total_return_pct": 1.458758536781752,
+      "max_drawdown_pct": 0.0,
+      "trades": 10,
+      "win_rate": 0.3,
+      "simulation": 1,
+      "start_offset": 228,
+      "start_date": "2024-06-04 02:30:00",
+      "end_date": "2024-10-11 10:00:00"
+    },
+    {
+      "final_balance": 10318.082666632621,
+      "total_return_pct": 3.1808266663262112,
+      "max_drawdown_pct": 0.0,
+      "trades": 14,
+      "win_rate": 0.5,
+      "simulation": 2,
+      "start_offset": 51,
+      "start_date": "2024-06-02 06:15:00",
+      "end_date": "2024-10-01 17:00:00"
+    },
+    {
+      "final_balance": 10111.35824032254,
+      "total_return_pct": 1.1135824032253914,
+      "max_drawdown_pct": 0.0,
+      "trades": 9,
+      "win_rate": 0.2222222222222222,
+      "simulation": 3,
+      "start_offset": 563,
+      "start_date": "2024-06-07 14:15:00",
+      "end_date": "2024-10-31 23:00:00"
+    },
+    {
+      "final_balance": 9689.197785714285,
+      "total_return_pct": -3.108022142857153,
+      "max_drawdown_pct": 3.108022142857153,
+      "trades": 21,
+      "win_rate": 0.42857142857142855,
+      "simulation": 4,
+      "start_offset": 501,
+      "start_date": "2024-06-06 22:45:00",
+      "end_date": "2024-10-29 07:00:00"
+    },
+    {
+      "final_balance": 10676.289963605212,
+      "total_return_pct": 6.762899636052117,
+      "max_drawdown_pct": 0.0,
+      "trades": 9,
+      "win_rate": 0.5555555555555556,
+      "simulation": 5,
+      "start_offset": 457,
+      "start_date": "2024-06-06 11:45:00",
+      "end_date": "2024-10-25 09:00:00"
+    }
+  ],
+  "num_simulations": 5,
+  "period_days": 10,
+  "strategy_performance": {
+    "mean_reversion": {
+      "mean_return": 0.23599135389864992,
+      "std_return": 1.4543507666491908,
+      "positive_rate": 0.36666666666666664,
+      "sample_size": 30
+    },
+    "rsi": {
+      "mean_return": 0.04101838095238235,
+      "std_return": 0.8206503647132009,
+      "positive_rate": 0.26666666666666666,
+      "sample_size": 30
+    },
+    "trend_momentum": {
+      "mean_return": 0.0,
+      "std_return": 0.0,
+      "positive_rate": 0.0,
+      "sample_size": 15
+    }
+  }
+}

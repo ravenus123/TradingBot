@@ -1,0 +1,122 @@
+{
+  "EURUSD": {
+    "best_params": [
+      20,
+      20.0,
+      1.5,
+      2.0
+    ],
+    "opt_test_metrics": {
+      "total_trades": 113,
+      "wins": 96,
+      "losses": 17,
+      "win_rate": 84.95575221238938,
+      "total_profit": 8331.375221304597,
+      "avg_profit": 73.72898425933272,
+      "avg_win": 116.99567082986881,
+      "avg_loss": -170.60053990369465,
+      "best_trade": 322.88988510576274,
+      "worst_trade": -224.68341937979778,
+      "profit_factor": 3.872680799530372,
+      "max_drawdown": 639.4624817149815,
+      "final_balance": 18331.375221304595,
+      "return_pct": 83.31375221304596
+    },
+    "full_metrics": {
+      "total_trades": 79,
+      "wins": 62,
+      "losses": 17,
+      "win_rate": 78.48101265822784,
+      "total_profit": 3915.679378174623,
+      "avg_profit": 49.565561749045855,
+      "avg_win": 104.02244813578865,
+      "avg_loss": -149.0419062496632,
+      "best_trade": 281.74931144644006,
+      "worst_trade": -165.65690094954627,
+      "profit_factor": 2.545431663248174,
+      "max_drawdown": 471.08260094364414,
+      "final_balance": 13915.679378174624,
+      "return_pct": 39.15679378174624
+    }
+  },
+  "GBPUSD": {
+    "best_params": [
+      20,
+      16.0,
+      1.5,
+      2.0
+    ],
+    "opt_test_metrics": {
+      "total_trades": 150,
+      "wins": 116,
+      "losses": 34,
+      "win_rate": 77.33333333333333,
+      "total_profit": 8315.758447401211,
+      "avg_profit": 55.43838964934141,
+      "avg_win": 120.86691345884505,
+      "avg_loss": -167.7883386419063,
+      "best_trade": 329.0601631970585,
+      "worst_trade": -220.45885191983348,
+      "profit_factor": 2.457676575056284,
+      "max_drawdown": 616.5075182010041,
+      "final_balance": 18315.75844740121,
+      "return_pct": 83.15758447401211
+    },
+    "full_metrics": {
+      "total_trades": 84,
+      "wins": 61,
+      "losses": 23,
+      "win_rate": 72.61904761904762,
+      "total_profit": 2923.888730780468,
+      "avg_profit": 34.80819917595795,
+      "avg_win": 97.76254787893744,
+      "avg_loss": -132.15768216672672,
+      "best_trade": 299.08850361408423,
+      "worst_trade": -164.23558994329332,
+      "profit_factor": 1.9619236271870812,
+      "max_drawdown": 466.2952514043518,
+      "final_balance": 12923.888730780469,
+      "return_pct": 29.23888730780469
+    }
+  },
+  "USDJPY": {
+    "best_params": [
+      20,
+      12.0,
+      1.5,
+      2.0
+    ],
+    "opt_test_metrics": {
+      "total_trades": 176,
+      "wins": 132,
+      "losses": 44,
+      "win_rate": 75.0,
+      "total_profit": 9936.917049557174,
+      "avg_profit": 56.459755963393036,
+      "avg_win": 131.48644410055584,
+      "avg_loss": -168.62030844809533,
+      "best_trade": 394.3180205910718,
+      "worst_trade": -217.86283891546924,
+      "profit_factor": 2.339334662189222,
+      "max_drawdown": 640.7161259864806,
+      "final_balance": 19936.917049557174,
+      "return_pct": 99.36917049557175
+    },
+    "full_metrics": {
+      "total_trades": 10,
+      "wins": 5,
+      "losses": 5,
+      "win_rate": 50.0,
+      "total_profit": -130.48359549832657,
+      "avg_profit": -13.048359549832657,
+      "avg_win": 82.40074590320738,
+      "avg_loss": -108.4974650028727,
+      "best_trade": 94.16869675859813,
+      "worst_trade": -111.57506520781888,
+      "profit_factor": 0.7594716236091382,
+      "max_drawdown": 324.95009599069635,
+      "final_balance": 9869.516404501674,
+      "return_pct": -1.304835954983264
+    }
+  }
+}

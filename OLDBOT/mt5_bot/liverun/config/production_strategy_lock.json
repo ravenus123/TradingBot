@@ -1,0 +1,315 @@
+{
+  "source": "hedge_fund_portfolio_v45",
+  "mode": "multi_strategy_portfolio",
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:XAUUSD:1",
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "stop_atr_mult": 0.6,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "volatility",
+      "label": "volatility:XAUUSD:1",
+      "params": {
+        "volatility_window": 14,
+        "volatility_threshold": 1.2,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "macd",
+      "label": "macd:XAUUSD:1",
+      "params": {
+        "fast_period": 8,
+        "slow_period": 21,
+        "signal_period": 7,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:XAUUSD:2",
+      "params": {
+        "period": 15,
+        "std_dev": 1.5,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.3
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:XAUUSD:3",
+      "params": {
+        "period": 25,
+        "std_dev": 2.5,
+        "stop_atr_mult": 0.7,
+        "tp_atr_mult": 1.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "volatility",
+      "label": "volatility:XAUUSD:2",
+      "params": {
+        "volatility_window": 10,
+        "volatility_threshold": 1.0,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "volatility",
+      "label": "volatility:XAUUSD:3",
+      "params": {
+        "volatility_window": 18,
+        "volatility_threshold": 1.8,
+        "stop_atr_mult": 0.6,
+        "tp_atr_mult": 1.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "macd",
+      "label": "macd:XAUUSD:2",
+      "params": {
+        "fast_period": 5,
+        "slow_period": 13,
+        "signal_period": 5,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "macd",
+      "label": "macd:XAUUSD:3",
+      "params": {
+        "fast_period": 12,
+        "slow_period": 26,
+        "signal_period": 9,
+        "stop_atr_mult": 0.6,
+        "tp_atr_mult": 1.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "NAS100",
+      "strategy": "bollinger",
+      "label": "bollinger:NAS100:1",
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "stop_atr_mult": 0.6,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "NAS100",
+      "strategy": "volatility",
+      "label": "volatility:NAS100:1",
+      "params": {
+        "volatility_window": 14,
+        "volatility_threshold": 1.2,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "NAS100",
+      "strategy": "macd",
+      "label": "macd:NAS100:1",
+      "params": {
+        "fast_period": 8,
+        "slow_period": 21,
+        "signal_period": 7,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "NAS100",
+      "strategy": "bollinger",
+      "label": "bollinger:NAS100:2",
+      "params": {
+        "period": 15,
+        "std_dev": 1.5,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.3
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "NAS100",
+      "strategy": "volatility",
+      "label": "volatility:NAS100:2",
+      "params": {
+        "volatility_window": 10,
+        "volatility_threshold": 1.0,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:BTCUSD:1",
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "stop_atr_mult": 0.6,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "volatility",
+      "label": "volatility:BTCUSD:1",
+      "params": {
+        "volatility_window": 14,
+        "volatility_threshold": 1.2,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "macd",
+      "label": "macd:BTCUSD:1",
+      "params": {
+        "fast_period": 8,
+        "slow_period": 21,
+        "signal_period": 7,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:BTCUSD:2",
+      "params": {
+        "period": 15,
+        "std_dev": 1.5,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.3
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "volatility",
+      "label": "volatility:BTCUSD:2",
+      "params": {
+        "volatility_window": 10,
+        "volatility_threshold": 1.0,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "volatility",
+      "label": "volatility:BTCUSD:3",
+      "params": {
+        "volatility_window": 18,
+        "volatility_threshold": 1.8,
+        "stop_atr_mult": 0.6,
+        "tp_atr_mult": 1.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "macd",
+      "label": "macd:BTCUSD:2",
+      "params": {
+        "fast_period": 5,
+        "slow_period": 13,
+        "signal_period": 5,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "macd",
+      "label": "macd:BTCUSD:3",
+      "params": {
+        "fast_period": 12,
+        "slow_period": 26,
+        "signal_period": 9,
+        "stop_atr_mult": 0.6,
+        "tp_atr_mult": 1.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "NAS100",
+      "strategy": "volatility",
+      "label": "volatility:NAS100:3",
+      "params": {
+        "volatility_window": 18,
+        "volatility_threshold": 1.8,
+        "stop_atr_mult": 0.6,
+        "tp_atr_mult": 1.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "NAS100",
+      "strategy": "macd",
+      "label": "macd:NAS100:2",
+      "params": {
+        "fast_period": 5,
+        "slow_period": 13,
+        "signal_period": 5,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "NAS100",
+      "strategy": "macd",
+      "label": "macd:NAS100:3",
+      "params": {
+        "fast_period": 12,
+        "slow_period": 26,
+        "signal_period": 9,
+        "stop_atr_mult": 0.6,
+        "tp_atr_mult": 1.8
+      },
+      "enabled": true
+    }
+  ]
+}

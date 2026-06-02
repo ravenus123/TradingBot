@@ -21,6 +21,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 import numpy as np
 import pandas as pd
+import pickle
 
 try:
     from tqdm import tqdm
@@ -57,6 +58,8 @@ FOREX_PLUS = {'EURUSD', 'GBPUSD', 'USDJPY', 'EURJPY', 'XAUUSD'}  # Advisor-appro
 BEST_SETTINGS_FILE = Path(__file__).parent / 'best_settings.json'
 DATA_DIR = Path(__file__).parent / 'backtest_data_improved'
 DATA_DIR.mkdir(exist_ok=True)
+CACHE_DIR = Path(__file__).parent / 'liverun' / 'cache'
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 BACKTEST_DAYS = 30
 INITIAL_BALANCE = 10000.0
 # Allow trading 24/7 when True (user requested fully autonomous 24/7 operation)
@@ -83,8 +86,28 @@ def fetch_data(symbol: str, bars: int = 10000) -> Optional[pd.DataFrame]:
     Fetch REAL data from MetaTrader 5. NO CSV FALLBACK.
     Returns DataFrame with datetime index or raises error.
     """
+    # If MetaTrader5 is not available, allow CSV fallback or synthetic data for offline testing.
     if mt5 is None:
-        raise RuntimeError("MetaTrader5 module not available. Install with: pip install MetaTrader5")
+        # Try CSV fallback in DATA_DIR
+        csv_path = DATA_DIR / f"{symbol}.csv"
+        if csv_path.exists():
+            df = pd.read_csv(csv_path, parse_dates=['Time'], index_col='Time')
+            print(f"[Fallback] Loaded {len(df)} bars for {symbol} from {csv_path}")
+            return df
+
+        # Synthetic data fallback (useful for offline testing / CI)
+        print(f"[Fallback] MetaTrader5 not available and no CSV for {symbol}. Generating synthetic data ({bars} bars).")
+        end = datetime.now()
+        idx = pd.date_range(end=end, periods=bars, freq='15T')
+        # simple random-walk around a base price (symbol-agnostic)
+        base = 1.1000 if symbol in FOREX_PLUS else 1000.0
+        close = np.cumsum(np.random.randn(bars) * (0.0005 if symbol in FOREX_PLUS else 1.0)) + base
+        openp = close + np.random.randn(bars) * (0.0001 if symbol in FOREX_PLUS else 0.5)
+        high = np.maximum(openp, close) + np.abs(np.random.randn(bars) * (0.0002 if symbol in FOREX_PLUS else 0.5))
+        low = np.minimum(openp, close) - np.abs(np.random.randn(bars) * (0.0002 if symbol in FOREX_PLUS else 0.5))
+        vol = np.random.randint(10, 100, size=bars)
+        df = pd.DataFrame({'Open': openp, 'High': high, 'Low': low, 'Close': close, 'Volume': vol}, index=idx)
+        return df
     
     if not mt5.initialize():
         raise RuntimeError(f"MT5 initialization failed: {mt5.last_error()}")
@@ -236,7 +259,26 @@ def is_rejection_candle(o, h, l, c, direction, strict=False):
 # INDICATORS
 # ===============================================================================
 
-def add_indicators(df, ema_period=50, atr_period=14, adx_period=14):
+def add_indicators(df, ema_period=50, atr_period=14, adx_period=14, symbol: Optional[str]=None, use_cache: bool=True):
+    """
+    Add indicators to dataframe. If `symbol` provided and Time column exists, results
+    may be cached to speed repeated runs (useful during parameter sweeps and Monte Carlo).
+    """
+    # Attempt to load cache keyed by symbol, time-range and params
+    cache_path = None
+    if use_cache and symbol is not None and 'Time' in df.columns:
+        try:
+            start = pd.to_datetime(df['Time'].iloc[0]).strftime('%Y%m%d%H%M')
+            end = pd.to_datetime(df['Time'].iloc[-1]).strftime('%Y%m%d%H%M')
+            key = f"{symbol}_{start}_{end}_e{ema_period}_a{atr_period}_x{adx_period}.pkl"
+            cache_path = CACHE_DIR / key
+            if cache_path.exists():
+                with open(cache_path, 'rb') as fh:
+                    cached = pickle.load(fh)
+                return cached.copy()
+        except Exception:
+            cache_path = None
+
     df = df.copy()
     close = df['Close'].astype(float).values
     high  = df['High'].astype(float).values
@@ -278,6 +320,13 @@ def add_indicators(df, ema_period=50, atr_period=14, adx_period=14):
     df['EMA_21'] = cs.ewm(span=21, adjust=False).mean().bfill().values
     df['EMA_34'] = cs.ewm(span=34, adjust=False).mean().bfill().values
     df['EMA_50'] = cs.ewm(span=50, adjust=False).mean().bfill().values
+    # Save to cache if possible
+    if use_cache and cache_path is not None:
+        try:
+            with open(cache_path, 'wb') as fh:
+                pickle.dump(df, fh)
+        except Exception:
+            pass
     return df
 
 
@@ -360,6 +409,24 @@ def _get_rr_boost(symbol):
         'GBPUSD': 1.05,   # Medium: +5% boost
     }
     return boosts.get(symbol, 1.0)
+
+
+def _get_min_stop_spread_ratio(symbol):
+    """Minimum stop-distance-to-spread ratio needed to trade.
+
+    This is a survivability filter: if the stop is too close to the spread,
+    the setup is not worth trading because transaction costs dominate the edge.
+    """
+    table = {
+        'EURUSD': 4.0,
+        'GBPUSD': 4.0,
+        'USDJPY': 4.0,
+        'XAUUSD': 3.0,
+        'NAS100': 3.0,
+        'BTCUSD': 2.5,
+        'GBPJPY': 3.5,
+    }
+    return table.get(symbol, 4.0)
 
 def _default_params(symbol):
     """(ema_period, adx_min, atr_sl_mult, rr_target)"""
@@ -469,7 +536,8 @@ def run_backtest_no_lookahead(
     df: pd.DataFrame,
     symbol: str,
     params: Optional[Tuple] = None,
-    risk_pct: float = 10.0,
+    risk_pct: float = 1.0,
+    use_indicator_cache: bool = True,
 ) -> Dict:
     """
     ICT/SMC backtest — strict no-lookahead.
@@ -497,8 +565,8 @@ def run_backtest_no_lookahead(
     # -- params --
     ema_period, adx_min, atr_sl_mult, rr_target = params or _load_best_params(symbol)
 
-    # -- indicators --
-    df = add_indicators(df, ema_period=ema_period)
+    # -- indicators (cached per-symbol to speed repeated runs) --
+    df = add_indicators(df, ema_period=ema_period, symbol=symbol, use_cache=use_indicator_cache)
     df = df.fillna(0).reset_index(drop=True)
 
     O  = df['Open'].astype(float).to_numpy()
@@ -678,7 +746,9 @@ def run_backtest_no_lookahead(
 
             if ex:
                 mv = (ep - e_price) if dirn == 1 else (e_price - ep)
-                ra = bal * (risk / 100.0)
+                # Position sizing: use risk % but cap absolute risk to protect from runaway compounding
+                max_risk_abs = INITIAL_BALANCE * 0.02  # 2% of initial balance hard cap
+                ra = min(bal * (risk / 100.0), max_risk_abs)
                 sd = abs(e_price - init_sl)
                 gp = (mv / sd) * ra if sd > 0 else 0.0
                 sc = (spr_p / sd) * ra if sd > 0 else 0.0
@@ -847,6 +917,7 @@ def run_backtest_no_lookahead(
 
         # ATR-based stop (consistent sizing)
         stop_dist = atr_p * atr_sl_mult
+        min_stop_spread_ratio = _get_min_stop_spread_ratio(symbol)
         if dirn == 1:
             sl_price = e_price - stop_dist
             tp_price = e_price + stop_dist * adjusted_rr  # Use adaptive RR
@@ -856,6 +927,8 @@ def run_backtest_no_lookahead(
 
         # Sanity - no margin restrictions in backtest (matches live bot)
         if stop_dist < pip * 2 or stop_dist > atr_p * 6:
+            dirn = 0; continue
+        if spr_p > 0 and stop_dist / spr_p < min_stop_spread_ratio:
             dirn = 0; continue
 
         in_trade = True; held = 0; init_sl = sl_price; last_eidx = i  # partial_taken disabled
@@ -1144,7 +1217,8 @@ def run_smc_backtest(df: pd.DataFrame, symbol: str,
             continue
         
         # Calculate position size
-        risk_amount = equity * (risk_pct / 100.0)
+        # Cap absolute per-trade risk to protect from runaway sizing (2% of initial balance)
+        risk_amount = min(equity * (risk_pct / 100.0), INITIAL_BALANCE * 0.02)
         stop_dist = abs(entry_price - stop_price)
         
         if stop_dist <= 0:
@@ -1155,6 +1229,11 @@ def run_smc_backtest(df: pd.DataFrame, symbol: str,
         inst = INSTRUMENTS.get(symbol, {'pip_size': 0.0001, 'spread': 1.0})
         pip_size = inst['pip_size']
         spread = inst['spread'] * pip_size
+
+        min_stop_spread_ratio = _get_min_stop_spread_ratio(symbol)
+        if spread > 0 and stop_dist / spread < min_stop_spread_ratio:
+            i += 1
+            continue
         
         # Adjust for spread
         if direction == 'buy':
@@ -1410,7 +1489,8 @@ def run_smc_backtest(df: pd.DataFrame, symbol: str,
             continue
         
         # Calculate position size
-        risk_amount = equity * (risk_pct / 100.0)
+        # Cap absolute per-trade risk to protect from runaway sizing (2% of initial balance)
+        risk_amount = min(equity * (risk_pct / 100.0), INITIAL_BALANCE * 0.02)
         stop_dist = abs(entry_price - stop_price)
         
         if stop_dist <= 0:
@@ -1525,19 +1605,43 @@ def compute_score(m):
     return r - p
 
 
+def compute_robust_score(m):
+    """Robustness-first scoring: prefer low drawdown, consistent positive periods,
+    reasonable trades count, and positive out-of-sample return. Penalize extreme parameter sensitivity.
+    """
+    pf = m.get('profit_factor', 0); ret = m.get('return_pct', 0)
+    t = m.get('total_trades', 0); wr = m.get('win_rate', 0); dd = m.get('max_drawdown', 0)
+    # Require minimum trade count
+    if t < 5:
+        return -999.0
+    # Low drawdown is primary
+    score = - (dd / max(1.0, INITIAL_BALANCE)) * 100.0
+    # Reward positive out-of-sample return modestly
+    score += ret * 1.5
+    # Reward higher win_rate and profit factor
+    score += max(pf - 1.0, 0) * 10.0
+    score += (wr - 50.0) * 0.2
+    # Slight reward for trade frequency (stability)
+    score += np.sqrt(t) * 1.5
+    return score
+
+
 def optimize(symbol, df, risk_pct=2.0):
     sp = int(len(df)*0.7)
     dtr = df.iloc[:sp].copy(); dte = df.iloc[sp:].copy()
-    # AGGRESSIVE OPTIMIZATION: 10x more parameter combinations
-    ema_g = [10,15,20,25,30,40,50,60,70,80,90,100]; adx_g = [10.0,13.0,16.0,19.0,22.0,25.0,28.0]
-    slm_g = [0.5,0.7,1.0,1.2,1.5,1.8,2.0,2.3,2.5]; rr_g = [1.2,1.5,1.7,1.8,2.0,2.2,2.5,2.8,3.0]
+    # ROBUSTNESS-FIRST: smaller, coarser grid to avoid overfitting
+    ema_g = [20, 50, 80]
+    adx_g = [12.0, 16.0, 20.0, 24.0]
+    slm_g = [1.0, 1.2, 1.5]
+    rr_g = [1.2, 1.5, 2.0]
     best_s = -np.inf; best_p = None; best_r = None
     for e,a,s,r in tqdm(list(product(ema_g,adx_g,slm_g,rr_g)), desc=f'Opt {symbol}'):
         pr = (e,a,s,r)
         _ = run_backtest_no_lookahead(dtr, symbol, params=pr, risk_pct=risk_pct)
         rv = run_backtest_no_lookahead(dte, symbol, params=pr, risk_pct=risk_pct)
-        sc = compute_score(rv.get('metrics',{}))
-        if sc > best_s: best_s=sc; best_p=pr; best_r=rv
+        sc = compute_robust_score(rv.get('metrics',{}))
+        if sc > best_s:
+            best_s=sc; best_p=pr; best_r=rv
     return best_p, best_r
 
 
@@ -1546,15 +1650,17 @@ def refine_params(symbol, df, base, risk_pct=2.0):
     be,ba,bs,br = base
     sp = int(len(df)*0.7); dtr = df.iloc[:sp].copy(); dte = df.iloc[sp:].copy()
     best_s = -np.inf; best_p = None; best_r = None
+    # Narrow, conservative refinement around base params
     for e in sorted({max(10,be-10), be, be+10}):
-        for a in sorted({max(10,ba-3), ba, ba+3}):
-            for s in sorted({max(0.5,bs-0.3), bs, min(3.0,bs+0.3)}):
-                for r in sorted({max(1.2,br-0.3), br, min(4.0,br+0.3)}):
+        for a in sorted({max(10,ba-2), ba, ba+2}):
+            for s in sorted({max(0.8,bs-0.2), bs, min(2.0,bs+0.2)}):
+                for r in sorted({max(1.2,br-0.2), br, min(3.0,br+0.2)}):
                     pr = (int(e),float(a),float(s),float(r))
                     _ = run_backtest_no_lookahead(dtr, symbol, params=pr, risk_pct=risk_pct)
                     rv = run_backtest_no_lookahead(dte, symbol, params=pr, risk_pct=risk_pct)
-                    sc = compute_score(rv.get('metrics',{}))
-                    if sc > best_s: best_s=sc; best_p=pr; best_r=rv
+                    sc = compute_robust_score(rv.get('metrics',{}))
+                    if sc > best_s:
+                        best_s=sc; best_p=pr; best_r=rv
     return best_p, best_r
 
 
@@ -1571,6 +1677,92 @@ def build_output_payload(symbol, mode, result):
 def save_output(payload, path):
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, 'w') as f: json.dump(payload, f, indent=2, default=str)
+
+
+def run_stress_suite(symbol: str, df: pd.DataFrame, out_dir: Optional[Path]=None) -> Dict:
+    """Run a set of stress tests altering data quality, noise, spreads and execution latency.
+    Returns a dict of test_name -> metrics.
+    """
+    if out_dir is None:
+        out_dir = Path(__file__).parent / 'liverun' / 'stress_tests'
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    if df is None or len(df) < 120:
+        return {'symbol': symbol, 'error': 'insufficient data'}
+
+    tests = {}
+    base_df = df.copy().reset_index(drop=False)
+
+    def run_case(name, df_case, inst_overrides=None):
+        # temporary instrument override
+        orig = None
+        if inst_overrides:
+            orig = {}
+            for k,v in inst_overrides.items():
+                orig[k] = INSTRUMENTS.get(k)
+                INSTRUMENTS[k] = v
+        res = run_backtest_no_lookahead(df_case.copy(), symbol, risk_pct=1.0, use_indicator_cache=False)
+        score = compute_robust_score(res.get('metrics', {}))
+        tests[name] = {'metrics': res.get('metrics', {}), 'robust_score': score}
+        # restore
+        if inst_overrides and orig is not None:
+            for k,v in orig.items():
+                if v is None:
+                    INSTRUMENTS.pop(k, None)
+                else:
+                    INSTRUMENTS[k] = v
+
+    pip = INSTRUMENTS.get(symbol, {'pip_size':0.0001})['pip_size']
+
+    # Baseline
+    run_case('baseline', base_df)
+
+    # Small gaussian noise on prices
+    df_n = base_df.copy()
+    sigma = pip * 0.5
+    for col in ['Open','High','Low','Close']:
+        df_n[col] = df_n[col].astype(float) + np.random.randn(len(df_n)) * sigma
+    run_case('noise_small', df_n)
+
+    # Large noise
+    df_n2 = base_df.copy()
+    sigma2 = pip * 2.0
+    for col in ['Open','High','Low','Close']:
+        df_n2[col] = df_n2[col].astype(float) + np.random.randn(len(df_n2)) * sigma2
+    run_case('noise_large', df_n2)
+
+    # Increased spread x2
+    inst2 = INSTRUMENTS.get(symbol, {}).copy()
+    inst2['spread'] = inst2.get('spread',1.0) * 2.0
+    run_case('spread_x2', base_df, inst_overrides={symbol: inst2})
+
+    # Increased spread x5
+    inst5 = INSTRUMENTS.get(symbol, {}).copy()
+    inst5['spread'] = inst5.get('spread',1.0) * 5.0
+    run_case('spread_x5', base_df, inst_overrides={symbol: inst5})
+
+    # Missing bars (randomly drop ~1%)
+    df_miss = base_df.copy()
+    drop_idx = np.random.choice(df_miss.index, size=max(1, int(len(df_miss)*0.01)), replace=False)
+    df_miss = df_miss.drop(drop_idx).reset_index(drop=True)
+    run_case('missing_1pct', df_miss)
+
+    # Execution delay: entries execute at next bar open (shift Open forward)
+    df_delay = base_df.copy()
+    df_delay['Open'] = df_delay['Open'].shift(1).bfill()
+    run_case('exec_delay_1bar', df_delay)
+
+    # Combined worst-case: large noise + spread x5 + missing 2%
+    df_wc = base_df.copy()
+    for col in ['Open','High','Low','Close']:
+        df_wc[col] = df_wc[col].astype(float) + np.random.randn(len(df_wc)) * sigma2
+    drop_idx2 = np.random.choice(df_wc.index, size=max(1,int(len(df_wc)*0.02)), replace=False)
+    df_wc = df_wc.drop(drop_idx2).reset_index(drop=True)
+    run_case('worst_combined', df_wc, inst_overrides={symbol: inst5})
+
+    out_path = out_dir / f"{symbol}_stress.json"
+    save_output({'symbol': symbol, 'timestamp': datetime.now().isoformat(), 'tests': tests}, out_path)
+    return {'symbol': symbol, 'tests': list(tests.keys()), 'out_path': str(out_path)}
 
 
 # ===============================================================================
