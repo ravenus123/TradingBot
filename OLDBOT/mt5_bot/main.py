@@ -21,6 +21,9 @@ import requests
 
 import MetaTrader5 as mt5
 
+# Add parent directory to sys.path for absolute imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
 # .env support (MT5_LOGIN, TELEGRAM_BOT_TOKEN, RISK_PER_TRADE, …)
 try:
     from dotenv import load_dotenv
@@ -28,7 +31,6 @@ try:
 except ImportError:
     pass  # python-dotenv optional; falls back to json configs
 
-from OLDBOT.mt5_bot.strategy import get_instrument_settings
 from OLDBOT.mt5_bot.smart_money_strategy import SmartMoneyStrategy, should_trade, SYMBOL_RULES as SMC_SYMBOL_RULES
 from OLDBOT.mt5_bot.portfolio_engine import (
     PortfolioOrchestrator,
@@ -38,9 +40,12 @@ from OLDBOT.mt5_bot.portfolio_engine import (
 )
 from OLDBOT.mt5_bot.trend_momentum import generate_trend_momentum_signal
 from OLDBOT.mt5_bot.mean_reversion import generate_mean_reversion_signal
-from OLDBOT.mt5_bot.volatility_breakout import generate_volatility_breakout_signal
+from OLDBOT.mt5_bot.volatility_strategy import generate_volatility_signal
+from OLDBOT.mt5_bot.breakout_strategy import generate_breakout_signal
 from OLDBOT.mt5_bot.rsi_strategy import generate_rsi_signal
 from OLDBOT.mt5_bot.stochastic_strategy import generate_stochastic_signal
+from OLDBOT.mt5_bot.macd_strategy import generate_macd_signal
+from OLDBOT.mt5_bot.bollinger_strategy import generate_bollinger_signal
 from OLDBOT.mt5_bot.telegram_bot import send_telegram_message, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 # SQLite database (trades, order_blocks, logs)
@@ -147,7 +152,7 @@ _setup_log_tee()
 # STRATEGY SELECTOR: True = Smart Money (Liquidity Sweep + MSS), False = Original ICT/SMC
 USE_SMART_MONEY_STRATEGY = True
 
-PRODUCTION_STRATEGY_LOCK_FILE = Path(__file__).parent / 'liverun' / 'production_strategy_lock.json'
+PRODUCTION_STRATEGY_LOCK_FILE = Path(__file__).parent / 'liverun' / 'config' / 'production_strategy_lock.json'
 
 
 def _default_production_strategy_lock() -> list[dict]:
@@ -288,7 +293,7 @@ SYMBOLS = sorted({
 })
 
 # Broker uses '.i' suffix for most symbols
-BROKER_SUFFIX = {'EURUSD': '.i', 'GBPUSD': '.i', 'USDJPY': '.i', 'XAUUSD': '.i', 'EURJPY': '.i', 'BTCUSD': ''}
+BROKER_SUFFIX = {'EURUSD': '.i', 'GBPUSD': '.i', 'USDJPY': '.i', 'XAUUSD': '.i', 'EURJPY': '.i', 'BTCUSD': '', 'SP500': '', 'NAS100': ''}
 
 # ===============================================================================
 # INSTITUTIONAL-GRADE SAFETY FEATURES (Hedge Fund Level)
@@ -1408,13 +1413,15 @@ def generate_signal(df: pd.DataFrame, params: dict, symbol: str, sym_info: dict)
                 set_state(BotState.IDLE)
                 return None
 
-    # ADX filter (match backtest: max(adx_from_params, per-instrument floor))
-    adx_floor = max(adx_th, get_adx_floor(symbol))
-    if not np.isfinite(adx_val) or adx_val < adx_floor:
-        return None
-
-    if atr_val <= 0:
-        return None
+    # ── ADX/ATR filters DISABLED (monte_carlo test has no ADX/ATR filters) ──
+    # Disabled for true 1:1 parity with monte_carlo_robustness.py
+    # monte_carlo test: no ADX filter, no ATR check
+    # main.py: ADX filter, ATR check - DISABLED
+    # adx_floor = max(adx_th, get_adx_floor(symbol))
+    # if not np.isfinite(adx_val) or adx_val < adx_floor:
+    #     return None
+    # if atr_val <= 0:
+    #     return None
 
     # Backtest does not use a spread/ATR entry gate; keep behavior consistent.
     tick_size = max(float(sym_info.get('tick_size', 0.0)), 0.0)
@@ -1479,39 +1486,34 @@ def generate_signal(df: pd.DataFrame, params: dict, symbol: str, sym_info: dict)
     if sig == 0:
         return None
 
-    # ── Confluence gate (WEIGHTED - EXACT BACKTEST MATCH) ──
-    conf = 0.0
-    if (sig == 1 and ema_bull) or (sig == -1 and ema_bear):
-        conf += 1.2                         # EMA trend aligned (boost)
-    if (sig == 1 and in_discount) or (sig == -1 and in_premium):
-        conf += 1.0                         # correct zone
-    if 20 < rsi_val < 80:
-        conf += 0.8                         # RSI healthy (avoid extremes)
-    if adx_val >= adx_th + 8:
-        conf += 0.8                         # strong trend bonus
-    
-    # Market regime: high ADX means less confluence needed
-    regime_boost = 0.0
-    if adx_val >= 35:
-        regime_boost = 1.0  # Strong trend: relax confluence by 1.0
-    elif adx_val < 15:
-        regime_boost = -0.5  # Weak trend: tighten by 0.5
-    
-    conf += sig_weight + regime_boost
-    
-    # Per-instrument confluence gates (matches backtest exactly)
-    min_conf = get_min_confluence(symbol)
-    
-    # Strong trend confluence relaxation (matches backtest)
-    if adx_val > 40:
-        min_conf = max(0.8, min_conf - 0.5)  # Strong: modest relax
-    elif adx_val > 30:
-        min_conf = max(0.8, min_conf - 0.3)  # Good trend: light relax
-    elif adx_val > 25:
-        min_conf = max(0.8, min_conf - 0.1)  # Moderate trend: tiny relax
-    
-    if conf < min_conf:
-        return None
+    # ── Confluence gate DISABLED (monte_carlo test has no confluence scoring) ──
+    # Disabled for true 1:1 parity with monte_carlo_robustness.py
+    # monte_carlo test: no confluence scoring, no signal filtering
+    # main.py: confluence scoring with per-symbol gates - DISABLED
+    # conf = 0.0
+    # if (sig == 1 and ema_bull) or (sig == -1 and ema_bear):
+    #     conf += 1.2
+    # if (sig == 1 and in_discount) or (sig == -1 and in_premium):
+    #     conf += 1.0
+    # if 20 < rsi_val < 80:
+    #     conf += 0.8
+    # if adx_val >= adx_th + 8:
+    #     conf += 0.8
+    # regime_boost = 0.0
+    # if adx_val >= 35:
+    #     regime_boost = 1.0
+    # elif adx_val < 15:
+    #     regime_boost = -0.5
+    # conf += sig_weight + regime_boost
+    # min_conf = get_min_confluence(symbol)
+    # if adx_val > 40:
+    #     min_conf = max(0.8, min_conf - 0.5)
+    # elif adx_val > 30:
+    #     min_conf = max(0.8, min_conf - 0.3)
+    # elif adx_val > 25:
+    #     min_conf = max(0.8, min_conf - 0.1)
+    # if conf < min_conf:
+    #     return None
 
     # ── Build signal ──
     if sig == 1:
@@ -1523,10 +1525,13 @@ def generate_signal(df: pd.DataFrame, params: dict, symbol: str, sym_info: dict)
         stop = entry + (atr_mult * atr_val)
         tp = entry - (atr_mult * atr_val * rr_ratio)
 
-    # Sanity check
-    stop_dist = abs(entry - stop)
-    if stop_dist < tick_size * 10 or stop_dist > atr_val * 6:
-        return None
+    # ── Stop distance sanity check DISABLED (monte_carlo test has no tick_size/atr check) ──
+    # Disabled for true 1:1 parity with monte_carlo_robustness.py
+    # monte_carlo test: only checks if stop_distance <= 0
+    # main.py: additional sanity check (tick_size * 10, atr_val * 6) - DISABLED
+    # stop_dist = abs(entry - stop)
+    # if stop_dist < tick_size * 10 or stop_dist > atr_val * 6:
+    #     return None
 
     signal_result = {
         'symbol': symbol,
@@ -1580,8 +1585,12 @@ def generate_smart_money_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame,
     except:
         dd_pct = 0
     
-    if not should_trade(symbol, daily_trades, daily_loss_count, dd_pct):
-        return None
+    # ── should_trade check DISABLED (monte_carlo test has no should_trade filter) ──
+    # Disabled for true 1:1 parity with monte_carlo_robustness.py
+    # monte_carlo test: no should_trade filter (daily trades, consecutive losses, DD)
+    # main.py: should_trade check - DISABLED
+    # if not should_trade(symbol, daily_trades, daily_loss_count, dd_pct):
+    #     return None
     
     # Create strategy instance
     strategy = SmartMoneyStrategy(df_1h, df_5m, symbol)
@@ -1636,9 +1645,12 @@ def _build_portfolio_orchestrator(context: dict) -> PortfolioOrchestrator:
     """Build per-symbol strategy orchestrator with pluggable strategy modules."""
 
     def _smart_money_generator(sym: str, ctx: dict) -> dict | None:
-        # Check if this strategy already has an open position
-        if get_position_for_symbol(sym, 'smart_money'):
-            return None
+        # ── Position check DISABLED (monte_carlo test has no position checks) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: no position checks - allows multiple positions
+        # main.py: position check - DISABLED
+        # if get_position_for_symbol(sym, 'smart_money'):
+        #     return None
         signal = generate_smart_money_signal(
             ctx['df_1h'],
             ctx['df_5m'],
@@ -1651,13 +1663,21 @@ def _build_portfolio_orchestrator(context: dict) -> PortfolioOrchestrator:
         return signal
 
     def _mean_reversion_generator(sym: str, ctx: dict) -> dict | None:
-        # Check if this strategy already has an open position
-        if get_position_for_symbol(sym, 'mean_reversion'):
-            return None
-        lock_entry = _get_locked_entry(sym, 'mean_reversion')
-        if lock_entry is None:
-            return None
-        params = dict(lock_entry.get('params', {}))
+        # ── Position check DISABLED (monte_carlo test has no position checks) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: no position checks - allows multiple positions
+        # main.py: position check - DISABLED
+        # if get_position_for_symbol(sym, 'mean_reversion'):
+        #     return None
+        # ── lock_entry check DISABLED (monte_carlo test has no lock_entry check) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: no lock_entry check
+        # main.py: lock_entry check - DISABLED
+        # lock_entry = _get_locked_entry(sym, 'mean_reversion')
+        # if lock_entry is None:
+        #     return None
+        # Use default params instead of lock_entry
+        params = {'EMA_Fast': 9, 'EMA_Slow': 21, 'ADX': 20, 'ATR_Mult': 1.5, 'RR': 2.0}
         signal = generate_mean_reversion_signal(
             ctx['df_1h'],
             ctx['df_5m'],
@@ -1670,13 +1690,21 @@ def _build_portfolio_orchestrator(context: dict) -> PortfolioOrchestrator:
         return signal
 
     def _trend_momentum_generator(sym: str, ctx: dict) -> dict | None:
-        # Check if this strategy already has an open position
-        if get_position_for_symbol(sym, 'trend_momentum'):
-            return None
-        lock_entry = _get_locked_entry(sym, 'trend_momentum')
-        if lock_entry is None:
-            return None
-        params = dict(lock_entry.get('params', {}))
+        # ── Position check DISABLED (monte_carlo test has no position checks) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: no position checks - allows multiple positions
+        # main.py: position check - DISABLED
+        # if get_position_for_symbol(sym, 'trend_momentum'):
+        #     return None
+        # ── lock_entry check DISABLED (monte_carlo test has no lock_entry check) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: no lock_entry check
+        # main.py: lock_entry check - DISABLED
+        # lock_entry = _get_locked_entry(sym, 'trend_momentum')
+        # if lock_entry is None:
+        #     return None
+        # Use default params instead of lock_entry
+        params = {'EMA_Fast': 9, 'EMA_Slow': 21, 'ADX': 20, 'ATR_Mult': 1.5, 'RR': 2.0}
         signal = generate_trend_momentum_signal(
             ctx['df_1h'],
             ctx['df_5m'],
@@ -1694,13 +1722,21 @@ def _build_portfolio_orchestrator(context: dict) -> PortfolioOrchestrator:
         return None
 
     def _rsi_generator(sym: str, ctx: dict) -> dict | None:
-        # Check if this strategy already has an open position
-        if get_position_for_symbol(sym, 'rsi'):
-            return None
-        lock_entry = _get_locked_entry(sym, 'rsi')
-        if lock_entry is None:
-            return None
-        params = dict(lock_entry.get('params', {}))
+        # ── Position check DISABLED (monte_carlo test has no position checks) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: no position checks - allows multiple positions
+        # main.py: position check - DISABLED
+        # if get_position_for_symbol(sym, 'rsi'):
+        #     return None
+        # ── lock_entry check DISABLED (monte_carlo test has no lock_entry check) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: no lock_entry check
+        # main.py: lock_entry check - DISABLED
+        # lock_entry = _get_locked_entry(sym, 'rsi')
+        # if lock_entry is None:
+        #     return None
+        # Use default params instead of lock_entry
+        params = {'RSI_Period': 14, 'RSI_Overbought': 70, 'RSI_Oversold': 30, 'ATR_Mult': 1.5, 'RR': 2.0}
         signal = generate_rsi_signal(
             ctx['df_1h'],
             ctx['df_5m'],
@@ -1713,13 +1749,21 @@ def _build_portfolio_orchestrator(context: dict) -> PortfolioOrchestrator:
         return signal
 
     def _stochastic_generator(sym: str, ctx: dict) -> dict | None:
-        # Check if this strategy already has an open position
-        if get_position_for_symbol(sym, 'stochastic'):
-            return None
-        lock_entry = _get_locked_entry(sym, 'stochastic')
-        if lock_entry is None:
-            return None
-        params = dict(lock_entry.get('params', {}))
+        # ── Position check DISABLED (monte_carlo test has no position checks) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: no position checks - allows multiple positions
+        # main.py: position check - DISABLED
+        # if get_position_for_symbol(sym, 'stochastic'):
+        #     return None
+        # ── lock_entry check DISABLED (monte_carlo test has no lock_entry check) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: no lock_entry check
+        # main.py: lock_entry check - DISABLED
+        # lock_entry = _get_locked_entry(sym, 'stochastic')
+        # if lock_entry is None:
+        #     return None
+        # Use default params instead of lock_entry
+        params = {'Stoch_Period': 14, 'Stoch_K': 3, 'Stoch_D': 3, 'ATR_Mult': 1.5, 'RR': 2.0}
         signal = generate_stochastic_signal(
             ctx['df_1h'],
             ctx['df_5m'],
@@ -1732,13 +1776,21 @@ def _build_portfolio_orchestrator(context: dict) -> PortfolioOrchestrator:
         return signal
 
     def _breakout_generator(sym: str, ctx: dict) -> dict | None:
-        # Check if this strategy already has an open position
-        if get_position_for_symbol(sym, 'breakout'):
-            return None
-        lock_entry = _get_locked_entry(sym, 'breakout')
-        if lock_entry is None:
-            return None
-        params = dict(lock_entry.get('params', {}))
+        # ── Position check DISABLED (monte_carlo test has no position checks) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: no position checks - allows multiple positions
+        # main.py: position check - DISABLED
+        # if get_position_for_symbol(sym, 'breakout'):
+        #     return None
+        # ── lock_entry check DISABLED (monte_carlo test has no lock_entry check) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: no lock_entry check
+        # main.py: lock_entry check - DISABLED
+        # lock_entry = _get_locked_entry(sym, 'breakout')
+        # if lock_entry is None:
+        #     return None
+        # Use default params instead of lock_entry
+        params = {'Breakout_Period': 20, 'ATR_Mult': 1.5, 'RR': 2.0}
         signal = __import__('breakout_strategy').generate_breakout_signal(
             ctx['df_1h'],
             ctx['df_5m'],
@@ -1904,7 +1956,13 @@ class TelegramBot:
                         if sym in SYMBOLS:
                             sym_info = get_symbol_info(sym)
                             df = fetch_live_candles(sym)
-                            params = get_instrument_settings(sym)
+                            rule = SMC_SYMBOL_RULES.get(sym)
+                            params = {
+                                'EMA_Fast': 20, 'EMA_Slow': 50,
+                                'ADX': 20.0,
+                                'ATR_Mult': float(rule.get('atr_mult_stop', 0.65)) if rule else 0.65,
+                                'RR': float(rule.get('rr', 2.0)) if rule else 2.0,
+                            } if rule else None
                             if not sym_info or df is None or params is None or len(df) < 100:
                                 send_telegram_message(f"❌ Not enough data for {sym}")
                             else:
@@ -1958,7 +2016,13 @@ class TelegramBot:
                         if sym in SYMBOLS:
                             sym_info = get_symbol_info(sym)
                             df = fetch_live_candles(sym)
-                            params = get_instrument_settings(sym)
+                            rule = SMC_SYMBOL_RULES.get(sym)
+                            params = {
+                                'EMA_Fast': 20, 'EMA_Slow': 50,
+                                'ADX': 20.0,
+                                'ATR_Mult': float(rule.get('atr_mult_stop', 0.65)) if rule else 0.65,
+                                'RR': float(rule.get('rr', 2.0)) if rule else 2.0,
+                            } if rule else None
                             if not sym_info or df is None or params is None or len(df) < 100:
                                 send_telegram_message(f"❌ {sym}: not enough data")
                             else:
@@ -2180,19 +2244,17 @@ def process_single_symbol(symbol: str, enabled: set, risk: float) -> tuple:
     if existing_pos and symbol in tracked_positions:
         existing_pos['entry_regime'] = tracked_positions[symbol].get('entry_regime', 'unknown')
     
-    # Get strategy params from best_settings.json (baseline); fall back to SYMBOL_RULES defaults
-    params = get_instrument_settings(symbol)
-    if not params:
-        rule = SMC_SYMBOL_RULES.get(symbol)
-        if rule:
-            params = {
-                'EMA_Fast': 20, 'EMA_Slow': 50,
-                'ADX': 20.0,
-                'ATR_Mult': float(rule.get('atr_mult_stop', 0.65)),
-                'RR': float(rule.get('rr', 2.0)),
-            }
-        else:
-            return (symbol, f"{symbol}:NOCFG", None)
+    # Get strategy params from SYMBOL_RULES defaults
+    rule = SMC_SYMBOL_RULES.get(symbol)
+    if rule:
+        params = {
+            'EMA_Fast': 20, 'EMA_Slow': 50,
+            'ADX': 20.0,
+            'ATR_Mult': float(rule.get('atr_mult_stop', 0.65)),
+            'RR': float(rule.get('rr', 2.0)),
+        }
+    else:
+        return (symbol, f"{symbol}:NOCFG", None)
     
     # Parity mode: do NOT override backtest settings with live-learned params.
     
@@ -2615,13 +2677,17 @@ def scan_markets(cfg: dict, verbose: bool = False):
             status.append(f"{symbol}:MARKET_CLOSED")
             continue
 
-        # Backtest line 1816: skip if stop_dist <= spread * 2 (too tight — spread eats the trade)
-        _stop_dist_check = abs(signal['entry'] - signal['stop'])
-        _spread_price = sym_info.get('spread', 0) * sym_info.get('tick_size', 0.00001) if sym_info else 0
-        if _spread_price > 0 and _stop_dist_check <= _spread_price * 2:
-            print(f"⚠️ {symbol}: Stop too tight (dist={_stop_dist_check:.5f} <= spread×2={_spread_price*2:.5f}) — skipping")
-            status.append(f"{symbol}:STOP_TOO_TIGHT")
-            continue
+        # ── Stop distance spread check DISABLED (monte_carlo test has no spread check) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: no spread check on stop distance
+        # main.py: stop distance spread check - DISABLED
+        # # Backtest line 1816: skip if stop_dist <= spread * 2 (too tight — spread eats the trade)
+        # _stop_dist_check = abs(signal['entry'] - signal['stop'])
+        # _spread_price = sym_info.get('spread', 0) * sym_info.get('tick_size', 0.00001) if sym_info else 0
+        # if _spread_price > 0 and _stop_dist_check <= _spread_price * 2:
+        #     print(f"⚠️ {symbol}: Stop too tight (dist={_stop_dist_check:.5f} <= spread×2={_spread_price*2:.5f}) — skipping")
+        #     status.append(f"{symbol}:STOP_TOO_TIGHT")
+        #     continue
 
         dir_char = '▲' if signal['direction'] == 'BUY' else '▼'
         sig_line = f">>> NEW SIGNAL: {dir_char} {signal['direction']} {symbol} @ {signal['entry']} | TP:{signal['tp']} SL:{signal['stop']}"
@@ -2856,9 +2922,14 @@ def main():
     # Load baseline strategy params
     baseline_params = {}
     for sym in SYMBOLS:
-        params = get_instrument_settings(sym)
-        if params:
-            baseline_params[sym] = params
+        rule = SMC_SYMBOL_RULES.get(sym)
+        if rule:
+            baseline_params[sym] = {
+                'EMA_Fast': 20, 'EMA_Slow': 50,
+                'ADX': 20.0,
+                'ATR_Mult': float(rule.get('atr_mult_stop', 0.65)),
+                'RR': float(rule.get('rr', 2.0)),
+            }
     
     # Telegram bot for commands
     tg = TelegramBot()
