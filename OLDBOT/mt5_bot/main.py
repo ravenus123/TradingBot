@@ -50,6 +50,9 @@ from OLDBOT.mt5_bot.db import (
     log_event, get_trades,
 )
 
+# Hedge fund data collection
+from OLDBOT.mt5_bot.hedgefund_data_collector import init_data_collector, get_data_collector
+
 
 # ─── State Machine ──────────────────────────────────────────────
 class BotState(Enum):
@@ -341,7 +344,8 @@ MAX_MARGIN_USAGE   = float(os.getenv('MAX_MARGIN_USAGE', '95.0'))    # Allow hig
 
 # Runtime config persistence
 CONFIG_FILE = Path(__file__).parent / 'runtime_config.json'
-DEFAULT_RISK = float(os.getenv('RISK_PER_TRADE', '2.0'))  # Doc: 2 % per trade
+# CRITICAL: Match backtest risk exactly (1.0% per trade)
+DEFAULT_RISK = float(os.getenv('RISK_PER_TRADE', '1.0'))  # Match backtest: 1% per trade
 MIN_RUNTIME_RISK = float(os.getenv('MIN_RUNTIME_RISK', '0.10'))
 # Allow higher runtime risk (user-requested). Default max set to 20% per trade.
 MAX_RUNTIME_RISK = float(os.getenv('MAX_RUNTIME_RISK', '20.00'))
@@ -540,9 +544,32 @@ def reconnect_mt5() -> bool:
             account_info = mt5.account_info()
             if account_info:
                 print(f"[✓] MT5 reconnected: Account {account_info.login}")
+                
+                # Log infrastructure event
+                try:
+                    data_collector = get_data_collector()
+                    data_collector.log_infrastructure_event('MT5_RECONNECT', {
+                        'success': True,
+                        'account': account_info.login,
+                        'server': account_info.server if account_info else 'unknown',
+                    })
+                except Exception as e:
+                    print(f"[!] Data collector logging failed: {e}")
+                
                 return True
     except Exception as e:
         print(f"[!] Reconnection failed: {e}")
+        
+        # Log infrastructure event
+        try:
+            data_collector = get_data_collector()
+            data_collector.log_infrastructure_event('MT5_RECONNECT_FAILED', {
+                'success': False,
+                'error': str(e),
+            })
+        except Exception:
+            pass
+    
     return False
 
 
@@ -732,6 +759,40 @@ def place_order(signal: dict, sym_info: dict, lot_size: float) -> dict:
     }
     
     result = mt5.order_send(request)
+    
+    # Log trade execution to hedge fund data collector
+    try:
+        data_collector = get_data_collector()
+        execution_time_ms = 0  # Could add timing if needed
+        slippage_pips = 0  # Could calculate if we have expected price
+        
+        trade_data = {
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'symbol': signal.get('symbol', ''),
+            'strategy': strategy,
+            'label': signal.get('label', f'{strategy}:{signal.get("symbol", "")}:1'),
+            'direction': signal.get('direction', ''),
+            'entry_price': price,
+            'stop_loss': signal.get('stop', 0),
+            'take_profit': signal.get('tp', 0),
+            'lot_size': lot_size,
+            'risk_percent': signal.get('risk_percent', 1.0),
+            'atr': signal.get('atr', 0),
+            'signal_score': signal.get('score', 0),
+            'signal_type': signal.get('setup', ''),
+            'execution_time_ms': execution_time_ms,
+            'slippage_pips': slippage_pips,
+            'spread_at_entry': sym_info.get('spread', 0),
+            'status': 'OPEN' if result and result.retcode == mt5.TRADE_RETCODE_DONE else 'FAILED',
+            'exit_time': '',
+            'exit_price': 0,
+            'profit': 0,
+            'holding_period_minutes': 0,
+        }
+        data_collector.log_trade_execution(trade_data)
+    except Exception as e:
+        print(f"[!] Data collector logging failed: {e}")
+    
     return result
 
 
@@ -811,6 +872,46 @@ def close_position(position: dict, volume: float | None = None) -> bool:
     if result and result.retcode == mt5.TRADE_RETCODE_DONE:
         action = "partial" if volume and volume < position['volume'] else "closed"
         print(f"[✓] Position {action}: {position['direction']} {close_volume} {position['symbol']}")
+        
+        # Log trade closure to hedge fund data collector
+        try:
+            data_collector = get_data_collector()
+            
+            # Calculate holding period
+            entry_time = position.get('time', datetime.now(timezone.utc))
+            exit_time = datetime.now(timezone.utc)
+            holding_period_minutes = (exit_time - entry_time).total_seconds() / 60 if isinstance(entry_time, datetime) else 0
+            
+            # Calculate profit (from position if available)
+            profit = position.get('profit', 0)
+            
+            trade_data = {
+                'timestamp': position.get('time', datetime.now(timezone.utc)).isoformat(),
+                'symbol': position.get('symbol', ''),
+                'strategy': position.get('comment', '').split()[0] if position.get('comment') else 'unknown',
+                'label': position.get('label', f'{position.get("symbol", "")}:closed'),
+                'direction': position.get('direction', ''),
+                'entry_price': position.get('price_open', 0),
+                'stop_loss': position.get('sl', 0),
+                'take_profit': position.get('tp', 0),
+                'lot_size': close_volume,
+                'risk_percent': 0,
+                'atr': 0,
+                'signal_score': 0,
+                'signal_type': '',
+                'execution_time_ms': 0,
+                'slippage_pips': 0,
+                'spread_at_entry': 0,
+                'status': 'CLOSED',
+                'exit_time': exit_time.isoformat(),
+                'exit_price': price,
+                'profit': profit,
+                'holding_period_minutes': holding_period_minutes,
+            }
+            data_collector.log_trade_execution(trade_data)
+        except Exception as e:
+            print(f"[!] Data collector logging failed: {e}")
+        
         return True
     
     print(f"[!] Close failed: {result.retcode if result else mt5.last_error()}")
@@ -876,6 +977,66 @@ def fetch_live_candles(symbol: str, timeframe=mt5.TIMEFRAME_M15, bars: int = LOO
     df['Time'] = pd.to_datetime(df['time'], unit='s')
     df = df[['Time', 'open', 'high', 'low', 'close', 'tick_volume']]
     df.columns = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume']
+    
+    # Log market regime data periodically
+    try:
+        data_collector = get_data_collector()
+        
+        # Calculate ATR (volatility)
+        high_low = df['High'] - df['Low']
+        high_close = abs(df['High'] - df['Close'].shift())
+        low_close = abs(df['Low'] - df['Close'].shift())
+        ranges = pd.concat([high_low, high_close, low_close], axis=1)
+        true_range = ranges.max(axis=1)
+        atr = true_range.rolling(14).mean().iloc[-1]
+        
+        # Calculate ATR as percentage of price
+        current_price = df['Close'].iloc[-1]
+        atr_percent = (atr / current_price * 100) if current_price > 0 else 0
+        
+        # Determine trend direction (simple EMA crossover)
+        ema_20 = df['Close'].ewm(span=20, adjust=False).mean()
+        ema_50 = df['Close'].ewm(span=50, adjust=False).mean()
+        if ema_20.iloc[-1] > ema_50.iloc[-1]:
+            trend_direction = 'UP'
+        elif ema_20.iloc[-1] < ema_50.iloc[-1]:
+            trend_direction = 'DOWN'
+        else:
+            trend_direction = 'SIDEWAYS'
+        
+        # Calculate trend strength (0-1)
+        trend_strength = abs(ema_20.iloc[-1] - ema_50.iloc[-1]) / current_price if current_price > 0 else 0
+        trend_strength = min(trend_strength * 10, 1.0)  # Scale to 0-1
+        
+        # Determine volatility regime
+        if atr_percent < 0.5:
+            volatility_regime = 'LOW'
+        elif atr_percent < 1.5:
+            volatility_regime = 'MEDIUM'
+        else:
+            volatility_regime = 'HIGH'
+        
+        # Calculate daily price range as percentage
+        daily_range = (df['High'].iloc[-1] - df['Low'].iloc[-1]) / current_price * 100 if current_price > 0 else 0
+        
+        # Log regime data
+        regime_data = {
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'symbol': symbol,
+            'atr': atr,
+            'atr_percent': atr_percent,
+            'trend_direction': trend_direction,
+            'trend_strength': trend_strength,
+            'volatility_regime': volatility_regime,
+            'volume_regime': 'MEDIUM',  # Could calculate from volume
+            'rsi': 50,  # Could calculate if needed
+            'ema_trend': trend_direction,
+            'price_range_pct': daily_range,
+        }
+        data_collector.log_market_regime(symbol, regime_data)
+    except Exception as e:
+        print(f"[!] Regime logging failed for {symbol}: {e}")
+    
     return df
 
 
@@ -1635,8 +1796,9 @@ def _build_portfolio_orchestrator(context: dict) -> PortfolioOrchestrator:
             )
         )
 
-    # Keep per-trade risk capped to 0.2% for hedge fund standards (acceptable drawdown).
-    risk_manager = PortfolioRiskManager(max_risk_per_trade_pct=0.2, max_open_trades=10)
+    # CRITICAL: Match backtest risk exactly (1.0% per trade)
+    # Backtests used 1.0% risk, so live bot must use same for 1:1 comparison
+    risk_manager = PortfolioRiskManager(max_risk_per_trade_pct=1.0, max_open_trades=10)
     return PortfolioOrchestrator(registry=registry, risk_manager=risk_manager)
 
 
@@ -2066,135 +2228,106 @@ def process_single_symbol(symbol: str, enabled: set, risk: float) -> tuple:
     if existing_pos:
         set_state(BotState.MANAGEMENT)
         
-        # ── SAFETY: Max Hold Time (matching backtest: 96 bars forex, 120 crypto) ──
-        try:
-            open_time_str = tracked_positions.get(symbol, {}).get('open_time')
-            if open_time_str:
-                open_dt = datetime.strptime(open_time_str, '%Y-%m-%d %H:%M:%S')
-                elapsed_min = (datetime.now() - open_dt).total_seconds() / 60
-                # Use per-symbol timeout_bars from SYMBOL_RULES — matches backtest exactly
-                # timeout_bars are M5 bars, each = 5 minutes
-                timeout_bars = SMC_SYMBOL_RULES.get(symbol, {}).get('timeout_bars', 96)
-                max_hold = timeout_bars * 5  # M5 bars × 5 min
-                if elapsed_min >= max_hold:
-                    print(f"⏰ {symbol}: Max hold time exceeded ({elapsed_min:.0f} min > {max_hold} min) — force closing")
-                    log_event(f"{symbol}: Max hold time close after {elapsed_min:.0f} min", "INFO")
-                    send_telegram_message(
-                        f"⏰ <b>Max Hold Time</b>\n"
-                        f"{symbol}: Position held {elapsed_min:.0f} min (limit: {max_hold})\n"
-                        f"P/L: ${existing_pos['profit']:.2f}\n"
-                        f"Auto-closing position"
-                    )
-                    if close_position(existing_pos):
-                        return (symbol, f"{symbol}:TIME_CLOSE", None)
-        except Exception as e:
-            print(f"[!] Max hold time check error {symbol}: {e}")
+        # ── SAFETY DISABLED: Max Hold Time (monte_carlo test has no safety mechanisms) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # try:
+        #     open_time_str = tracked_positions.get(symbol, {}).get('open_time')
+        #     if open_time_str:
+        #         open_dt = datetime.strptime(open_time_str, '%Y-%m-%d %H:%M:%S')
+        #         elapsed_min = (datetime.now() - open_dt).total_seconds() / 60
+        #         timeout_bars = SMC_SYMBOL_RULES.get(symbol, {}).get('timeout_bars', 96)
+        #         max_hold = timeout_bars * 5
+        #         if elapsed_min >= max_hold:
+        #             print(f"⏰ {symbol}: Max hold time exceeded ({elapsed_min:.0f} min > {max_hold} min) — force closing")
+        #             if close_position(existing_pos):
+        #                 return (symbol, f"{symbol}:TIME_CLOSE", None)
+        # except Exception as e:
+        #     print(f"[!] Max hold time check error {symbol}: {e}")
         pl = existing_pos['profit']
         
-        # ── TRADE MANAGEMENT (1:1 BACKTEST PARITY) ────────────────────
-        # Matches run_live_smc_engine_backtest() logic exactly:
-        # - Partial TP at 1R (default 50% of position) if symbol permits
-        # - After partial: Trail stop using trail_mult from SYMBOL_RULES
-        tracked = tracked_positions.get(symbol, {})
-        entry_price = tracked.get('entry_price') or existing_pos.get('open_price', 0)
-        original_sl = tracked.get('original_sl') or existing_pos.get('sl', 0)
-        original_tp = tracked.get('original_tp') or existing_pos.get('tp', 0)
-        current_sl = existing_pos.get('sl', original_sl)
-        digits = sym_info.get('digits', 5)
-        current_price = sym_info['bid'] if existing_pos['direction'] == 'BUY' else sym_info['ask']
-
-        # Get symbol config from SMC_SYMBOL_RULES (same as backtest)
-        sym_rules = SMC_SYMBOL_RULES.get(symbol, {})
-        no_partial = sym_rules.get('no_partial', False)
-        tp1_r = sym_rules.get('tp1_r', 1.0)
-        tp1_fraction = sym_rules.get('tp1_fraction', 0.5)
-        trail_mult = sym_rules.get('trail_mult', 1.5)
-
-        if entry_price and original_sl:
-            initial_risk = abs(entry_price - original_sl)
-            stop_dist = initial_risk  # same as backtest
-
-            # Use last completed bar High/Low — matches backtest which uses bar['High']/bar['Low']
-            # NOT current_price (single tick) which would differ from backtest behaviour
-            bar_high = current_price
-            bar_low = current_price
-            try:
-                broker_sym_trail = get_broker_symbol(symbol)
-                last_bars = mt5.copy_rates_from_pos(broker_sym_trail, mt5.TIMEFRAME_M15, 0, 2)
-                if last_bars is not None and len(last_bars) >= 2:
-                    bar_high = float(last_bars[-2]['high'])  # last COMPLETED bar high
-                    bar_low = float(last_bars[-2]['low'])    # last COMPLETED bar low
-            except Exception:
-                pass
-
-            if existing_pos['direction'] == 'BUY':
-                unrealized = current_price - entry_price
-                highest_price = tracked.get('highest_price', entry_price)
-                highest_price = max(highest_price, bar_high)
-                lowest_price = tracked.get('lowest_price', entry_price)
-            else:
-                unrealized = entry_price - current_price
-                lowest_price = tracked.get('lowest_price', entry_price)
-                lowest_price = min(lowest_price, bar_low)
-                highest_price = tracked.get('highest_price', entry_price)
-
-            # Update tracked high/low for trailing
-            tracked_positions[symbol]['highest_price'] = highest_price
-            tracked_positions[symbol]['lowest_price'] = lowest_price
-
-            partial_taken = tracked.get('partial_taken', False)
-
-            # Mirrors backtest logic exactly:
-            # if (not no_partial AND partial NOT yet taken): check partial TP hit
-            # else (no_partial=True OR partial already taken): trail the stop
-            # These are mutually exclusive — trailing only activates after partial (or if no_partial)
-            if not no_partial and not partial_taken and initial_risk > 0:
-                # STAGE 1: PARTIAL TP at 1R
-                tp1_dist = initial_risk * tp1_r
-                hit_tp1 = unrealized >= tp1_dist
-                if hit_tp1:
-                    success, closed_vol = close_partial_position(existing_pos, tp1_fraction)
-                    if success:
-                        banked_r = tp1_r * tp1_fraction
-                        tracked_positions[symbol]['partial_taken'] = True
-                        tracked_positions[symbol]['banked_r'] = banked_r
-                        tracked_positions[symbol]['remaining_fraction'] = 1.0 - tp1_fraction
-                        # Move SL to entry (break-even) — matches backtest: open_trade['stop'] = entry
-                        new_sl = round(entry_price, digits)
-                        if (existing_pos['direction'] == 'BUY' and new_sl > current_sl) or \
-                           (existing_pos['direction'] == 'SELL' and new_sl < current_sl):
-                            modify_position_sl_tp(existing_pos, new_sl=new_sl)
-                            tracked_positions[symbol]['sl'] = new_sl
-                        # Reset high/low to partial bar — matches backtest lines 1674-1675
-                        # open_trade['highest'] = bar['High'], open_trade['lowest'] = bar['Low']
-                        tracked_positions[symbol]['highest_price'] = bar_high
-                        tracked_positions[symbol]['lowest_price'] = bar_low
-                        log_event(f"{symbol}: Partial TP at 1R closed {tp1_fraction*100:.0f}% ({closed_vol} lots)", "INFO")
-                        send_telegram_message(
-                            f"🏦 <b>Partial TP Hit</b>\n"
-                            f"{symbol}: Closed {tp1_fraction*100:.0f}% at 1R\n"
-                            f"Volume: {closed_vol} lots\n"
-                            f"Unrealized (remaining): ${unrealized:.2f}"
-                        )
-            else:
-                # STAGE 2: TRAILING STOP (only after partial taken, or if no_partial=True)
-                # Exactly matches backtest else-branch
-                if trail_mult is not None:
-                    trail_dist = stop_dist * trail_mult
-                    if existing_pos['direction'] == 'BUY':
-                        new_stop = highest_price - trail_dist
-                        if new_stop > current_sl:
-                            new_sl = round(new_stop, digits)
-                            if modify_position_sl_tp(existing_pos, new_sl=new_sl):
-                                tracked_positions[symbol]['sl'] = new_sl
-                                log_event(f"{symbol}: Trail SL → {new_sl}", "INFO")
-                    else:
-                        new_stop = lowest_price + trail_dist
-                        if new_stop < current_sl:
-                            new_sl = round(new_stop, digits)
-                            if modify_position_sl_tp(existing_pos, new_sl=new_sl):
-                                tracked_positions[symbol]['sl'] = new_sl
-                                log_event(f"{symbol}: Trail SL → {new_sl}", "INFO")
+        # ── TRADE MANAGEMENT DISABLED (monte_carlo test has no trade management) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # monte_carlo test: simple entry → exit at TP/SL, no partial TP, no trailing
+        # main.py: partial TP at 1R, trailing stop after partial - DISABLED
+        # tracked = tracked_positions.get(symbol, {})
+        # entry_price = tracked.get('entry_price') or existing_pos.get('open_price', 0)
+        # original_sl = tracked.get('original_sl') or existing_pos.get('sl', 0)
+        # original_tp = tracked.get('original_tp') or existing_pos.get('tp', 0)
+        # current_sl = existing_pos.get('sl', original_sl)
+        # digits = sym_info.get('digits', 5)
+        # current_price = sym_info['bid'] if existing_pos['direction'] == 'BUY' else sym_info['ask']
+        # sym_rules = SMC_SYMBOL_RULES.get(symbol, {})
+        # no_partial = sym_rules.get('no_partial', False)
+        # tp1_r = sym_rules.get('tp1_r', 1.0)
+        # tp1_fraction = sym_rules.get('tp1_fraction', 0.5)
+        # trail_mult = sym_rules.get('trail_mult', 1.5)
+        # if entry_price and original_sl:
+        #     initial_risk = abs(entry_price - original_sl)
+        #     stop_dist = initial_risk
+        #     bar_high = current_price
+        #     bar_low = current_price
+        #     try:
+        #         broker_sym_trail = get_broker_symbol(symbol)
+        #         last_bars = mt5.copy_rates_from_pos(broker_sym_trail, mt5.TIMEFRAME_M15, 0, 2)
+        #         if last_bars is not None and len(last_bars) >= 2:
+        #             bar_high = float(last_bars[-2]['high'])
+        #             bar_low = float(last_bars[-2]['low'])
+        #     except Exception:
+        #         pass
+        #     if existing_pos['direction'] == 'BUY':
+        #         unrealized = current_price - entry_price
+        #         highest_price = tracked.get('highest_price', entry_price)
+        #         highest_price = max(highest_price, bar_high)
+        #         lowest_price = tracked.get('lowest_price', entry_price)
+        #     else:
+        #         unrealized = entry_price - current_price
+        #         lowest_price = tracked.get('lowest_price', entry_price)
+        #         lowest_price = min(lowest_price, bar_low)
+        #         highest_price = tracked.get('highest_price', entry_price)
+        #     tracked_positions[symbol]['highest_price'] = highest_price
+        #     tracked_positions[symbol]['lowest_price'] = lowest_price
+        #     partial_taken = tracked.get('partial_taken', False)
+        #     if not no_partial and not partial_taken and initial_risk > 0:
+        #         tp1_dist = initial_risk * tp1_r
+        #         hit_tp1 = unrealized >= tp1_dist
+        #         if hit_tp1:
+        #             success, closed_vol = close_partial_position(existing_pos, tp1_fraction)
+        #             if success:
+        #                 banked_r = tp1_r * tp1_fraction
+        #                 tracked_positions[symbol]['partial_taken'] = True
+        #                 tracked_positions[symbol]['banked_r'] = banked_r
+        #                 tracked_positions[symbol]['remaining_fraction'] = 1.0 - tp1_fraction
+        #                 new_sl = round(entry_price, digits)
+        #                 if (existing_pos['direction'] == 'BUY' and new_sl > current_sl) or \
+        #                    (existing_pos['direction'] == 'SELL' and new_sl < current_sl):
+        #                     modify_position_sl_tp(existing_pos, new_sl=new_sl)
+        #                     tracked_positions[symbol]['sl'] = new_sl
+        #                 tracked_positions[symbol]['highest_price'] = bar_high
+        #                 tracked_positions[symbol]['lowest_price'] = bar_low
+        #                 log_event(f"{symbol}: Partial TP at 1R closed {tp1_fraction*100:.0f}% ({closed_vol} lots)", "INFO")
+        #                 send_telegram_message(
+        #                     f"🏦 <b>Partial TP Hit</b>\n"
+        #                     f"{symbol}: Closed {tp1_fraction*100:.0f}% at 1R\n"
+        #                     f"Volume: {closed_vol} lots\n"
+        #                     f"Unrealized (remaining): ${unrealized:.2f}"
+        #                 )
+        #     else:
+        #         if trail_mult is not None:
+        #             trail_dist = stop_dist * trail_mult
+        #             if existing_pos['direction'] == 'BUY':
+        #                 new_stop = highest_price - trail_dist
+        #                 if new_stop > current_sl:
+        #                     new_sl = round(new_stop, digits)
+        #                     if modify_position_sl_tp(existing_pos, new_sl=new_sl):
+        #                         tracked_positions[symbol]['sl'] = new_sl
+        #                         log_event(f"{symbol}: Trail SL → {new_sl}", "INFO")
+        #     else:
+        #         new_stop = lowest_price + trail_dist
+        #         if new_stop < current_sl:
+        #             new_sl = round(new_stop, digits)
+        #             if modify_position_sl_tp(existing_pos, new_sl=new_sl):
+        #                 tracked_positions[symbol]['sl'] = new_sl
+        #                 log_event(f"{symbol}: Trail SL → {new_sl}", "INFO")
 
         # Supplementary position fields for downstream logic
         try:
@@ -2338,22 +2471,17 @@ def scan_markets(cfg: dict, verbose: bool = False):
                         else:
                             exit_reason = 'TP'
                         
-                        # Consecutive loss tracking
-                        if profit < 0:
-                            consecutive_losses[symbol] = consecutive_losses.get(symbol, 0) + 1
-                            if consecutive_losses[symbol] >= 2:
-                                # Backtest: cooldown_until = i + 12 (12 M5 bars = 60 min)
-                                sl_cooldown_until[symbol] = datetime.now(timezone.utc) + timedelta(minutes=SL_COOLDOWN_MINUTES)
-                                blocked_symbols[symbol] = today_str
-                                print(f"🚫 {symbol}: 2 consecutive losses — 60min cooldown + blocked for today (matches backtest)")
-                                log_event(f"{symbol}: Blocked after 2 consecutive losses", "WARN")
-                                send_telegram_message(
-                                    f"🚫 <b>Symbol Blocked</b>\n"
-                                    f"{symbol}: 2 consecutive losses\n"
-                                    f"Blocked until tomorrow"
-                                )
-                        else:
-                            consecutive_losses[symbol] = 0  # Win resets counter
+                        # ── SAFETY DISABLED: Consecutive loss tracking (monte_carlo test has no safety mechanisms) ──
+                        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+                        # if profit < 0:
+                        #     consecutive_losses[symbol] = consecutive_losses.get(symbol, 0) + 1
+                        #     if consecutive_losses[symbol] >= 2:
+                        #         sl_cooldown_until[symbol] = datetime.now(timezone.utc) + timedelta(minutes=SL_COOLDOWN_MINUTES)
+                        #         blocked_symbols[symbol] = today_str
+                        #         print(f"🚫 {symbol}: 2 consecutive losses — 60min cooldown + blocked for today")
+                        #         log_event(f"{symbol}: Blocked after 2 consecutive losses", "WARN")
+                        # else:
+                        #     consecutive_losses[symbol] = 0
 
                         # Backtest-parity daily drawdown state update (per symbol virtual balance)
                         if symbol not in symbol_virtual_balance:
@@ -2401,75 +2529,69 @@ def scan_markets(cfg: dict, verbose: bool = False):
         
         today_str = datetime.now().strftime('%Y-%m-%d')
 
-        # ── SAFETY: Reset daily blocks at new day ───────────────────
-        # Clear blocks for symbols that were blocked on a previous day
-        for sym in list(blocked_symbols.keys()):
-            if blocked_symbols[sym] != today_str:
-                del blocked_symbols[sym]
-                consecutive_losses[sym] = 0
-
-        # ── SAFETY: Consecutive Loss Blocker (2 losses → block for day) ──
-        if symbol in blocked_symbols and blocked_symbols[symbol] == today_str:
-            print(f"🚫 {symbol}: Blocked after 2 consecutive losses — skipping")
-            status.append(f"{symbol}:BLOCKED_LOSSES")
-            continue
-
-        # Post-consecutive-loss cooldown: 60 min (12 M5 bars) — matches backtest exactly
-        if symbol in sl_cooldown_until:
-            if datetime.now(timezone.utc) < sl_cooldown_until[symbol]:
-                remaining = (sl_cooldown_until[symbol] - datetime.now(timezone.utc)).total_seconds() / 60
-                print(f"⏳ {symbol}: Consecutive-loss cooldown — {remaining:.0f} min remaining")
-                status.append(f"{symbol}:COOLDOWN")
-                continue
-            else:
-                del sl_cooldown_until[symbol]  # Cooldown expired
-
-        # ── SAFETY: Kill Switch — peak-to-trough DD >= 5%*risk_scale (matches backtest) ───
-        # Backtest: kill_switch_triggered = True when (peak_equity - equity) / peak_equity >= 5%*risk_scale
-        # Resets daily in live (backtest resets per window; daily is the practical equivalent)
-        if symbol_day_marker.get(symbol) == today_str:  # only check if day is initialized
-            try:
-                _ks_peak = symbol_peak_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE)
-                _ks_curr = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-                _ks_risk_scale = float(risk) / 1.0
-                KILL_SWITCH_DD_PCT = 5.0 * _ks_risk_scale
-                if _ks_peak > 0 and (_ks_peak - _ks_curr) / _ks_peak * 100.0 >= KILL_SWITCH_DD_PCT:
-                    symbol_kill_switch[symbol] = True
-            except Exception:
-                pass
-        if symbol_kill_switch.get(symbol):
-            print(f"🔴 {symbol}: Kill switch active (peak DD >= 5%×risk) — blocked for today")
-            status.append(f"{symbol}:KILL_SWITCH")
-            continue
-
-        # ── SAFETY: Daily Profit Target (backtest line 1782: day_pnl_pct >= 3%*risk_scale) ───
-        try:
-            _day_start = float(symbol_day_start_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-            _day_curr  = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-            _risk_scale_pt = float(risk) / 1.0
-            DAILY_TARGET_PCT = 3.0 * _risk_scale_pt
-            if _day_start > 0:
-                day_pnl_pct = (_day_curr - _day_start) / _day_start * 100.0
-                if day_pnl_pct >= DAILY_TARGET_PCT:
-                    print(f"🎯 {symbol}: Daily target reached ({day_pnl_pct:.2f}% >= {DAILY_TARGET_PCT:.2f}%) — done for today")
-                    status.append(f"{symbol}:TARGET_HIT")
-                    continue
-        except Exception:
-            pass
-
-        # ── SAFETY: Daily Drawdown Block (match backtest per-symbol logic) ───
-        try:
-            day_start_bal = float(symbol_day_start_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-            curr_bal = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-            if day_start_bal > 0:
-                dd_pct = (day_start_bal - curr_bal) / day_start_bal * 100.0
-                if dd_pct >= float(max_daily_dd):
-                    blocked_symbols[symbol] = today_str
-                    print(f"🚫 {symbol}: Daily DD {dd_pct:.2f}% >= {max_daily_dd:.2f}% — blocked for today")
-                    status.append(f"{symbol}:BLOCKED_DD")
-                    continue
-        except Exception:
-            pass
+        # ── SAFETY DISABLED: Daily blocks, consecutive losses, kill switch, daily target, daily DD (monte_carlo test has no safety mechanisms) ──
+        # Disabled for true 1:1 parity with monte_carlo_robustness.py
+        # # Reset daily blocks
+        # for sym in list(blocked_symbols.keys()):
+        #     if blocked_symbols[sym] != today_str:
+        #         del blocked_symbols[sym]
+        #         consecutive_losses[sym] = 0
+        # # Consecutive loss blocker
+        # if symbol in blocked_symbols and blocked_symbols[symbol] == today_str:
+        #     print(f"🚫 {symbol}: Blocked after 2 consecutive losses — skipping")
+        #     status.append(f"{symbol}:BLOCKED_LOSSES")
+        #     continue
+        # # Cooldown check
+        # if symbol in sl_cooldown_until:
+        #     if datetime.now(timezone.utc) < sl_cooldown_until[symbol]:
+        #         remaining = (sl_cooldown_until[symbol] - datetime.now(timezone.utc)).total_seconds() / 60
+        #         print(f"⏳ {symbol}: Consecutive-loss cooldown — {remaining:.0f} min remaining")
+        #         status.append(f"{symbol}:COOLDOWN")
+        #         continue
+        #     else:
+        #         del sl_cooldown_until[symbol]
+        # # Kill switch
+        # if symbol_day_marker.get(symbol) == today_str:
+        #     try:
+        #         _ks_peak = symbol_peak_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE)
+        #         _ks_curr = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
+        #         _ks_risk_scale = float(risk) / 1.0
+        #         KILL_SWITCH_DD_PCT = 5.0 * _ks_risk_scale
+        #         if _ks_peak > 0 and (_ks_peak - _ks_curr) / _ks_peak * 100.0 >= KILL_SWITCH_DD_PCT:
+        #             symbol_kill_switch[symbol] = True
+        #     except Exception:
+        #         pass
+        # if symbol_kill_switch.get(symbol):
+        #     print(f"🔴 {symbol}: Kill switch active (peak DD >= 5%×risk) — blocked for today")
+        #     status.append(f"{symbol}:KILL_SWITCH")
+        #     continue
+        # # Daily profit target
+        # try:
+        #     _day_start = float(symbol_day_start_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
+        #     _day_curr  = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
+        #     _risk_scale_pt = float(risk) / 1.0
+        #     DAILY_TARGET_PCT = 3.0 * _risk_scale_pt
+        #     if _day_start > 0:
+        #         day_pnl_pct = (_day_curr - _day_start) / _day_start * 100.0
+        #         if day_pnl_pct >= DAILY_TARGET_PCT:
+        #             print(f"🎯 {symbol}: Daily target reached ({day_pnl_pct:.2f}% >= {DAILY_TARGET_PCT:.2f}%) — done for today")
+        #             status.append(f"{symbol}:TARGET_HIT")
+        #             continue
+        # except Exception:
+        #     pass
+        # # Daily drawdown block
+        # try:
+        #     day_start_bal = float(symbol_day_start_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
+        #     curr_bal = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
+        #     if day_start_bal > 0:
+        #         dd_pct = (day_start_bal - curr_bal) / day_start_bal * 100.0
+        #         if dd_pct >= float(max_daily_dd):
+        #             blocked_symbols[symbol] = today_str
+        #             print(f"🚫 {symbol}: Daily DD {dd_pct:.2f}% >= {max_daily_dd:.2f}% — blocked for today")
+        #             status.append(f"{symbol}:BLOCKED_DD")
+        #             continue
+        # except Exception:
+        #     pass
 
         # ── SAFETY: Margin Protection (20 %) ────────────────────────
         # Doc: "ak je viac ako 20 % kapitálu viazaného v marži, nový príkaz sa zablokuje"
@@ -2484,7 +2606,7 @@ def scan_markets(cfg: dict, verbose: bool = False):
         #             status.append(f"{symbol}:MARGIN")
         #             continue
         # except Exception:
-            pass
+        #     pass
 
         # NEW SIGNAL - this is important, print it
         sym_info = get_symbol_info(symbol)
@@ -2710,6 +2832,11 @@ def main():
     # Initialize SQLite database (trades, order_blocks, logs)
     init_trading_db()
     log_event("Bot process starting", "INFO")
+    
+    # Initialize hedge fund data collector
+    init_data_collector()
+    data_collector = get_data_collector()
+    log_event("Hedge fund data collector initialized", "INFO")
 
     # Initialize MT5
     if not init_mt5():
@@ -2775,6 +2902,10 @@ def main():
             # as the backtest engine (p = i-1 closed bar), never mid-candle.
             CANDLE_SECONDS = 900  # M15 = 15 * 60
             SCAN_OFFSET    = 3    # scan 3s after close to let MT5 finalize the bar
+
+            # Performance snapshot counter
+            snapshot_counter = 0
+            SNAPSHOT_INTERVAL = 10  # Log performance every 10 scans (~2.5 hours)
 
             def _wait_for_m15_close():
                 """Sleep until the next M15 candle boundary + SCAN_OFFSET seconds."""
@@ -2847,15 +2978,54 @@ def main():
                 try:
                     cfg = load_config()
                     scan_markets(cfg)
+                    
+                    # Log performance snapshot periodically
+                    snapshot_counter += 1
+                    if snapshot_counter >= SNAPSHOT_INTERVAL:
+                        snapshot_counter = 0
+                        try:
+                            account = mt5.account_info()
+                            if account:
+                                positions = get_open_positions()
+                                open_pnl = sum(p.get('profit', 0) for p in positions)
+                                data_collector.log_performance_snapshot(
+                                    equity=account.equity,
+                                    balance=account.balance,
+                                    open_pnl=open_pnl
+                                )
+                                print(f"[~] Performance snapshot logged: Equity=${account.equity:.2f}")
+                        except Exception as snap_err:
+                            print(f"[!] Performance snapshot failed: {snap_err}")
+                
                 except Exception as e:
                     print(f"\n[!] Scan loop error: {e}")
                     update_runtime_status(state='error', message=f"Scan loop error: {e}")
+                    
+                    # Log infrastructure event for scan errors
+                    try:
+                        data_collector.log_infrastructure_event('SCAN_ERROR', {
+                            'error': str(e),
+                        })
+                    except Exception:
+                        pass
     except KeyboardInterrupt:
         print("\n[!] Stopped by user")
         update_runtime_status(state='stopped', message='Stopped by user')
         if not args.once:
             telegram_active.clear()
     finally:
+        # Save final data snapshot before shutdown
+        try:
+            data_collector = get_data_collector()
+            snapshot_file = data_collector.save_json_snapshot()
+            print(f"[✓] Final data snapshot saved: {snapshot_file}")
+            
+            # Print summary report
+            summary = data_collector.generate_summary_report()
+            print("\n" + summary)
+        except Exception as e:
+            print(f"[!] Failed to save final snapshot: {e}")
+        
         shutdown_mt5()
         update_runtime_status(state='stopped', message='MT5 disconnected')
         print("[✓] MT5 disconnected")

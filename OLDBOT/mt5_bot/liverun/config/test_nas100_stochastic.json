@@ -1,0 +1,20 @@
+{
+  "source": "test_nas100_stochastic",
+  "mode": "multi_strategy_portfolio",
+  "strategies": [
+    {
+      "symbol": "NAS100",
+      "strategy": "stochastic",
+      "label": "stochastic:NAS100:1",
+      "params": {
+        "k_period": 14,
+        "d_period": 3,
+        "oversold": 20,
+        "overbought": 80,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "source": "test_nas100_breakout",
+  "mode": "multi_strategy_portfolio",
+  "strategies": [
+    {
+      "symbol": "NAS100",
+      "strategy": "breakout",
+      "label": "breakout:NAS100:1",
+      "params": {
+        "period": 20,
+        "breakout_threshold": 0.5,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    }
+  ]
+}

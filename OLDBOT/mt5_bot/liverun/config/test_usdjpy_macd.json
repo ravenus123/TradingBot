@@ -1,0 +1,19 @@
+{
+  "source": "test_usdjpy_macd",
+  "mode": "multi_strategy_portfolio",
+  "strategies": [
+    {
+      "symbol": "USDJPY",
+      "strategy": "macd",
+      "label": "macd:USDJPY:1",
+      "params": {
+        "fast_period": 8,
+        "slow_period": 21,
+        "signal_period": 7,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "session_start": "2026-06-02T14:35:43.368667+00:00",
+    "snapshot_time": "2026-06-02T14:35:43.382231+00:00",
+    "session_duration_hours": 3.7677777777777777e-06
+  },
+  "performance_metrics": {
+    "session_start": "2026-06-02T14:35:43.368667+00:00",
+    "session_duration_hours": 3.7677777777777777e-06,
+    "initial_equity": 10000.0,
+    "final_equity": 10150.0,
+    "total_return_pct": 1.5,
+    "max_drawdown_pct": 0.0,
+    "sharpe_ratio": 0,
+    "total_trades": 2,
+    "total_wins": 1,
+    "win_rate_pct": 50.0,
+    "strategy_count": 1,
+    "infrastructure_events": 2
+  },
+  "strategy_performance": {
+    "bollinger:XAUUSD:1": {
+      "symbol": "XAUUSD",
+      "strategy": "bollinger",
+      "trades": 2,
+      "wins": 1,
+      "losses": 0,
+      "total_profit": 150.0,
+      "total_loss": 0.0,
+      "avg_return": 75.0,
+      "max_profit": 150.0,
+      "max_loss": 0.0,
+      "avg_holding_period": 60.0,
+      "total_holding_period": 120.0
+    }
+  },
+  "equity_curve": [
+    {
+      "timestamp": "2026-06-02T14:35:43.371745+00:00",
+      "equity": 10000.0,
+      "balance": 10000.0,
+      "open_pnl": 0.0,
+      "peak_equity": 10000.0,
+      "drawdown_pct": 0.0,
+      "session_duration_hours": 8.55e-07
+    },
+    {
+      "timestamp": "2026-06-02T14:35:43.372747+00:00",
+      "equity": 10150.0,
+      "balance": 10150.0,
+      "open_pnl": 0.0,
+      "peak_equity": 10150.0,
+      "drawdown_pct": 0.0,
+      "session_duration_hours": 1.1333333333333334e-06
+    }
+  ],
+  "infrastructure_events": [
+    {
+      "timestamp": "2026-06-02T14:35:43.376177+00:00",
+      "event_type": "MT5_CONNECT",
+      "session_duration_hours": 2.0861111111111112e-06,
+      "success": true,
+      "account": 123456
+    },
+    {
+      "timestamp": "2026-06-02T14:35:43.377683+00:00",
+      "event_type": "ORDER_REJECT",
+      "session_duration_hours": 2.5044444444444445e-06,
+      "symbol": "XAUUSD",
+      "reason": "Insufficient margin"
+    }
+  ]
+}

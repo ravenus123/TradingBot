@@ -1,0 +1,19 @@
+{
+  "source": "test_nas100_rsi",
+  "mode": "multi_strategy_portfolio",
+  "strategies": [
+    {
+      "symbol": "NAS100",
+      "strategy": "rsi",
+      "label": "rsi:NAS100:1",
+      "params": {
+        "period": 14,
+        "oversold": 30,
+        "overbought": 70,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    }
+  ]
+}

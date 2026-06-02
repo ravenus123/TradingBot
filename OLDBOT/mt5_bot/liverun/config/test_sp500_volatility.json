@@ -1,0 +1,18 @@
+{
+  "source": "test_sp500_volatility",
+  "mode": "multi_strategy_portfolio",
+  "strategies": [
+    {
+      "symbol": "SP500",
+      "strategy": "volatility",
+      "label": "volatility:SP500:1",
+      "params": {
+        "volatility_window": 14,
+        "volatility_threshold": 1.2,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    }
+  ]
+}

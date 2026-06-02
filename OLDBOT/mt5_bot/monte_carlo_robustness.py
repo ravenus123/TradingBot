@@ -36,9 +36,9 @@ STRATEGY_MAP = {
 }
 
 
-def load_candidates(limit: int | None = None) -> List[Dict]:
-    """Load candidate strategies from production_strategy_lock.json"""
-    config_path = BOT_DIR / 'liverun' / 'config' / 'production_strategy_lock.json'
+def load_candidates(limit: int | None = None, config_file: str = 'production_strategy_lock.json') -> List[Dict]:
+    """Load candidate strategies from config file"""
+    config_path = BOT_DIR / 'liverun' / 'config' / config_file
     with open(config_path) as f:
         config = json.load(f)
     
@@ -224,7 +224,8 @@ def calculate_metrics(equity: pd.Series, trades: List[float]) -> Dict:
 
 def run_monte_carlo_test(candidates: List[Dict], outdir: Path, bars: int = 50000, 
                           num_simulations: int = 50, period_days: int = 30, 
-                          risk_pct: float = 1.0, seed: int | None = None) -> Dict:
+                          risk_pct: float = 1.0, seed: int | None = None, 
+                          config_file: str = 'production_strategy_lock.json') -> Dict:
     """Run Monte Carlo robustness test with random start/end dates."""
     if seed is not None:
         random.seed(seed)
@@ -332,9 +333,10 @@ def main():
     parser.add_argument("--simulations", type=int, default=50)
     parser.add_argument("--period-days", type=int, default=30)
     parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--config", type=str, default="production_strategy_lock.json")
     args = parser.parse_args()
 
-    candidates = load_candidates(limit=args.limit if args.limit > 0 else None)
+    candidates = load_candidates(limit=args.limit if args.limit > 0 else None, config_file=args.config)
     if not candidates:
         print("No candidates found; aborting")
         return
@@ -347,7 +349,7 @@ def main():
     print(f"Candidates: {len(candidates)}")
     
     result = run_monte_carlo_test(
-        candidates, outdir, args.bars, args.simulations, args.period_days, args.risk_pct, args.seed
+        candidates, outdir, args.bars, args.simulations, args.period_days, args.risk_pct, args.seed, args.config
     )
     
     # Calculate statistics

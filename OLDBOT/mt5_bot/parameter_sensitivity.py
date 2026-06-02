@@ -15,12 +15,12 @@ from volatility_strategy import generate_volatility_signal
 from macd_strategy import generate_macd_signal
 
 BOT_DIR = Path(__file__).parent
-CONFIG_FILE = BOT_DIR / 'liverun' / 'config' / 'production_strategy_lock.json'
+DEFAULT_CONFIG_FILE = BOT_DIR / 'liverun' / 'config' / 'production_strategy_lock.json'
 
 
-def load_candidates() -> List[Dict]:
-    """Load candidate strategies from production_strategy_lock.json"""
-    with open(CONFIG_FILE) as f:
+def load_candidates(config_file: Path = DEFAULT_CONFIG_FILE) -> List[Dict]:
+    """Load candidate strategies from config file"""
+    with open(config_file) as f:
         config = json.load(f)
     return config['strategies']
 
@@ -159,9 +159,12 @@ def simulate_with_params(df_1h: pd.DataFrame, df_5m: pd.DataFrame, candidates: L
     return total_return, max_drawdown, trades
 
 
-def run_parameter_sensitivity(num_variations: int = 20):
+def run_parameter_sensitivity(num_variations: int = 20, config_file: Path = None):
     """Run parameter sensitivity analysis."""
-    base_candidates = load_candidates()
+    if config_file:
+        base_candidates = load_candidates(config_file)
+    else:
+        base_candidates = load_candidates()
     
     # Group candidates by symbol
     symbols = set(c['symbol'] for c in base_candidates)
@@ -296,7 +299,16 @@ def run_parameter_sensitivity(num_variations: int = 20):
 
 
 if __name__ == '__main__':
-    results = run_parameter_sensitivity(num_variations=20)
+    import argparse
+    parser = argparse.ArgumentParser(description='Run parameter sensitivity analysis')
+    parser.add_argument('--config', type=str, help='Config file path (default: production_strategy_lock.json)')
+    args = parser.parse_args()
+    
+    config_file = None
+    if args.config:
+        config_file = BOT_DIR / 'liverun' / 'config' / args.config
+    
+    results = run_parameter_sensitivity(num_variations=20, config_file=config_file)
     
     # Save results
     output_file = Path(__file__).parent / 'liverun' / 'parameter_sensitivity_results.json'

@@ -1,0 +1,18 @@
+{
+  "source": "test_ukoil_bollinger",
+  "mode": "multi_strategy_portfolio",
+  "strategies": [
+    {
+      "symbol": "UKOIL",
+      "strategy": "bollinger",
+      "label": "bollinger:UKOIL:1",
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "stop_atr_mult": 0.6,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    }
+  ]
+}

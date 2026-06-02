@@ -1,0 +1,2 @@
+timestamp,symbol,atr,atr_percent,trend_direction,trend_strength,volatility_regime,volume_regime,rsi,ema_trend,price_range_pct,logged_at
+2026-06-02T14:35:43.375173+00:00,XAUUSD,5.0,0.25,UP,0.7,MEDIUM,MEDIUM,55,UP,0.3,2026-06-02T14:35:43.375173+00:00

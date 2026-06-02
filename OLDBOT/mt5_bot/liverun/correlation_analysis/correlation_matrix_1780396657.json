@@ -1,0 +1,17 @@
+{
+  "bollinger": {
+    "bollinger": 1.0,
+    "volatility": 0.5048269503577457,
+    "macd": 0.4065579237497631
+  },
+  "volatility": {
+    "bollinger": 0.5048269503577457,
+    "volatility": 1.0,
+    "macd": 0.6594938117882319
+  },
+  "macd": {
+    "bollinger": 0.4065579237497631,
+    "volatility": 0.6594938117882319,
+    "macd": 1.0
+  }
+}
