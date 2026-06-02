@@ -1,0 +1,57 @@
+{
+  "strategies": [
+    {
+      "symbol": "BTCUSD",
+      "strategy": "parabolic_sar",
+      "label": "parabolic_sar:BTCUSD:1",
+      "params": {
+        "af_start": 0.02,
+        "af_step": 0.02,
+        "af_max": 0.2,
+        "use_sar_as_stop": true,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "parabolic_sar",
+      "label": "parabolic_sar:BTCUSD:2",
+      "params": {
+        "af_start": 0.01,
+        "af_step": 0.01,
+        "af_max": 0.15,
+        "use_sar_as_stop": false,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "parabolic_sar",
+      "label": "parabolic_sar:SP500:1",
+      "params": {
+        "af_start": 0.02,
+        "af_step": 0.02,
+        "af_max": 0.2,
+        "use_sar_as_stop": true,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "parabolic_sar",
+      "label": "parabolic_sar:XAUUSD:1",
+      "params": {
+        "af_start": 0.02,
+        "af_step": 0.02,
+        "af_max": 0.2,
+        "use_sar_as_stop": true,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    }
+  ]
+}

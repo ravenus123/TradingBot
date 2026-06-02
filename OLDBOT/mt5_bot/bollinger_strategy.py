@@ -51,6 +51,7 @@ def generate_bollinger_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame, symbol: 
         band_width = current_upper - current_lower
         percent_b = (current_close - current_lower) / max(1e-8, band_width)
         
+        
         # Generate signals based on Bollinger Band touches
         # Price at or above upper band - expect mean reversion down
         if percent_b >= 0.95:

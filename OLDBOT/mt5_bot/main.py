@@ -31,7 +31,6 @@ try:
 except ImportError:
     pass  # python-dotenv optional; falls back to json configs
 
-from OLDBOT.mt5_bot.smart_money_strategy import SmartMoneyStrategy, should_trade, SYMBOL_RULES as SMC_SYMBOL_RULES
 from OLDBOT.mt5_bot.portfolio_engine import (
     PortfolioOrchestrator,
     PortfolioRiskManager,
@@ -148,10 +147,7 @@ def _setup_log_tee():
 
 _setup_log_tee()
 
-# Pure ICT/SMC strategy - no AI layers
-# STRATEGY SELECTOR: True = Smart Money (Liquidity Sweep + MSS), False = Original ICT/SMC
-USE_SMART_MONEY_STRATEGY = True
-
+# Config
 PRODUCTION_STRATEGY_LOCK_FILE = Path(__file__).parent / 'liverun' / 'config' / 'production_strategy_lock.json'
 
 
@@ -225,7 +221,6 @@ def _build_portfolio_strategies_from_lock() -> dict:
     
     # Strategy style mapping
     style_map = {
-        'smart_money': 'hybrid',
         'mean_reversion': 'mean_reversion',
         'rsi': 'mean_reversion',
         'stochastic': 'momentum',
@@ -236,28 +231,31 @@ def _build_portfolio_strategies_from_lock() -> dict:
         'macd': 'momentum',
     }
     
-    # Build strategy list from lock file
+    # Build strategy list from lock file - include ALL variations for multi-strategy portfolio
     for item in PRODUCTION_STRATEGY_LOCK:
         if not bool(item.get('enabled', True)):
             continue
         
         strategy_name = str(item.get('strategy', '')).strip()
         symbol = str(item.get('symbol', '')).upper().strip()
+        label = str(item.get('label', '')).strip()  # e.g., "bollinger:XAUUSD:1"
         
-        if not strategy_name or not symbol:
+        if not strategy_name or not symbol or not label:
             continue
         
-        # Create strategy key (e.g., 'mean_reversion_v1')
-        strategy_key = f"{strategy_name}_v1"
+        # Use label as unique key to support multiple variations of same strategy type
+        # e.g., "bollinger:XAUUSD:1", "bollinger:XAUUSD:2", etc.
+        strategy_key = label.replace(':', '_')  # Convert to valid Python identifier
         
-        # If strategy not already in dict, add it
-        if strategy_key not in strategies:
-            strategies[strategy_key] = {
-                'enabled': True,
-                'weight': 1.0,
-                'style': style_map.get(strategy_name, 'unknown'),
-                'asset_class': 'multi_asset',
-            }
+        # Add each variation as a separate strategy
+        strategies[strategy_key] = {
+            'enabled': True,
+            'weight': 1.0,
+            'style': style_map.get(strategy_name, 'unknown'),
+            'asset_class': 'multi_asset',
+            'symbol': symbol,
+            'params': item.get('params', {}),
+        }
     
     # Ensure at least some strategies are enabled
     if not strategies:
@@ -295,18 +293,8 @@ SYMBOLS = sorted({
 # Broker uses '.i' suffix for most symbols
 BROKER_SUFFIX = {'EURUSD': '.i', 'GBPUSD': '.i', 'USDJPY': '.i', 'XAUUSD': '.i', 'EURJPY': '.i', 'BTCUSD': '', 'SP500': '', 'NAS100': ''}
 
-# ===============================================================================
-# INSTITUTIONAL-GRADE SAFETY FEATURES (Hedge Fund Level)
-# ===============================================================================
-
-# Global Kill-Switch: Emergency equity protection
-# If total account equity falls below this threshold, bot self-destructs
-GLOBAL_KILL_SWITCH_ENABLED = True
-GLOBAL_EQUITY_THRESHOLD_PCT = 90.0  # 90% of starting capital triggers kill-switch
-
 # Magic Number Separation: Each strategy gets unique magic number for order tracking
 STRATEGY_MAGIC_NUMBERS = {
-    'smart_money_v1': 100001,
     'mean_reversion_v1': 100002,
     'trend_momentum_v1': 100003,
     'breakout_v1': 100004,
@@ -317,103 +305,21 @@ STRATEGY_MAGIC_NUMBERS = {
     'macd_v1': 100009,
 }
 
-# Hard SL/TP Enforcement: Every order MUST have hard stops attached
-# No virtual, hidden, or floating stops that depend on VPS connection
-HARD_STOP_ENFORCEMENT = True
-MIN_STOP_DISTANCE_PIPS = 5  # Minimum stop distance in pips
-MIN_TP_DISTANCE_PIPS = 10   # Minimum take profit distance in pips
-
 # Strategy constants (same as backtested)
-# Session kill zones: London 07-11 UTC, New York 13-17 UTC
-SESSION_LONDON_START = 7
-SESSION_LONDON_END   = 11
-SESSION_NY_START     = 13
-SESSION_NY_END       = 17
 ATR_PERIOD = 14
 ADX_PERIOD = 14
-ADX_THRESHOLD = 25       # Doc: ADX < 25 = consolidation → skip
 LOOKBACK_BARS = 3000     # closer to 30-day M15 backtest horizon (~2880 bars)
 TP_RR_RATIO = 2.5        # Take Profit at 2.5:1 risk-reward (aligned with improved backtest engine)
 
-# ICT / SMC constants (ported from validated backtest engine)
-BOS_VALIDITY = 50        # Order Block zone valid for 50 bars
-OB_SCAN = 20             # Look back up to 20 bars for OB candle
-SWING_LOOKBACK = 5       # Swing-point detection window
-MIN_CONFLUENCE = 0.8     # Match backtest aggressive confluence (was 4 - too restrictive)
-COOLDOWN_BARS = 0        # NO SIGNAL SPACING - back-to-back entries for maximum profit (matches backtest)
-FULL_TIME_TRADING = True # Match backtest default: no session-hour restriction when True
-
-# Safety mechanisms — circuit breakers
-MAX_DAILY_DRAWDOWN = float(os.getenv('MAX_DAILY_DRAWDOWN', '3.0'))   # 3% daily max loss → deactivate (matches backtest)
-MAX_MARGIN_USAGE   = float(os.getenv('MAX_MARGIN_USAGE', '95.0'))    # Allow high margin usage (user controls risk)
-
 # Runtime config persistence
-CONFIG_FILE = Path(__file__).parent / 'runtime_config.json'
-# CRITICAL: Match backtest risk exactly (1.0% per trade)
-DEFAULT_RISK = float(os.getenv('RISK_PER_TRADE', '1.0'))  # Match backtest: 1% per trade
-MIN_RUNTIME_RISK = float(os.getenv('MIN_RUNTIME_RISK', '0.10'))
-# Allow higher runtime risk (user-requested). Default max set to 20% per trade.
-MAX_RUNTIME_RISK = float(os.getenv('MAX_RUNTIME_RISK', '20.00'))
+# CRITICAL: Fixed 0.2% risk per trade for 45-strategy portfolio (no runtime adjustment)
+DEFAULT_RISK = 0.2  # 0.2% per trade for multi-strategy portfolio
 
 # Track last signal to avoid spam
 last_signals = {}
 
-# Debug mode flag — set by --debug arg
-_DEBUG_MODE = False
-
-# Per-symbol confluence gates (EXACT MATCH TO BACKTEST)
-def get_min_confluence(symbol):
-    """OPTIMIZED confluence gates - instrument-specific tuning"""
-    table = {
-        'BTCUSD': 0.8,   # More conservative - crypto is volatile
-        'EURUSD': 0.7,   # Already good
-        'GBPUSD': 0.7,   # Already good
-        'GBPJPY': 0.8,   # Already good
-        'XAUUSD': 0.5,   # Aggressive - gold responds well
-        'USDJPY': 0.8,   # Already good
-        'NAS100': 0.7,   # More conservative - index volatility
-    }
-    return table.get(symbol, 0.8)
-
-
-def get_adx_floor(symbol):
-    """Per-instrument ADX minimums (match backtest _get_adx_floor)."""
-    table = {
-        'USDJPY': 12.0,
-        'GBPJPY': 12.0,
-        'XAUUSD': 13.0,
-        'EURUSD': 13.0,
-        'GBPUSD': 14.0,
-        'BTCUSD': 14.0,
-        'NAS100': 13.0,
-    }
-    return table.get(symbol, 12.0)
-
 # Track open positions to detect closures
 tracked_positions = {}
-
-# ── Safety state (matching backtest engine) ──────────────────────────────
-# Daily trade cap: 3/day per symbol — matches backtest MAX_DAILY_TRADES = 3
-daily_trade_count = {}   # {symbol: {date_str: int}}
-
-# Consecutive loss blocker: 2 consecutive SLs → block symbol for the day (matches backtest)
-consecutive_losses = {}  # {symbol: int}
-blocked_symbols = {}     # {symbol: date_str} — blocked until next day
-
-# Post-consecutive-loss cooldown: 12 M5 bars = 60 min — matches backtest exactly
-# Backtest: cooldown_until = i + 12 after 2 consecutive losses
-sl_cooldown_until = {}   # {symbol: datetime}
-SL_COOLDOWN_MINUTES = 60  # 12 M5 bars × 5 min = 60 min (matches backtest)
-
-# Backtest-parity virtual balance state (per symbol)
-# Mirrors backtest's per-symbol balance/day-balance logic for DD blocking.
-BACKTEST_INITIAL_BALANCE = 10000.0
-BACKTEST_DD_LIMIT_PCT = 3.0
-symbol_virtual_balance = {}      # {symbol: float} — current virtual equity
-symbol_peak_virtual_balance = {} # {symbol: float} — running peak (for dd_factor, matches backtest peak_equity)
-symbol_kill_switch = {}          # {symbol: bool} — permanent stop when peak DD >= 5%*risk_scale (matches backtest)
-symbol_day_start_balance = {}    # {symbol: float}
-symbol_day_marker = {}           # {symbol: 'YYYY-MM-DD'}
 
 # Max hold time: from SYMBOL_RULES timeout_bars (M5 bars × 5min)
 # EURUSD=192 M5 bars=960min, NAS100/XAUUSD=96 M5 bars=480min (backtest default)
@@ -625,14 +531,8 @@ def is_symbol_tradeable(sym_info: dict | None) -> bool:
     """Return True when MT5 reports the symbol can currently be traded."""
     if not sym_info:
         return False
-    if sym_info.get('trade_mode') != mt5.SYMBOL_TRADE_MODE_FULL:
-        return False
-    session_flags = (
-        int(sym_info.get('session_deals', 0) or 0),
-        int(sym_info.get('session_buy_orders', 0) or 0),
-        int(sym_info.get('session_sell_orders', 0) or 0),
-    )
-    return any(flag > 0 for flag in session_flags)
+    # Simplified check - only verify trade_mode, session checks can be unreliable
+    return sym_info.get('trade_mode') == mt5.SYMBOL_TRADE_MODE_FULL
 
 
 # position mgmt
@@ -733,72 +633,119 @@ def calculate_lot_size(symbol: str, risk_percent: float, stop_distance: float, s
 
 def place_order(signal: dict, sym_info: dict, lot_size: float) -> dict:
     """Place a market order with SL. Returns result dict."""
-    broker_sym = signal['broker_symbol']
-    
-    # Get magic number for this strategy
-    strategy = signal.get('strategy', 'mean_reversion')
-    strategy_key = f"{strategy}_v1"
-    magic_num = STRATEGY_MAGIC_NUMBERS.get(strategy_key, 123456)
-    
-    # Determine order type
-    if signal['direction'] == 'BUY':
-        order_type = mt5.ORDER_TYPE_BUY
-        price = sym_info['ask']  # fresh ask
-    else:
-        order_type = mt5.ORDER_TYPE_SELL
-        price = sym_info['bid']  # fresh bid
-    
-    request = {
-        'action': mt5.TRADE_ACTION_DEAL,
-        'symbol': broker_sym,
-        'volume': lot_size,
-        'type': order_type,
-        'price': price,
-        'sl': signal['stop'],
-        'tp': signal['tp'],
-        'deviation': 20,  # slippage in points
-        'magic': magic_num,  # Strategy-specific magic number
-        'comment': f'{strategy}',
-        'type_time': mt5.ORDER_TIME_GTC,
-        'type_filling': mt5.ORDER_FILLING_IOC,
-    }
-    
-    result = mt5.order_send(request)
-    
-    # Log trade execution to hedge fund data collector
     try:
-        data_collector = get_data_collector()
-        execution_time_ms = 0  # Could add timing if needed
-        slippage_pips = 0  # Could calculate if we have expected price
+        print(f"[LOG] Placing order: {signal.get('symbol')} {signal.get('direction')} @ {signal.get('entry')} lot={lot_size}")
+        broker_sym = signal['broker_symbol']
         
-        trade_data = {
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'symbol': signal.get('symbol', ''),
-            'strategy': strategy,
-            'label': signal.get('label', f'{strategy}:{signal.get("symbol", "")}:1'),
-            'direction': signal.get('direction', ''),
-            'entry_price': price,
-            'stop_loss': signal.get('stop', 0),
-            'take_profit': signal.get('tp', 0),
-            'lot_size': lot_size,
-            'risk_percent': signal.get('risk_percent', 1.0),
-            'atr': signal.get('atr', 0),
-            'signal_score': signal.get('score', 0),
-            'signal_type': signal.get('setup', ''),
-            'execution_time_ms': execution_time_ms,
-            'slippage_pips': slippage_pips,
-            'spread_at_entry': sym_info.get('spread', 0),
-            'status': 'OPEN' if result and result.retcode == mt5.TRADE_RETCODE_DONE else 'FAILED',
-            'exit_time': '',
-            'exit_price': 0,
-            'profit': 0,
-            'holding_period_minutes': 0,
+        # Get magic number for this strategy
+        strategy = signal.get('strategy', 'mean_reversion')
+        strategy_key = f"{strategy}_v1"
+        magic_num = STRATEGY_MAGIC_NUMBERS.get(strategy_key, 123456)
+        
+        # Safe comment: truncate to 20 chars and remove special chars
+        safe_strategy = strategy.replace('_', '')[:20]
+        
+        # Determine order type
+        if signal['direction'] == 'BUY':
+            order_type = mt5.ORDER_TYPE_BUY
+            price = sym_info['ask']  # fresh ask
+        else:
+            order_type = mt5.ORDER_TYPE_SELL
+            price = sym_info['bid']  # fresh bid
+        
+        # Validate SL/TP distance from entry (minimum distance check)
+        stop_dist = abs(signal['stop'] - price)
+        tp_dist = abs(signal['tp'] - price)
+        
+        # Get minimum distance from symbol info
+        min_distance = sym_info.get('trade_tick_size', 0.00001) * 10  # 10 ticks minimum
+        
+        if stop_dist < min_distance:
+            print(f"[ERROR] {signal.get('symbol')}: Stop distance too small ({stop_dist:.5f} < {min_distance:.5f})")
+            return {'success': False, 'error': f'Stop distance too small: {stop_dist:.5f}'}
+        
+        if tp_dist < min_distance:
+            print(f"[ERROR] {signal.get('symbol')}: TP distance too small ({tp_dist:.5f} < {min_distance:.5f})")
+            return {'success': False, 'error': f'TP distance too small: {tp_dist:.5f}'}
+        
+        request = {
+            'action': mt5.TRADE_ACTION_DEAL,
+            'symbol': broker_sym,
+            'volume': lot_size,
+            'type': order_type,
+            'price': price,
+            'sl': signal['stop'],
+            'tp': signal['tp'],
+            'deviation': 20,  # slippage in points
+            'magic': magic_num,  # Strategy-specific magic number
+            'comment': safe_strategy,
+            'type_time': mt5.ORDER_TIME_GTC,
+            'type_filling': mt5.ORDER_FILLING_IOC,
         }
-        data_collector.log_trade_execution(trade_data)
+        
+        result = mt5.order_send(request)
+        
+        if result is None:
+            print(f"[ERROR] Order send returned None for {signal.get('symbol')}")
+            return {'success': False, 'error': 'Order send returned None'}
+        
+        # Check if result has retcode attribute (it should be an object, not dict)
+        if hasattr(result, 'retcode'):
+            if result.retcode != mt5.TRADE_RETCODE_DONE:
+                print(f"[ERROR] Order failed for {signal.get('symbol')}: retcode={result.retcode}, comment={result.comment}")
+                return {'success': False, 'error': f"Order failed: {result.comment}", 'retcode': result.retcode}
+        else:
+            # If result is a dict (shouldn't happen but handle it)
+            if isinstance(result, dict):
+                retcode = result.get('retcode', -1)
+                comment = result.get('comment', 'Unknown')
+                print(f"[ERROR] Order failed for {signal.get('symbol')}: retcode={retcode}, comment={comment}")
+                return {'success': False, 'error': f"Order failed: {comment}", 'retcode': retcode}
+            else:
+                print(f"[ERROR] Unexpected result type for {signal.get('symbol')}: {type(result)}")
+                return {'success': False, 'error': 'Unexpected result type'}
+        
+        print(f"[LOG] Order placed successfully: {signal.get('symbol')} ticket={result.order}")
+        
+        # Log trade execution to hedge fund data collector
+        try:
+            data_collector = get_data_collector()
+            execution_time_ms = 0  # Could add timing if needed
+            slippage_pips = 0  # Could calculate if we have expected price
+            
+            trade_data = {
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'symbol': signal.get('symbol', ''),
+                'strategy': strategy,
+                'label': signal.get('label', f'{strategy}:{signal.get("symbol", "")}:1'),
+                'direction': signal.get('direction', ''),
+                'entry_price': price,
+                'stop_loss': signal.get('stop', 0),
+                'take_profit': signal.get('tp', 0),
+                'lot_size': lot_size,
+                'risk_percent': signal.get('risk_percent', 1.0),
+                'atr': signal.get('atr', 0),
+                'signal_score': signal.get('score', 0),
+                'signal_type': signal.get('setup', ''),
+                'execution_time_ms': execution_time_ms,
+                'slippage_pips': slippage_pips,
+                'spread_at_entry': sym_info.get('spread', 0),
+                'status': 'OPEN' if result and result.retcode == mt5.TRADE_RETCODE_DONE else 'FAILED',
+                'exit_time': '',
+                'exit_price': 0,
+                'profit': 0,
+                'holding_period_minutes': 0,
+            }
+            data_collector.log_trade_execution(trade_data)
+        except Exception as e:
+            print(f"[!] Data collector logging failed: {e}")
+        
+        return result
     except Exception as e:
-        print(f"[!] Data collector logging failed: {e}")
-    
-    return result
+        print(f"[ERROR] place_order failed for {signal.get('symbol')}: {e}")
+        import traceback
+        traceback.print_exc()
+        return {'success': False, 'error': str(e)}
 
 
 def open_position_with_retry(signal: dict, sym_info: dict, risk_percent: float) -> bool:
@@ -819,28 +766,60 @@ def open_position_with_retry(signal: dict, sym_info: dict, risk_percent: float) 
             time.sleep(RETRY_DELAY)
             continue
         
-        if result.retcode == mt5.TRADE_RETCODE_DONE:
-            fill_line = f"[✓] Order filled: {signal['direction']} {lot_size} {signal['symbol']} @ {result.price}"
-            print(fill_line)
-            _push_logs_async([fill_line])
-            signal['lot_size'] = lot_size  # Store for logging
-            return True
+        # Handle dict return from place_order (failure case)
+        if isinstance(result, dict):
+            if result.get('success'):
+                # This shouldn't happen - success returns MT5 object, not dict
+                fill_line = f"[✓] Order filled: {signal['direction']} {lot_size} {signal['symbol']} @ {result.get('price', 'N/A')}"
+                print(fill_line)
+                _push_logs_async([fill_line])
+                signal['lot_size'] = lot_size
+                return True
+            else:
+                # Order failed
+                retcode = result.get('retcode', -1)
+                error_msg = result.get('error', 'Unknown error')
+                print(f"[!] Order failed: code={retcode}, error={error_msg}")
+                
+                # Check if it's a retriable error
+                retriable_codes = [
+                    mt5.TRADE_RETCODE_REQUOTE,
+                    mt5.TRADE_RETCODE_PRICE_CHANGED,
+                    mt5.TRADE_RETCODE_CONNECTION,
+                ]
+                
+                if retcode in retriable_codes and attempt < MAX_ORDER_RETRIES:
+                    print(f"[!] Order attempt {attempt} failed (code {retcode}), retrying...")
+                    time.sleep(RETRY_DELAY)
+                else:
+                    return False
+                continue
         
-        # Check if it's a retriable error
-        retriable_codes = [
-            mt5.TRADE_RETCODE_REQUOTE,
-            mt5.TRADE_RETCODE_PRICE_CHANGED,
-            mt5.TRADE_RETCODE_PRICE_OFF,
-            mt5.TRADE_RETCODE_TIMEOUT,
-            mt5.TRADE_RETCODE_CONNECTION,
-        ]
-        
-        if result.retcode in retriable_codes and attempt < MAX_ORDER_RETRIES:
-            print(f"[!] Order attempt {attempt} failed (code {result.retcode}), retrying...")
-            time.sleep(RETRY_DELAY)
-        else:
-            print(f"[!] Order failed: code={result.retcode}, comment={result.comment}")
-            return False
+        # Handle MT5 result object (success case)
+        if hasattr(result, 'retcode'):
+            if result.retcode == mt5.TRADE_RETCODE_DONE:
+                fill_line = f"[✓] Order filled: {signal['direction']} {lot_size} {signal['symbol']} @ {result.price}"
+                print(fill_line)
+                _push_logs_async([fill_line])
+                signal['lot_size'] = lot_size  # Store for logging
+                return True
+            
+            # Check if it's a retriable error
+            retriable_codes = [
+                mt5.TRADE_RETCODE_REQUOTE,
+                mt5.TRADE_RETCODE_PRICE_CHANGED,
+                mt5.TRADE_RETCODE_PRICE_OFF,
+                mt5.TRADE_RETCODE_TIMEOUT,
+                mt5.TRADE_RETCODE_CONNECTION,
+            ]
+            
+            if result.retcode in retriable_codes and attempt < MAX_ORDER_RETRIES:
+                print(f"[!] Order attempt {attempt} failed (code {result.retcode}), retrying...")
+                time.sleep(RETRY_DELAY)
+            else:
+                print(f"[!] Order failed: code={result.retcode}, comment={result.comment}")
+                return False
+            continue
     
     return False
 
@@ -958,91 +937,102 @@ def modify_position_sl_tp(position: dict, new_sl: float | None = None, new_tp: f
 
 def fetch_live_candles(symbol: str, timeframe=mt5.TIMEFRAME_M15, bars: int = LOOKBACK_BARS) -> pd.DataFrame | None:
     """Fetch live candles from MT5 (M15 timeframe per documentation)."""
-    # Check connection first
-    if not check_mt5_connection():
-        if not reconnect_mt5():
-            return None
-    
-    broker_sym = get_broker_symbol(symbol)
-    
-    # Ensure symbol is visible in Market Watch
-    if not mt5.symbol_select(broker_sym, True):
-        # Try once more after small delay
-        time.sleep(0.5)
-        if not mt5.symbol_select(broker_sym, True):
-            last_error = mt5.last_error()
-            print(f"[!] Failed to select {broker_sym}: {last_error}")
-            return None
-    
-    rates = mt5.copy_rates_from_pos(broker_sym, timeframe, 0, bars)
-    if rates is None or len(rates) < 100:
-        return None
-    
-    df = pd.DataFrame(rates)
-    df['Time'] = pd.to_datetime(df['time'], unit='s')
-    df = df[['Time', 'open', 'high', 'low', 'close', 'tick_volume']]
-    df.columns = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume']
-    
-    # Log market regime data periodically
     try:
-        data_collector = get_data_collector()
+        print(f"[LOG] Fetching candles for {symbol}: timeframe={timeframe}, bars={bars}")
+        # Check connection first
+        if not check_mt5_connection():
+            if not reconnect_mt5():
+                print(f"[ERROR] {symbol}: MT5 connection failed")
+                return None
         
-        # Calculate ATR (volatility)
-        high_low = df['High'] - df['Low']
-        high_close = abs(df['High'] - df['Close'].shift())
-        low_close = abs(df['Low'] - df['Close'].shift())
-        ranges = pd.concat([high_low, high_close, low_close], axis=1)
-        true_range = ranges.max(axis=1)
-        atr = true_range.rolling(14).mean().iloc[-1]
+        broker_sym = get_broker_symbol(symbol)
         
-        # Calculate ATR as percentage of price
-        current_price = df['Close'].iloc[-1]
-        atr_percent = (atr / current_price * 100) if current_price > 0 else 0
+        # Ensure symbol is visible in Market Watch
+        if not mt5.symbol_select(broker_sym, True):
+            # Try once more after small delay
+            time.sleep(0.5)
+            if not mt5.symbol_select(broker_sym, True):
+                last_error = mt5.last_error()
+                print(f"[ERROR] {symbol}: Failed to select {broker_sym}: {last_error}")
+                return None
         
-        # Determine trend direction (simple EMA crossover)
-        ema_20 = df['Close'].ewm(span=20, adjust=False).mean()
-        ema_50 = df['Close'].ewm(span=50, adjust=False).mean()
-        if ema_20.iloc[-1] > ema_50.iloc[-1]:
-            trend_direction = 'UP'
-        elif ema_20.iloc[-1] < ema_50.iloc[-1]:
-            trend_direction = 'DOWN'
-        else:
-            trend_direction = 'SIDEWAYS'
+        rates = mt5.copy_rates_from_pos(broker_sym, timeframe, 0, bars)
+        if rates is None or len(rates) < 100:
+            print(f"[ERROR] {symbol}: Not enough candles (got {len(rates) if rates is not None else 0})")
+            return None
         
-        # Calculate trend strength (0-1)
-        trend_strength = abs(ema_20.iloc[-1] - ema_50.iloc[-1]) / current_price if current_price > 0 else 0
-        trend_strength = min(trend_strength * 10, 1.0)  # Scale to 0-1
+        df = pd.DataFrame(rates)
+        df['Time'] = pd.to_datetime(df['time'], unit='s')
+        df = df[['Time', 'open', 'high', 'low', 'close', 'tick_volume']]
+        df.columns = ['Time', 'Open', 'High', 'Low', 'Close', 'Volume']
         
-        # Determine volatility regime
-        if atr_percent < 0.5:
-            volatility_regime = 'LOW'
-        elif atr_percent < 1.5:
-            volatility_regime = 'MEDIUM'
-        else:
-            volatility_regime = 'HIGH'
+        print(f"[LOG] {symbol}: Fetched {len(df)} candles successfully")
         
-        # Calculate daily price range as percentage
-        daily_range = (df['High'].iloc[-1] - df['Low'].iloc[-1]) / current_price * 100 if current_price > 0 else 0
+        # Log market regime data periodically
+        try:
+            data_collector = get_data_collector()
+            
+            # Calculate ATR (volatility)
+            high_low = df['High'] - df['Low']
+            high_close = abs(df['High'] - df['Close'].shift())
+            low_close = abs(df['Low'] - df['Close'].shift())
+            ranges = pd.concat([high_low, high_close, low_close], axis=1)
+            true_range = ranges.max(axis=1)
+            atr = true_range.rolling(14).mean().iloc[-1]
+            
+            # Calculate ATR as percentage of price
+            current_price = df['Close'].iloc[-1]
+            atr_percent = (atr / current_price * 100) if current_price > 0 else 0
+            
+            # Determine trend direction (simple EMA crossover)
+            ema_20 = df['Close'].ewm(span=20, adjust=False).mean()
+            ema_50 = df['Close'].ewm(span=50, adjust=False).mean()
+            if ema_20.iloc[-1] > ema_50.iloc[-1]:
+                trend_direction = 'UP'
+            elif ema_20.iloc[-1] < ema_50.iloc[-1]:
+                trend_direction = 'DOWN'
+            else:
+                trend_direction = 'SIDEWAYS'
+            
+            # Calculate trend strength (0-1)
+            trend_strength = abs(ema_20.iloc[-1] - ema_50.iloc[-1]) / current_price if current_price > 0 else 0
+            trend_strength = min(trend_strength * 10, 1.0)  # Scale to 0-1
+            
+            # Determine volatility regime
+            if atr_percent < 0.5:
+                volatility_regime = 'LOW'
+            elif atr_percent < 1.5:
+                volatility_regime = 'MEDIUM'
+            else:
+                volatility_regime = 'HIGH'
+            
+            # Calculate daily price range as percentage
+            daily_range = (df['High'].iloc[-1] - df['Low'].iloc[-1]) / current_price * 100 if current_price > 0 else 0
+            
+            # Log regime data
+            regime_data = {
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'symbol': symbol,
+                'atr': atr,
+                'atr_percent': atr_percent,
+                'trend_direction': trend_direction,
+                'trend_strength': trend_strength,
+                'volatility_regime': volatility_regime,
+                'volume_regime': 'MEDIUM',  # Could calculate from volume
+                'rsi': 50,  # Could calculate if needed
+                'ema_trend': trend_direction,
+                'price_range_pct': daily_range,
+            }
+            data_collector.log_market_regime(symbol, regime_data)
+        except Exception as e:
+            print(f"[!] Regime logging failed for {symbol}: {e}")
         
-        # Log regime data
-        regime_data = {
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'symbol': symbol,
-            'atr': atr,
-            'atr_percent': atr_percent,
-            'trend_direction': trend_direction,
-            'trend_strength': trend_strength,
-            'volatility_regime': volatility_regime,
-            'volume_regime': 'MEDIUM',  # Could calculate from volume
-            'rsi': 50,  # Could calculate if needed
-            'ema_trend': trend_direction,
-            'price_range_pct': daily_range,
-        }
-        data_collector.log_market_regime(symbol, regime_data)
+        return df
     except Exception as e:
-        print(f"[!] Regime logging failed for {symbol}: {e}")
-    
-    return df
+        print(f"[ERROR] fetch_live_candles failed for {symbol}: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 
 def _resample_m15_to_tf(df_m15: pd.DataFrame, rule: str) -> pd.DataFrame:
@@ -1066,14 +1056,24 @@ def fetch_m15_and_resample(symbol: str, bars: int = LOOKBACK_BARS) -> tuple[pd.D
     Returns (df_h1, df_m5) both derived from the same M15 feed.
     H1 drops the last (currently forming) bar — matches backtest h1_cutoff = decision_time - 1h
     which ensures only completed H1 bars feed into bias calculation (no lookahead)."""
-    df_m15 = fetch_live_candles(symbol, timeframe=mt5.TIMEFRAME_M15, bars=bars)
-    if df_m15 is None or len(df_m15) < 100:
+    try:
+        print(f"[LOG] Fetching M15 and resampling for {symbol}")
+        df_m15 = fetch_live_candles(symbol, timeframe=mt5.TIMEFRAME_M15, bars=bars)
+        if df_m15 is None or len(df_m15) < 100:
+            print(f"[ERROR] {symbol}: Not enough M15 candles")
+            return None, None
+        df_h1 = _resample_m15_to_tf(df_m15, '1h').iloc[:-1]  # drop forming bar — matches backtest
+        df_m5 = _resample_m15_to_tf(df_m15, '5min').iloc[:-1]  # drop forming M5 bar too
+        if len(df_h1) < 80 or len(df_m5) < 80:
+            print(f"[ERROR] {symbol}: Not enough resampled candles (H1={len(df_h1)}, M5={len(df_m5)})")
+            return None, None
+        print(f"[LOG] {symbol}: Resampled successfully (H1={len(df_h1)}, M5={len(df_m5)})")
+        return df_h1, df_m5
+    except Exception as e:
+        print(f"[ERROR] fetch_m15_and_resample failed for {symbol}: {e}")
+        import traceback
+        traceback.print_exc()
         return None, None
-    df_h1 = _resample_m15_to_tf(df_m15, '1h').iloc[:-1]  # drop forming bar — matches backtest
-    df_m5 = _resample_m15_to_tf(df_m15, '5min').iloc[:-1]  # drop forming M5 bar too
-    if len(df_h1) < 80 or len(df_m5) < 80:
-        return None, None
-    return df_h1, df_m5
 
 
 # multi-tf context
@@ -1154,513 +1154,8 @@ def add_indicators(df: pd.DataFrame, fast_ema: int, slow_ema: int) -> pd.DataFra
     return df
 
 
-def _find_swing_points(highs, lows, lookback=SWING_LOOKBACK):
-    """Detect swing highs and swing lows using lookback window (no future leak)."""
-    n = len(highs)
-    swing_highs = np.full(n, np.nan)
-    swing_lows = np.full(n, np.nan)
-    for i in range(lookback, n - lookback):
-        wh = highs[i - lookback: i + lookback + 1]
-        wl = lows[i - lookback: i + lookback + 1]
-        if highs[i] == np.max(wh):
-            swing_highs[i] = highs[i]
-        if lows[i] == np.min(wl):
-            swing_lows[i] = lows[i]
-    return swing_highs, swing_lows
-
-
-def in_session_kill_zone(hour: int) -> bool:
-    """Return True if current hour falls inside London or NY kill zone."""
-    return (SESSION_LONDON_START <= hour <= SESSION_LONDON_END) or \
-           (SESSION_NY_START <= hour <= SESSION_NY_END)
-
-
-def _is_rejection_candle_live(o, h, l, c, direction, strict=False):
-    """
-    Check for bullish (direction=1) or bearish (direction=-1) rejection.
-    STRICTER version: tighter thresholds to avoid false signals.
-    strict=True raises thresholds to filter weaker rejections.
-    EXACT MATCH TO BACKTEST
-    """
-    rng = h - l
-    if rng <= 0:
-        return False
-    body = abs(c - o)
-
-    if strict:
-        # Beast-mode: tighter thresholds
-        if direction == 1:  # bullish
-            lower_wick = min(o, c) - l
-            # Strong bullish close
-            if c > o and (c - l) / rng >= 0.68:
-                return True
-            # Very strong hammer
-            if lower_wick / rng >= 0.50:
-                return True
-            # Strong bullish body
-            if body / rng >= 0.70:
-                return True
-        else:  # bearish
-            upper_wick = h - max(o, c)
-            # Strong bearish close
-            if c < o and (h - c) / rng >= 0.68:
-                return True
-            # Very strong inverted hammer
-            if upper_wick / rng >= 0.50:
-                return True
-            # Strong bearish body
-            if body / rng >= 0.70:
-                return True
-    else:
-        # Standard thresholds (original)
-        if direction == 1:  # bullish
-            lower_wick = min(o, c) - l
-            if c > o and (c - l) / rng >= 0.55:
-                return True
-            if lower_wick / rng >= 0.40:
-                return True
-            if c > o and body / rng >= 0.60:
-                return True
-        else:  # bearish
-            upper_wick = h - max(o, c)
-            if c < o and (h - c) / rng >= 0.55:
-                return True
-            if upper_wick / rng >= 0.40:
-                return True
-            if c < o and body / rng >= 0.60:
-                return True
-    return False
-
-
-def generate_signal(df: pd.DataFrame, params: dict, symbol: str, sym_info: dict) -> dict | None:
-    """Generate ICT / SMC trading signal — SYNCED with backtest engine.
-
-    Entry types (identical to backtest_improved.py):
-      1. Order Block retest  (demand/supply after BOS, rejection candle)
-      2. Fair Value Gap fill (imbalance zone re-entry, directional close)
-      3. Liquidity sweep     (stop-hunt reversal, rejection + reclaim)
-
-    Filters:
-      • Market structure (struct >= 0 for buy, struct <= 0 for sell)
-      • ADX threshold (from best_settings.json)
-      • Session killzones (London 07-11, NY 13-17, US 14-20, crypto 24/7)
-      • Confluence gate >= 1 (EMA trend, zone, RSI non-extreme, strong ADX)
-    """
-    set_state(BotState.SCANNING)
-
-    if not params:
-        return None
-
-    fast = int(params.get('EMA_Fast', 9))
-    slow = int(params.get('EMA_Slow', 21))
-    adx_th = float(params.get('ADX', ADX_THRESHOLD))
-    atr_mult = float(params.get('ATR_Mult', 1.5))
-    rr_ratio = float(params.get('RR', TP_RR_RATIO))
-    rr_ratio = max(0.5, min(rr_ratio, 6.0))
-
-    # Fixed parameters only (no adaptive layer)
-
-    df = add_indicators(df, fast, slow).fillna(0)
-    n = len(df)
-    if n < max(slow, 60):
-        return None
-
-    C  = df['Close'].to_numpy().astype(float)
-    O  = df['Open'].to_numpy().astype(float)
-    H  = df['High'].to_numpy().astype(float)
-    L  = df['Low'].to_numpy().astype(float)
-    ema_f_arr = df['EMA_Fast'].to_numpy().astype(float)
-    ema_s_arr = df['EMA_Slow'].to_numpy().astype(float)
-    adx_arr   = df['ADX'].to_numpy().astype(float)
-    atr_arr   = df['ATR'].to_numpy().astype(float)
-    rsi_arr   = df['RSI'].to_numpy().astype(float)
-    times     = pd.to_datetime(df['Time'])
-    hours     = times.dt.hour.to_numpy()
-
-    # ── Swing detection (matching backtest: left=5, right=3) ──
-    SL_LEFT = 5; SR_RIGHT = 3
-    sh_list = []   # (bar, price) confirmed swing highs
-    sl_list = []   # (bar, price) confirmed swing lows
-    for j in range(SL_LEFT, n - SR_RIGHT):
-        is_sh = True
-        for k in range(1, SL_LEFT + 1):
-            if H[j - k] > H[j]: is_sh = False; break
-        if is_sh:
-            for k in range(1, SR_RIGHT + 1):
-                if H[j + k] >= H[j]: is_sh = False; break
-        if is_sh:
-            sh_list.append((j, float(H[j])))
-
-        is_sl = True
-        for k in range(1, SL_LEFT + 1):
-            if L[j - k] < L[j]: is_sl = False; break
-        if is_sl:
-            for k in range(1, SR_RIGHT + 1):
-                if L[j + k] <= L[j]: is_sl = False; break
-        if is_sl:
-            sl_list.append((j, float(L[j])))
-
-    # Keep recent swings
-    sh_list = sh_list[-25:]
-    sl_list = sl_list[-25:]
-
-    # ── Market structure (same as backtest) ──
-    struct = 0
-    if len(sh_list) >= 2 and len(sl_list) >= 2:
-        hh = sh_list[-1][1] > sh_list[-2][1]
-        hl = sl_list[-1][1] > sl_list[-2][1]
-        lh = sh_list[-1][1] < sh_list[-2][1]
-        ll = sl_list[-1][1] < sl_list[-2][1]
-        if hh and hl: struct = 1
-        elif lh and ll: struct = -1
-
-    set_state(BotState.ZONING)
-
-    # ── Detect BOS → create OB zones (scan recent ~120 bars) ──
-    OB_LOOK = 15; MAX_OB = 80; MAX_FVG = 50
-    start_idx = max(slow, SL_LEFT + SR_RIGHT + 20, 60)
-    # Match backtest behavior more closely: build zones across full available window.
-    scan_from = start_idx
-
-    obs = []   # {d: 1/-1, lo, hi, b, bb, ok}
-    fvgs = []  # {d: 1/-1, lo, hi, b}
-
-    for i in range(scan_from, n):
-        p = i - 1
-        if p < start_idx:
-            continue
-
-        # Detect bullish BOS (close above last swing high)
-        if sh_list:
-            lsh = sh_list[-1][1]
-            if C[p] > lsh and (p < 2 or C[p-1] <= lsh):
-                for j in range(p-1, max(p - OB_LOOK, start_idx), -1):
-                    if C[j] < O[j] and (H[j] - L[j]) > 0:
-                        obs.append({'d': 1, 'lo': float(L[j]), 'hi': float(H[j]),
-                                    'b': j, 'bb': p, 'ok': True})
-                        try:
-                            insert_order_block(symbol=symbol, price_high=float(H[j]),
-                                               price_low=float(L[j]), direction='BULL')
-                        except Exception:
-                            pass
-                        break
-
-        # Detect bearish BOS (close below last swing low)
-        if sl_list:
-            lsl = sl_list[-1][1]
-            if C[p] < lsl and (p < 2 or C[p-1] >= lsl):
-                for j in range(p-1, max(p - OB_LOOK, start_idx), -1):
-                    if C[j] > O[j] and (H[j] - L[j]) > 0:
-                        obs.append({'d': -1, 'lo': float(L[j]), 'hi': float(H[j]),
-                                    'b': j, 'bb': p, 'ok': True})
-                        try:
-                            insert_order_block(symbol=symbol, price_high=float(H[j]),
-                                               price_low=float(L[j]), direction='BEAR')
-                        except Exception:
-                            pass
-                        break
-
-        # Detect FVGs (matching backtest: gap > ATR * 0.20, directional)
-        if p >= 2:
-            ap = max(atr_arr[p], 1e-10)
-            g_b = L[p] - H[p-2]
-            if g_b > ap * 0.20 and C[p] > C[p-2]:
-                fvgs.append({'d': 1, 'lo': float(H[p-2]), 'hi': float(L[p]), 'b': p})
-            g_s = L[p-2] - H[p]
-            if g_s > ap * 0.20 and C[p] < C[p-2]:
-                fvgs.append({'d': -1, 'lo': float(H[p]), 'hi': float(L[p-2]), 'b': p})
-
-    # Expire old zones
-    latest = n - 1
-    obs  = [o for o in obs  if (latest - o['bb']) < MAX_OB and o['ok']]
-    fvgs = [f for f in fvgs if (latest - f['b']) < MAX_FVG]
-    for o in obs:
-        if o['d'] == 1  and C[latest-1] < o['lo'] - atr_arr[latest-1]*0.5: o['ok'] = False
-        if o['d'] == -1 and C[latest-1] > o['hi'] + atr_arr[latest-1]*0.5: o['ok'] = False
-
-    set_state(BotState.MONITORING)
-
-    # ── Check entry on the LATEST confirmed bar (p = n-2) ──
-    p = n - 2   # signal bar (confirmed)
-    i = n - 1   # execution bar
-    if p < start_idx:
-        return None
-
-    bar_time = df['Time'].iat[i]
-    hour = hours[p]
-    adx_val = adx_arr[p]
-    atr_val = atr_arr[p]
-    rsi_val = rsi_arr[p]
-
-    # Use LIVE bid/ask from MT5
-    bid = sym_info['bid']
-    ask = sym_info['ask']
-    spread_points = sym_info['spread']
-    digits = sym_info['digits']
-
-    # ── Session filter (matching backtest FULL_TIME_TRADING behavior) ──
-    is_crypto = symbol in ('BTCUSD',)
-    is_us = symbol in ('NAS100',)
-    if not FULL_TIME_TRADING:
-        if is_crypto:
-            pass  # 24/7
-        elif is_us:
-            if hour < 14 or hour > 20:
-                set_state(BotState.IDLE)
-                return None
-        else:
-            if not ((7 <= hour <= 11) or (13 <= hour <= 17)):
-                set_state(BotState.IDLE)
-                return None
-
-    # ── ADX/ATR filters DISABLED (monte_carlo test has no ADX/ATR filters) ──
-    # Disabled for true 1:1 parity with monte_carlo_robustness.py
-    # monte_carlo test: no ADX filter, no ATR check
-    # main.py: ADX filter, ATR check - DISABLED
-    # adx_floor = max(adx_th, get_adx_floor(symbol))
-    # if not np.isfinite(adx_val) or adx_val < adx_floor:
-    #     return None
-    # if atr_val <= 0:
-    #     return None
-
-    # Backtest does not use a spread/ATR entry gate; keep behavior consistent.
-    tick_size = max(float(sym_info.get('tick_size', 0.0)), 0.0)
-
-    # ── Trend & Zone filters (matching backtest) ──
-    ema_f_p = ema_f_arr[p]
-    ema_s_p = ema_s_arr[p]
-    ema_bull = C[p] > ema_s_p and ema_f_p > ema_s_p
-    ema_bear = C[p] < ema_s_p and ema_f_p < ema_s_p
-
-    RANGE_BARS = 50
-    range_hi = float(np.max(H[max(0, p - RANGE_BARS):p + 1]))
-    range_lo = float(np.min(L[max(0, p - RANGE_BARS):p + 1]))
-    range_mid = (range_hi + range_lo) / 2.0
-    in_discount = C[p] < range_mid
-    in_premium  = C[p] > range_mid
-
-    # ── 3 ENTRY TYPES (WEIGHTED - EXACT BACKTEST MATCH) ──
-    sig = 0
-    entry_type = ''
-    sig_weight = 0.0  # Signal weighting system (matches backtest)
-
-    # Determine if we need strict rejection (low confidence confluence only) - EXACT BACKTEST MATCH
-    force_strict_rej = False
-
-    # 1. Order Block retest (structure + rejection candle) - MOST RELIABLE (weight=1.5)
-    for ob in obs:
-        if not ob['ok']:
-            continue
-        if ob['d'] == 1 and struct >= 0:
-            if L[p] <= ob['hi'] and C[p] >= ob['lo']:
-                if _is_rejection_candle_live(O[p], H[p], L[p], C[p], 1, strict=force_strict_rej):
-                    sig = 1; sig_weight = 1.5; ob['ok'] = False; entry_type = 'OB'; break
-        elif ob['d'] == -1 and struct <= 0:
-            if H[p] >= ob['lo'] and C[p] <= ob['hi']:
-                if _is_rejection_candle_live(O[p], H[p], L[p], C[p], -1, strict=force_strict_rej):
-                    sig = -1; sig_weight = 1.5; ob['ok'] = False; entry_type = 'OB'; break
-
-    # 2. FVG fill (structure + directional close) - MEDIUM (weight=1.0)
-    if sig == 0:
-        for fi in range(len(fvgs)):
-            fv = fvgs[fi]
-            if fv['d'] == 1 and struct >= 0:
-                if L[p] <= fv['hi'] and C[p] > fv['lo'] and C[p] > O[p]:
-                    sig = 1; sig_weight = 1.0; fvgs.pop(fi); entry_type = 'FVG'; break
-            elif fv['d'] == -1 and struct <= 0:
-                if H[p] >= fv['lo'] and C[p] < fv['hi'] and C[p] < O[p]:
-                    sig = -1; sig_weight = 1.0; fvgs.pop(fi); entry_type = 'FVG'; break
-
-    # 3. Sweep reversal (rejection + reclaim) - WEAKEST (weight=0.8)
-    if sig == 0 and sl_list and struct >= 0:
-        for _si, sv in sl_list[-3:]:
-            if L[p] < sv and C[p] > sv:
-                if _is_rejection_candle_live(O[p], H[p], L[p], C[p], 1, strict=True):
-                    sig = 1; sig_weight = 0.8; entry_type = 'Sweep'; break
-    if sig == 0 and sh_list and struct <= 0:
-        for _si, sv in sh_list[-3:]:
-            if H[p] > sv and C[p] < sv:
-                if _is_rejection_candle_live(O[p], H[p], L[p], C[p], -1, strict=True):
-                    sig = -1; sig_weight = 0.8; entry_type = 'Sweep'; break
-
-    if sig == 0:
-        return None
-
-    # ── Confluence gate DISABLED (monte_carlo test has no confluence scoring) ──
-    # Disabled for true 1:1 parity with monte_carlo_robustness.py
-    # monte_carlo test: no confluence scoring, no signal filtering
-    # main.py: confluence scoring with per-symbol gates - DISABLED
-    # conf = 0.0
-    # if (sig == 1 and ema_bull) or (sig == -1 and ema_bear):
-    #     conf += 1.2
-    # if (sig == 1 and in_discount) or (sig == -1 and in_premium):
-    #     conf += 1.0
-    # if 20 < rsi_val < 80:
-    #     conf += 0.8
-    # if adx_val >= adx_th + 8:
-    #     conf += 0.8
-    # regime_boost = 0.0
-    # if adx_val >= 35:
-    #     regime_boost = 1.0
-    # elif adx_val < 15:
-    #     regime_boost = -0.5
-    # conf += sig_weight + regime_boost
-    # min_conf = get_min_confluence(symbol)
-    # if adx_val > 40:
-    #     min_conf = max(0.8, min_conf - 0.5)
-    # elif adx_val > 30:
-    #     min_conf = max(0.8, min_conf - 0.3)
-    # elif adx_val > 25:
-    #     min_conf = max(0.8, min_conf - 0.1)
-    # if conf < min_conf:
-    #     return None
-
-    # ── Build signal ──
-    if sig == 1:
-        entry = ask
-        stop = entry - (atr_mult * atr_val)
-        tp = entry + (atr_mult * atr_val * rr_ratio)
-    else:
-        entry = bid
-        stop = entry + (atr_mult * atr_val)
-        tp = entry - (atr_mult * atr_val * rr_ratio)
-
-    # ── Stop distance sanity check DISABLED (monte_carlo test has no tick_size/atr check) ──
-    # Disabled for true 1:1 parity with monte_carlo_robustness.py
-    # monte_carlo test: only checks if stop_distance <= 0
-    # main.py: additional sanity check (tick_size * 10, atr_val * 6) - DISABLED
-    # stop_dist = abs(entry - stop)
-    # if stop_dist < tick_size * 10 or stop_dist > atr_val * 6:
-    #     return None
-
-    signal_result = {
-        'symbol': symbol,
-        'broker_symbol': sym_info['broker_symbol'],
-        'direction': 'BUY' if sig == 1 else 'SELL',
-        'entry': round(entry, digits),
-        'stop': round(stop, digits),
-        'tp': round(tp, digits),
-        'bid': bid, 'ask': ask,
-        'spread': spread_points,
-        'adx': round(adx_val, 2),
-        'atr': round(atr_val, digits),
-        'atr_mult': atr_mult,
-        'ema_fast': round(float(ema_f_p), digits),
-        'ema_slow': round(float(ema_s_p), digits),
-        'timestamp': bar_time,
-        'confluence_score': conf,
-        'entry_type': entry_type,
-        'structure': struct,
-        'params': f"ICT EMA{fast}/{slow} ADX>{adx_th} ATR×{atr_mult} RR={rr_ratio} {entry_type} conf={conf}",
-    }
-    return signal_result
-
-
-def generate_smart_money_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame,
-                                 symbol: str, sym_info: dict, debug: bool = False) -> dict | None:
-    """
-    Smart Money Strategy - Liquidity Sweep + MSS + Pullback Entry
-    HTF Bias (1H) → LTF Entry (5m)
-    """
-    from OLDBOT.mt5_bot.smart_money_strategy import SmartMoneyStrategy, should_trade
-    
-    # NOTE: No outer session gate here — backtest has none.
-    # Session filtering is done per-symbol inside SmartMoneyStrategy._in_session()
-    # using SYMBOL_RULES sessions (XAUUSD: 12-18, 19-22 / NAS100: 13-22 / EURUSD: 7-11, 13-17)
-    # An outer gate of 6-17 was incorrectly blocking XAUUSD 19-22 and NAS100 17-22.
-    
-    # Check trade limits
-    today = datetime.now().strftime('%Y-%m-%d')
-    daily_trades = daily_trade_count.get(symbol, {}).get(today, 0)
-    daily_loss_count = consecutive_losses.get(symbol, 0)
-    
-    # Use simple balance check for DD
-    try:
-        if symbol in symbol_virtual_balance and symbol in symbol_day_start_balance:
-            day_start = float(symbol_day_start_balance[symbol])
-            current = float(symbol_virtual_balance[symbol])
-            dd_pct = (day_start - current) / day_start * 100 if day_start > 0 else 0
-        else:
-            dd_pct = 0
-    except:
-        dd_pct = 0
-    
-    # ── should_trade check DISABLED (monte_carlo test has no should_trade filter) ──
-    # Disabled for true 1:1 parity with monte_carlo_robustness.py
-    # monte_carlo test: no should_trade filter (daily trades, consecutive losses, DD)
-    # main.py: should_trade check - DISABLED
-    # if not should_trade(symbol, daily_trades, daily_loss_count, dd_pct):
-    #     return None
-    
-    # Create strategy instance
-    strategy = SmartMoneyStrategy(df_1h, df_5m, symbol)
-
-    # Check for signal
-    signal = strategy.check_signal(debug=debug)
-    if signal is None:
-        return None
-    
-    # Build result
-    bid = sym_info['bid']
-    ask = sym_info['ask']
-    digits = sym_info['digits']
-    
-    direction = signal['direction']
-    entry = signal['entry']
-    stop = signal['stop']
-    stop_dist = abs(entry - stop)
-
-    # Mirror backtest effective_rr logic exactly (backtest_improved.py line ~1809)
-    # When trail_mult is active, TP must be far enough to let trailing stop run
-    sym_rules_live = SMC_SYMBOL_RULES.get(symbol, {})
-    if sym_rules_live.get('trail_mult') is not None:
-        effective_rr = max(float(signal.get('rr', 2.0)), float(sym_rules_live.get('rr', 2.0)), 3.0)
-    else:
-        effective_rr = float(signal.get('rr', 2.0))
-
-    if direction == 'buy':
-        target = entry + stop_dist * effective_rr
-    else:
-        target = entry - stop_dist * effective_rr
-
-    return {
-        'symbol': symbol,
-        'broker_symbol': sym_info['broker_symbol'],
-        'direction': 'BUY' if direction == 'buy' else 'SELL',
-        'entry': round(entry, digits),
-        'stop': round(stop, digits),
-        'tp': round(target, digits),
-        'bid': bid,
-        'ask': ask,
-        'spread': sym_info['spread'],
-        'timestamp': datetime.now(),
-        'confluence_score': 2.0,  # Smart money is high quality
-        'entry_type': 'SmartMoney',
-        'structure': 1 if direction == 'buy' else -1,
-        'params': f"SmartMoney {direction} bias={signal['bias']}",
-    }
-
-
 def _build_portfolio_orchestrator(context: dict) -> PortfolioOrchestrator:
     """Build per-symbol strategy orchestrator with pluggable strategy modules."""
-
-    def _smart_money_generator(sym: str, ctx: dict) -> dict | None:
-        # ── Position check DISABLED (monte_carlo test has no position checks) ──
-        # Disabled for true 1:1 parity with monte_carlo_robustness.py
-        # monte_carlo test: no position checks - allows multiple positions
-        # main.py: position check - DISABLED
-        # if get_position_for_symbol(sym, 'smart_money'):
-        #     return None
-        signal = generate_smart_money_signal(
-            ctx['df_1h'],
-            ctx['df_5m'],
-            sym,
-            ctx['sym_info'],
-            debug=ctx.get('debug', False),
-        )
-        if signal:
-            signal['strategy'] = 'smart_money'
-        return signal
 
     def _mean_reversion_generator(sym: str, ctx: dict) -> dict | None:
         # ── Position check DISABLED (monte_carlo test has no position checks) ──
@@ -1824,16 +1319,214 @@ def _build_portfolio_orchestrator(context: dict) -> PortfolioOrchestrator:
     def _disabled_placeholder(_sym: str, _ctx: dict) -> dict | None:
         return None
 
-    generators = {
-        'smart_money_v1': _smart_money_generator,
-        'mean_reversion_v1': _mean_reversion_generator,
-        'trend_momentum_v1': _trend_momentum_generator,
-        'volatility_breakout_v1': _volatility_breakout_generator,
-        'rsi_v1': _rsi_generator,
-        'stochastic_v1': _stochastic_generator,
-        'breakout_v1': _breakout_generator,
-        'bollinger_v1': _bollinger_generator,
-    }
+    # Build generators dynamically for all 45 strategy variations from lock file
+    generators = {}
+    
+    for item in PRODUCTION_STRATEGY_LOCK:
+        if not bool(item.get('enabled', True)):
+            continue
+        
+        strategy_name = str(item.get('strategy', '')).strip()
+        symbol = str(item.get('symbol', '')).upper().strip()
+        label = str(item.get('label', '')).strip()
+        params = item.get('params', {})
+        
+        if not strategy_name or not symbol or not label:
+            continue
+        
+        strategy_key = label.replace(':', '_')
+        
+        # Create generator function for this specific variation with its params
+        if strategy_name == 'bollinger':
+            def make_generator(p):
+                def gen(sym: str, ctx: dict) -> dict | None:
+                    try:
+                        signal = __import__('bollinger_strategy').generate_bollinger_signal(
+                            ctx['df_1h'],
+                            ctx['df_5m'],
+                            sym,
+                            ctx['sym_info'],
+                            params=p,
+                        )
+                        if signal:
+                            signal['strategy'] = f'bollinger_{p}'
+                            signal['broker_symbol'] = ctx['sym_info']['broker_symbol']
+                            print(f"[LOG] {sym}: bollinger signal generated: {signal.get('direction')} @ {signal.get('entry')}")
+                        return signal
+                    except Exception as e:
+                        print(f"[ERROR] {sym}: bollinger generator failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        return None
+                return gen
+            generators[strategy_key] = make_generator(params)
+        
+        elif strategy_name == 'volatility':
+            def make_generator(p):
+                def gen(sym: str, ctx: dict) -> dict | None:
+                    try:
+                        signal = __import__('volatility_strategy').generate_volatility_signal(
+                            ctx['df_1h'],
+                            ctx['df_5m'],
+                            sym,
+                            ctx['sym_info'],
+                            params=p,
+                        )
+                        if signal:
+                            signal['strategy'] = f'volatility_{p}'
+                            signal['broker_symbol'] = ctx['sym_info']['broker_symbol']
+                            print(f"[LOG] {sym}: volatility signal generated: {signal.get('direction')} @ {signal.get('entry')}")
+                        return signal
+                    except Exception as e:
+                        print(f"[ERROR] {sym}: volatility generator failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        return None
+                return gen
+            generators[strategy_key] = make_generator(params)
+        
+        elif strategy_name == 'macd':
+            def make_generator(p):
+                def gen(sym: str, ctx: dict) -> dict | None:
+                    try:
+                        signal = __import__('macd_strategy').generate_macd_signal(
+                            ctx['df_1h'],
+                            ctx['df_5m'],
+                            sym,
+                            ctx['sym_info'],
+                            params=p,
+                        )
+                        if signal:
+                            signal['strategy'] = f'macd_{p}'
+                            signal['broker_symbol'] = ctx['sym_info']['broker_symbol']
+                            print(f"[LOG] {sym}: macd signal generated: {signal.get('direction')} @ {signal.get('entry')}")
+                        return signal
+                    except Exception as e:
+                        print(f"[ERROR] {sym}: macd generator failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        return None
+                return gen
+            generators[strategy_key] = make_generator(params)
+        
+        elif strategy_name == 'mean_reversion':
+            def make_generator(p):
+                def gen(sym: str, ctx: dict) -> dict | None:
+                    try:
+                        signal = __import__('mean_reversion').generate_mean_reversion_signal(
+                            ctx['df_1h'],
+                            ctx['df_5m'],
+                            sym,
+                            ctx['sym_info'],
+                            params=p,
+                        )
+                        if signal:
+                            signal['strategy'] = f'mean_reversion_{p}'
+                            signal['broker_symbol'] = ctx['sym_info']['broker_symbol']
+                            print(f"[LOG] {sym}: mean_reversion signal generated: {signal.get('direction')} @ {signal.get('entry')}")
+                        return signal
+                    except Exception as e:
+                        print(f"[ERROR] {sym}: mean_reversion generator failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        return None
+                return gen
+            generators[strategy_key] = make_generator(params)
+        
+        elif strategy_name == 'trend_momentum':
+            def make_generator(p):
+                def gen(sym: str, ctx: dict) -> dict | None:
+                    try:
+                        signal = __import__('trend_momentum').generate_trend_momentum_signal(
+                            ctx['df_1h'],
+                            ctx['df_5m'],
+                            sym,
+                            ctx['sym_info'],
+                            params=p,
+                        )
+                        if signal:
+                            signal['strategy'] = f'trend_momentum_{p}'
+                            signal['broker_symbol'] = ctx['sym_info']['broker_symbol']
+                            print(f"[LOG] {sym}: trend_momentum signal generated: {signal.get('direction')} @ {signal.get('entry')}")
+                        return signal
+                    except Exception as e:
+                        print(f"[ERROR] {sym}: trend_momentum generator failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        return None
+                return gen
+            generators[strategy_key] = make_generator(params)
+        
+        elif strategy_name == 'rsi':
+            def make_generator(p):
+                def gen(sym: str, ctx: dict) -> dict | None:
+                    try:
+                        signal = __import__('rsi_strategy').generate_rsi_signal(
+                            ctx['df_1h'],
+                            ctx['df_5m'],
+                            sym,
+                            ctx['sym_info'],
+                            params=p,
+                        )
+                        if signal:
+                            signal['strategy'] = f'rsi_{p}'
+                            signal['broker_symbol'] = ctx['sym_info']['broker_symbol']
+                            print(f"[LOG] {sym}: rsi signal generated: {signal.get('direction')} @ {signal.get('entry')}")
+                        return signal
+                    except Exception as e:
+                        print(f"[ERROR] {sym}: rsi generator failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        return None
+                return gen
+            generators[strategy_key] = make_generator(params)
+        
+        elif strategy_name == 'stochastic':
+            def make_generator(p):
+                def gen(sym: str, ctx: dict) -> dict | None:
+                    try:
+                        signal = __import__('stochastic_strategy').generate_stochastic_signal(
+                            ctx['df_1h'],
+                            ctx['df_5m'],
+                            sym,
+                            ctx['sym_info'],
+                            params=p,
+                        )
+                        if signal:
+                            signal['strategy'] = f'stochastic_{p}'
+                            signal['broker_symbol'] = ctx['sym_info']['broker_symbol']
+                            print(f"[LOG] {sym}: stochastic signal generated: {signal.get('direction')} @ {signal.get('entry')}")
+                            return signal
+                    except Exception as e:
+                        print(f"[ERROR] {sym}: stochastic generator failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        return None
+                return gen
+            generators[strategy_key] = make_generator(params)
+        
+        elif strategy_name == 'breakout':
+            def make_generator(p):
+                def gen(sym: str, ctx: dict) -> dict | None:
+                    try:
+                        signal = __import__('breakout_strategy').generate_breakout_signal(
+                            ctx['df_5m'],
+                            sym,
+                            ctx['sym_info'],
+                            params=p,
+                        )
+                        if signal:
+                            signal['strategy'] = f'breakout_{p}'
+                            signal['broker_symbol'] = ctx['sym_info']['broker_symbol']
+                            print(f"[LOG] {sym}: breakout signal generated: {signal.get('direction')} @ {signal.get('entry')}")
+                        return signal
+                    except Exception as e:
+                        print(f"[ERROR] {sym}: breakout generator failed: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        return None
+                return gen
+            generators[strategy_key] = make_generator(params)
 
     registry = StrategyRegistry()
     for name, cfg in PORTFOLIO_STRATEGIES.items():
@@ -1848,9 +1541,9 @@ def _build_portfolio_orchestrator(context: dict) -> PortfolioOrchestrator:
             )
         )
 
-    # CRITICAL: Match backtest risk exactly (1.0% per trade)
-    # Backtests used 1.0% risk, so live bot must use same for 1:1 comparison
-    risk_manager = PortfolioRiskManager(max_risk_per_trade_pct=1.0, max_open_trades=10)
+    # CRITICAL: 0.2% risk per trade for 45-strategy portfolio (was 1.0% for single strategy)
+    # With 45 strategies, 0.2% per trade = max 9% total if all signal at once
+    risk_manager = PortfolioRiskManager(max_risk_per_trade_pct=0.2, max_open_trades=50)
     return PortfolioOrchestrator(registry=registry, risk_manager=risk_manager)
 
 
@@ -1861,35 +1554,14 @@ def load_config() -> dict:
     cfg = {
         'risk_percent': DEFAULT_RISK,
         'enabled_symbols': SYMBOLS.copy(),
-        'max_daily_drawdown_pct': MAX_DAILY_DRAWDOWN,
-        'max_margin_usage_pct': MAX_MARGIN_USAGE,
-        'daily_drawdown_adjustment_usd': 0.0,
     }
-    if CONFIG_FILE.exists():
-        try:
-            data = json.loads(CONFIG_FILE.read_text())
-            cfg.update(data)
-        except Exception:
-            pass
-    cfg['risk_percent'] = max(MIN_RUNTIME_RISK, min(MAX_RUNTIME_RISK, float(cfg.get('risk_percent', DEFAULT_RISK))))
     cfg['enabled_symbols'] = [s for s in cfg.get('enabled_symbols', SYMBOLS) if s in SYMBOLS]
-    cfg['max_daily_drawdown_pct'] = max(0.5, min(25.0, float(cfg.get('max_daily_drawdown_pct', MAX_DAILY_DRAWDOWN))))
-    cfg['max_margin_usage_pct'] = max(5.0, min(95.0, float(cfg.get('max_margin_usage_pct', MAX_MARGIN_USAGE))))
-    cfg['daily_drawdown_adjustment_usd'] = float(cfg.get('daily_drawdown_adjustment_usd', 0.0))
 
     # Reload remote dashboard push config on each scan cycle
     global _dashboard_cfg
     _dashboard_cfg = _load_dashboard_push_config()
 
     return cfg
-
-
-def save_config(cfg: dict):
-    """Save runtime config to file."""
-    try:
-        CONFIG_FILE.write_text(json.dumps(cfg, indent=2))
-    except Exception:
-        pass
 
 
 # telegram
@@ -1956,13 +1628,12 @@ class TelegramBot:
                         if sym in SYMBOLS:
                             sym_info = get_symbol_info(sym)
                             df = fetch_live_candles(sym)
-                            rule = SMC_SYMBOL_RULES.get(sym)
                             params = {
                                 'EMA_Fast': 20, 'EMA_Slow': 50,
                                 'ADX': 20.0,
-                                'ATR_Mult': float(rule.get('atr_mult_stop', 0.65)) if rule else 0.65,
-                                'RR': float(rule.get('rr', 2.0)) if rule else 2.0,
-                            } if rule else None
+                                'ATR_Mult': 0.65,
+                                'RR': 2.0,
+                            }
                             if not sym_info or df is None or params is None or len(df) < 100:
                                 send_telegram_message(f"❌ Not enough data for {sym}")
                             else:
@@ -2016,13 +1687,12 @@ class TelegramBot:
                         if sym in SYMBOLS:
                             sym_info = get_symbol_info(sym)
                             df = fetch_live_candles(sym)
-                            rule = SMC_SYMBOL_RULES.get(sym)
                             params = {
                                 'EMA_Fast': 20, 'EMA_Slow': 50,
                                 'ADX': 20.0,
-                                'ATR_Mult': float(rule.get('atr_mult_stop', 0.65)) if rule else 0.65,
-                                'RR': float(rule.get('rr', 2.0)) if rule else 2.0,
-                            } if rule else None
+                                'ATR_Mult': 0.65,
+                                'RR': 2.0,
+                            }
                             if not sym_info or df is None or params is None or len(df) < 100:
                                 send_telegram_message(f"❌ {sym}: not enough data")
                             else:
@@ -2056,36 +1726,6 @@ class TelegramBot:
                 elif text == '/ping':
                     send_telegram_message("✅ Bot is online and connected.")
 
-                # /risk command
-                elif text.startswith('/risk'):
-                    parts = text.split()
-                    if len(parts) >= 2:
-                        try:
-                            val = float(parts[1])
-                            if MIN_RUNTIME_RISK <= val <= MAX_RUNTIME_RISK:
-                                cfg['risk_percent'] = round(val, 2)
-                                # Scale all risk protections proportionally (base = DEFAULT_RISK)
-                                _risk_scale = val / DEFAULT_RISK
-                                cfg['max_daily_drawdown_pct'] = round(MAX_DAILY_DRAWDOWN * _risk_scale, 2)
-                                send_telegram_message(
-                                    f"✅ <b>Risk Updated</b>\n"
-                                    f"📊 Risk per trade: <b>{cfg['risk_percent']}%</b>\n"
-                                    f"🛑 Daily DD limit auto-scaled: <b>{cfg['max_daily_drawdown_pct']:.2f}%</b>\n"
-                                    f"<i>(Base risk {DEFAULT_RISK}% → {val}% = {_risk_scale:.1f}x scale)</i>"
-                                )
-                                changed = True
-                            else:
-                                send_telegram_message(f"❌ Risk must be between {MIN_RUNTIME_RISK:.2f}-{MAX_RUNTIME_RISK:.2f}%\nExample: /risk 0.5")
-                        except ValueError:
-                            send_telegram_message("❌ Invalid format\nExample: /risk 0.5")
-                    else:
-                        send_telegram_message(
-                            f"📊 <b>Current Risk</b>\n"
-                            f"Risk per trade: {cfg['risk_percent']}%\n"
-                            f"Daily DD limit: {cfg.get('max_daily_drawdown_pct', MAX_DAILY_DRAWDOWN):.2f}%\n\n"
-                            f"To change: /risk [value]"
-                        )
-                
                 # /status command
                 elif text == '/status':
                     enabled = ', '.join(cfg['enabled_symbols'])
@@ -2100,9 +1740,6 @@ class TelegramBot:
                         "━━━━━━━━━━━━━━━━\n"
                         f"🔄 State: {state_name}\n"
                         f"⚠️ Risk: {cfg['risk_percent']}% per trade\n"
-                        f"🛑 Daily DD Limit: {cfg.get('max_daily_drawdown_pct', MAX_DAILY_DRAWDOWN):.2f}%\n"
-                        f"📉 DD Adjustment: ${cfg.get('daily_drawdown_adjustment_usd', 0.0):.2f}\n"
-                        f"🧱 Margin Cap: {cfg.get('max_margin_usage_pct', MAX_MARGIN_USAGE):.1f}%\n"
                         f"✅ Active Symbols: {len(cfg['enabled_symbols'])}/{len(SYMBOLS)}\n"
                         f"   {enabled}\n"
                         f"━━━━━━━━━━━━━━━━\n"
@@ -2224,16 +1861,20 @@ def show_open_positions():
 
 
 def process_single_symbol(symbol: str, enabled: set, risk: float) -> tuple:
-    """Process a single symbol and return its status and signal."""
+    """Process a single symbol and return its status and ALL signals."""
     global last_signals, tracked_positions
     
+    print(f"[LOG] Processing symbol: {symbol}")
+    
     if symbol not in enabled:
-        return (symbol, None, None)
+        print(f"[LOG] {symbol}: Not in enabled symbols, skipping")
+        return (symbol, None, [])
     
     # Get REAL symbol info from MT5
     sym_info = get_symbol_info(symbol)
     if not sym_info:
-        return (symbol, f"{symbol}:ERR", None)
+        print(f"[ERROR] {symbol}: Failed to get symbol info")
+        return (symbol, f"{symbol}:ERR", [])
     
     # For hedge fund portfolio: DO NOT check for existing positions here
     # The portfolio orchestrator handles per-strategy position checking
@@ -2245,44 +1886,39 @@ def process_single_symbol(symbol: str, enabled: set, risk: float) -> tuple:
         existing_pos['entry_regime'] = tracked_positions[symbol].get('entry_regime', 'unknown')
     
     # Get strategy params from SYMBOL_RULES defaults
-    rule = SMC_SYMBOL_RULES.get(symbol)
-    if rule:
-        params = {
-            'EMA_Fast': 20, 'EMA_Slow': 50,
-            'ADX': 20.0,
-            'ATR_Mult': float(rule.get('atr_mult_stop', 0.65)),
-            'RR': float(rule.get('rr', 2.0)),
-        }
-    else:
-        return (symbol, f"{symbol}:NOCFG", None)
+    params = {
+        'EMA_Fast': 20, 'EMA_Slow': 50,
+        'ADX': 20.0,
+        'ATR_Mult': 0.65,
+        'RR': 2.0,
+    }
     
-    # Parity mode: do NOT override backtest settings with live-learned params.
+    # Generate signals via modular portfolio orchestrator.
+    df_1h, df_5m = fetch_m15_and_resample(symbol, bars=LOOKBACK_BARS)
+    if df_1h is None or df_5m is None:
+        print(f"[ERROR] {symbol}: Failed to fetch data")
+        return (symbol, f"{symbol}:NODATA", [])
+    context = {
+        'df_1h': df_1h,
+        'df_5m': df_5m,
+        'sym_info': sym_info,
+        'debug': _DEBUG_MODE,
+        'risk_percent': risk,
+        'open_positions_count': len(get_open_positions()),
+        'symbol': symbol,  # Pass symbol for per-strategy position checking
+    }
+    orchestrator = _build_portfolio_orchestrator(context)
+    signals = orchestrator.generate_all_signals(symbol, context)
     
-    # Generate signal via modular portfolio orchestrator.
-    if USE_SMART_MONEY_STRATEGY:
-        df_1h, df_5m = fetch_m15_and_resample(symbol, bars=LOOKBACK_BARS)
-        if df_1h is None or df_5m is None:
-            return (symbol, f"{symbol}:NODATA", None)
-        context = {
-            'df_1h': df_1h,
-            'df_5m': df_5m,
-            'sym_info': sym_info,
-            'debug': _DEBUG_MODE,
-            'risk_percent': risk,
-            'open_positions_count': len(get_open_positions()),
-            'symbol': symbol,  # Pass symbol for per-strategy position checking
-        }
-        orchestrator = _build_portfolio_orchestrator(context)
-        signal = orchestrator.generate_signal(symbol, context)
-    else:
-        # Original ICT/SMC strategy
-        df = fetch_live_candles(symbol)
-        if df is None or len(df) < 100:
-            return (symbol, f"{symbol}:NODATA", None)
-        signal = generate_signal(df, params, symbol, sym_info)
+    print(f"[LOG] {symbol}: Generated {len(signals)} signals from portfolio orchestrator")
 
-    if signal and 'strategy_name' not in signal:
-        signal['strategy_name'] = 'legacy_ict_smc'
+    if not signals:
+        return (symbol, f"{symbol}:-", [])
+    
+    # Add strategy_name if missing
+    for signal in signals:
+        if signal and 'strategy_name' not in signal:
+            signal['strategy_name'] = 'portfolio_strategy'
     
     # Fixed-rule signal validation
     
@@ -2406,20 +2042,10 @@ def process_single_symbol(symbol: str, enabled: set, risk: float) -> tuple:
         # Holding position
         dir_char = '▲' if existing_pos['direction'] == 'BUY' else '▼'
         pl_str = f"+${pl:.0f}" if pl >= 0 else f"-${abs(pl):.0f}"
-        return (symbol, f"{symbol}:{dir_char}{pl_str}", None)
+        return (symbol, f"{symbol}:{dir_char}{pl_str}", [])
     
-    # No existing position - check for new signal
-    if signal:
-        sig_key = f"{symbol}_{signal['direction']}"
-        # Signal spacing REMOVED for maximum profit (matches backtest)
-        # last_time = last_signals.get(sig_key)
-        # if last_time and (datetime.now(timezone.utc) - last_time).seconds < 60:
-        #     return (symbol, f"{symbol}:WAIT", None)
-        
-        # Return signal for execution
-        return (symbol, None, signal)
-    else:
-        return (symbol, f"{symbol}:-", None)
+    # No existing position - return all signals for execution
+    return (symbol, None, signals)
 
 
 def scan_markets(cfg: dict, verbose: bool = False):
@@ -2436,22 +2062,6 @@ def scan_markets(cfg: dict, verbose: bool = False):
     
     enabled = set(cfg.get('enabled_symbols', SYMBOLS))
     risk = min(float(cfg.get('risk_percent', DEFAULT_RISK)), 1.0)
-    # Backtest parity mode: fixed 3% daily DD threshold (same as backtest code)
-    max_daily_dd = BACKTEST_DD_LIMIT_PCT
-    max_margin_usage = float(cfg.get('max_margin_usage_pct', MAX_MARGIN_USAGE))
-    drawdown_adjustment = float(cfg.get('daily_drawdown_adjustment_usd', 0.0))
-
-    # ── Daily reset (runs every scan, unconditionally) ─────────────────────
-    # Must not be inside the signal-execution loop — quiet days need reset too
-    _today = datetime.now().strftime('%Y-%m-%d')
-    for _sym in list(enabled):
-        if symbol_day_marker.get(_sym) != _today:
-            symbol_day_marker[_sym] = _today
-            if _sym not in symbol_virtual_balance:
-                symbol_virtual_balance[_sym] = BACKTEST_INITIAL_BALANCE
-            symbol_day_start_balance[_sym] = float(symbol_virtual_balance[_sym])
-            symbol_kill_switch[_sym] = False
-            symbol_peak_virtual_balance[_sym] = float(symbol_virtual_balance[_sym])
 
     # First, check for closed positions (SL/TP hit) - keep this sequential
     # Key by broker symbol (e.g. 'EURUSD.i') — that's what MT5 returns in pos.symbol
@@ -2545,22 +2155,7 @@ def scan_markets(cfg: dict, verbose: bool = False):
                         # else:
                         #     consecutive_losses[symbol] = 0
 
-                        # Backtest-parity daily drawdown state update (per symbol virtual balance)
-                        if symbol not in symbol_virtual_balance:
-                            symbol_virtual_balance[symbol] = BACKTEST_INITIAL_BALANCE
-                        symbol_virtual_balance[symbol] = float(symbol_virtual_balance[symbol]) + float(profit)
-                        # Track running peak — matches backtest peak_equity tracking
-                        if symbol not in symbol_peak_virtual_balance:
-                            symbol_peak_virtual_balance[symbol] = BACKTEST_INITIAL_BALANCE
-                        symbol_peak_virtual_balance[symbol] = max(
-                            symbol_peak_virtual_balance[symbol],
-                            symbol_virtual_balance[symbol]
-                        )
-                        
-                        # Post-SL cooldown DISABLED - matches backtest exactly
-                        # if exit_reason == 'SL':
-                        #     sl_cooldown_until[symbol] = datetime.now(timezone.utc) + timedelta(minutes=SL_COOLDOWN_MINUTES)
-                        #     print(f"⏳ {symbol}: SL cooldown until {sl_cooldown_until[symbol].strftime('%H:%M')}")
+                        # Virtual balance tracking DISABLED for 1:1 parity
                         
                         break
             
@@ -2577,16 +2172,21 @@ def scan_markets(cfg: dict, verbose: bool = False):
         
         # Collect results as they complete
         for future in as_completed(future_to_symbol):
-            symbol, status_str, signal = future.result()
+            symbol, status_str, signals = future.result()
             
             if status_str:
                 status.append(status_str)
             
-            if signal:
-                signals_to_execute.append((symbol, signal))
+            if signals:
+                # Add all signals from this symbol to the execution list
+                for signal in signals:
+                    signals_to_execute.append((symbol, signal))
+    
+    print(f"[LOG] Total signals to execute: {len(signals_to_execute)}")
     
     # Execute any new signals (sequential for safety)
-    for symbol, signal in signals_to_execute:
+    for idx, (symbol, signal) in enumerate(signals_to_execute):
+        print(f"[LOG] Executing signal {idx+1}/{len(signals_to_execute)}: {symbol} {signal.get('direction')}")
         set_state(BotState.EXECUTION)
         
         today_str = datetime.now().strftime('%Y-%m-%d')
@@ -2612,63 +2212,8 @@ def scan_markets(cfg: dict, verbose: bool = False):
         #         continue
         #     else:
         #         del sl_cooldown_until[symbol]
-        # # Kill switch
-        # if symbol_day_marker.get(symbol) == today_str:
-        #     try:
-        #         _ks_peak = symbol_peak_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE)
-        #         _ks_curr = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-        #         _ks_risk_scale = float(risk) / 1.0
-        #         KILL_SWITCH_DD_PCT = 5.0 * _ks_risk_scale
-        #         if _ks_peak > 0 and (_ks_peak - _ks_curr) / _ks_peak * 100.0 >= KILL_SWITCH_DD_PCT:
-        #             symbol_kill_switch[symbol] = True
-        #     except Exception:
-        #         pass
-        # if symbol_kill_switch.get(symbol):
-        #     print(f"🔴 {symbol}: Kill switch active (peak DD >= 5%×risk) — blocked for today")
-        #     status.append(f"{symbol}:KILL_SWITCH")
-        #     continue
-        # # Daily profit target
-        # try:
-        #     _day_start = float(symbol_day_start_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-        #     _day_curr  = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-        #     _risk_scale_pt = float(risk) / 1.0
-        #     DAILY_TARGET_PCT = 3.0 * _risk_scale_pt
-        #     if _day_start > 0:
-        #         day_pnl_pct = (_day_curr - _day_start) / _day_start * 100.0
-        #         if day_pnl_pct >= DAILY_TARGET_PCT:
-        #             print(f"🎯 {symbol}: Daily target reached ({day_pnl_pct:.2f}% >= {DAILY_TARGET_PCT:.2f}%) — done for today")
-        #             status.append(f"{symbol}:TARGET_HIT")
-        #             continue
-        # except Exception:
-        #     pass
-        # # Daily drawdown block
-        # try:
-        #     day_start_bal = float(symbol_day_start_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-        #     curr_bal = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-        #     if day_start_bal > 0:
-        #         dd_pct = (day_start_bal - curr_bal) / day_start_bal * 100.0
-        #         if dd_pct >= float(max_daily_dd):
-        #             blocked_symbols[symbol] = today_str
-        #             print(f"🚫 {symbol}: Daily DD {dd_pct:.2f}% >= {max_daily_dd:.2f}% — blocked for today")
-        #             status.append(f"{symbol}:BLOCKED_DD")
-        #             continue
-        # except Exception:
-        #     pass
 
-        # ── SAFETY: Margin Protection (20 %) ────────────────────────
-        # Doc: "ak je viac ako 20 % kapitálu viazaného v marži, nový príkaz sa zablokuje"
-        # Margin limit check DISABLED - user wants maximum margin usage
-        # try:
-        #     account = mt5.account_info()
-        #     if account and account.balance > 0:
-        #         margin_used_pct = (account.balance - account.margin_free) / account.balance * 100
-        #         if margin_used_pct > max_margin_usage:
-        #             print(f"[!] MARGIN LIMIT: {margin_used_pct:.1f}% margin used > {max_margin_usage}% — blocking new order")
-        #             log_event(f"Margin protection: {margin_used_pct:.1f}% used", "WARN")
-        #             status.append(f"{symbol}:MARGIN")
-        #             continue
-        # except Exception:
-        #     pass
+        # All safety checks DISABLED for 1:1 parity with monte_carlo tests
 
         # NEW SIGNAL - this is important, print it
         sym_info = get_symbol_info(symbol)
@@ -2698,15 +2243,7 @@ def scan_markets(cfg: dict, verbose: bool = False):
         htf_bias = 'N/A'
         dd_factor_live = 1.0
         vol_factor_live = 1.0
-        try:
-            # Use running peak — matches backtest peak_equity (not just current balance)
-            peak_bal = symbol_peak_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE)
-            curr_bal_dd = float(symbol_virtual_balance.get(symbol, BACKTEST_INITIAL_BALANCE))
-            _risk_scale_dd = float(risk) / 1.0
-            if peak_bal > 0 and (peak_bal - curr_bal_dd) / peak_bal > 0.04 * _risk_scale_dd:
-                dd_factor_live = 0.5
-        except Exception:
-            pass
+        # DD factor DISABLED for 1:1 parity with monte_carlo tests
         # vol_factor: ATR ratio scaling — matches backtest lines 1827-1837 exactly
         # Backtest uses _atr(df_m5) — resampled M5 data, NOT raw M15.
         # ratio>1.6 → scale risk to 0.6x (high vol), ratio<0.7 → scale to 0.8x (low vol)
@@ -2734,16 +2271,14 @@ def scan_markets(cfg: dict, verbose: bool = False):
         risk_used = float(risk) * dd_factor_live * vol_factor_live
 
         # Don't send signal alert - will send when position actually opens
+        print(f"[LOG] Attempting to open position for {symbol}...")
         success = open_position_with_retry(signal, sym_info, risk_used)
         
         if success:
+            print(f"[LOG] Position opened successfully for {symbol}")
             sig_key = f"{symbol}_{signal['direction']}"
             last_signals[sig_key] = datetime.now(timezone.utc)
             status.append(f"{symbol}:OPENED")
-            
-            # ── Increment daily trade counter ─────────────────────────
-            daily_trade_count.setdefault(symbol, {})
-            daily_trade_count[symbol][today_str] = daily_trade_count[symbol].get(today_str, 0) + 1
             
             send_telegram_message(
                 f"✅ <b>Position Opened</b>\n"
@@ -2912,47 +2447,26 @@ def main():
     
     print(f"[✓] MT5 connected: {mt5.terminal_info().name}")
     print(f"[✓] Account: {mt5.account_info().login}")
-    update_runtime_status(state='starting', message='Bot process initialized')
     
-    # Load config
     cfg = load_config()
     print(f"[✓] Risk: {cfg['risk_percent']}%")
     print(f"[✓] Symbols: {', '.join(cfg['enabled_symbols'])}")
-    
-    # Load baseline strategy params
-    baseline_params = {}
-    for sym in SYMBOLS:
-        rule = SMC_SYMBOL_RULES.get(sym)
-        if rule:
-            baseline_params[sym] = {
-                'EMA_Fast': 20, 'EMA_Slow': 50,
-                'ADX': 20.0,
-                'ATR_Mult': float(rule.get('atr_mult_stop', 0.65)),
-                'RR': float(rule.get('rr', 2.0)),
-            }
     
     # Telegram bot for commands
     tg = TelegramBot()
     if tg.is_configured():
         print("[✓] Telegram connected")
-    else:
-        print("[!] Telegram not configured")
-    
-    # Pure ICT/SMC strategy execution
     
     # Show existing open positions
     show_open_positions()
     
-    print("=" * 60)
+    print("[+] Scanning every M15 candle close (Ctrl+C to stop)\n")
 
     try:
         if args.once:
             cfg = load_config()
             scan_markets(cfg)
         else:
-            interval = max(2, args.loop)
-            print(f"[+] Scanning every {interval}s / M15 candle close (Ctrl+C to stop)\n")
-            
             # Start Telegram polling in separate thread for instant response
             telegram_active = threading.Event()
             telegram_active.set()
@@ -2967,133 +2481,40 @@ def main():
             telegram_thread.start()
             
 
-            
             # Market scanning loop — synchronized to M15 candle close
-            # This guarantees the bot scans on exactly the same bar boundaries
-            # as the backtest engine (p = i-1 closed bar), never mid-candle.
             CANDLE_SECONDS = 900  # M15 = 15 * 60
-            SCAN_OFFSET    = 3    # scan 3s after close to let MT5 finalize the bar
-
-            # Performance snapshot counter
-            snapshot_counter = 0
-            SNAPSHOT_INTERVAL = 10  # Log performance every 10 scans (~2.5 hours)
+            SCAN_OFFSET    = 0    # scan immediately at candle close for 1:1 parity with backtest
 
             def _wait_for_m15_close():
                 """Sleep until the next M15 candle boundary + SCAN_OFFSET seconds."""
                 now = time.time()
-                # seconds elapsed inside current 15-min window
                 elapsed_in_candle = now % CANDLE_SECONDS
-                # seconds until next close
                 wait = (CANDLE_SECONDS - elapsed_in_candle) + SCAN_OFFSET
                 next_close = datetime.utcfromtimestamp(now + wait).strftime('%H:%M:%S')
-                print(f"\r[~] Next M15 close scan at {next_close} UTC ({wait:.0f}s)   ", end='', flush=True)
+                print(f"\r[~] Next scan at {next_close} UTC ({wait:.0f}s)   ", end='', flush=True)
                 time.sleep(wait)
 
-            # Do one immediate scan on startup (may be mid-candle, but gives
-            # instant feedback that the bot is alive), then sync to candle close.
-            try:
-                cfg = load_config()
-                scan_markets(cfg)
-            except Exception as e:
-                print(f"\n[!] Startup scan error: {e}")
-
-            # Track starting equity for kill-switch
-            starting_equity = mt5.account_info().equity if mt5.account_info() else 10000.0
-            
             while True:
                 _wait_for_m15_close()
-                
-                # GLOBAL KILL-SWITCH CHECK (Institutional Safety Feature)
-                if GLOBAL_KILL_SWITCH_ENABLED:
-                    try:
-                        account = mt5.account_info()
-                        if account:
-                            current_equity = account.equity
-                            equity_pct = (current_equity / starting_equity) * 100.0
-                            
-                            if equity_pct < GLOBAL_EQUITY_THRESHOLD_PCT:
-                                print(f"\n{'='*80}")
-                                print(f"⚠️  GLOBAL KILL-SWITCH TRIGGERED ⚠️")
-                                print(f"Equity dropped to {equity_pct:.2f}% of starting capital")
-                                print(f"Threshold: {GLOBAL_EQUITY_THRESHOLD_PCT}%")
-                                print(f"INITIATING EMERGENCY PROTOCOL...")
-                                print(f"{'='*80}")
-                                
-                                # Emergency protocol: close all positions
-                                try:
-                                    positions = get_open_positions()
-                                    for pos in positions:
-                                        close_position(pos)
-                                    print(f"[✓] Closed {len(positions)} positions")
-                                except Exception as close_err:
-                                    print(f"[!] Error closing positions: {close_err}")
-                                
-                                # Send emergency alert
-                                try:
-                                    send_telegram_message(f"🚨 GLOBAL KILL-SWITCH TRIGGERED\nEquity: {equity_pct:.2f}%\nAll positions closed")
-                                except Exception as tg_err:
-                                    print(f"[!] Telegram alert failed: {tg_err}")
-                                
-                                # Log event
-                                log_event("GLOBAL KILL-SWITCH TRIGGERED", "CRITICAL")
-                                
-                                # Exit bot completely
-                                telegram_active.clear()
-                                shutdown_mt5()
-                                update_runtime_status(state='killed', message=f'Global kill-switch triggered at {equity_pct:.2f}% equity')
-                                print("[✓] Bot self-destruct complete")
-                                return
-                    except Exception as ks_err:
-                        print(f"[!] Kill-switch check error: {ks_err}")
                 
                 try:
                     cfg = load_config()
                     scan_markets(cfg)
-                    
-                    # Log performance snapshot periodically
-                    snapshot_counter += 1
-                    if snapshot_counter >= SNAPSHOT_INTERVAL:
-                        snapshot_counter = 0
-                        try:
-                            account = mt5.account_info()
-                            if account:
-                                positions = get_open_positions()
-                                open_pnl = sum(p.get('profit', 0) for p in positions)
-                                data_collector.log_performance_snapshot(
-                                    equity=account.equity,
-                                    balance=account.balance,
-                                    open_pnl=open_pnl
-                                )
-                                print(f"[~] Performance snapshot logged: Equity=${account.equity:.2f}")
-                        except Exception as snap_err:
-                            print(f"[!] Performance snapshot failed: {snap_err}")
-                
                 except Exception as e:
                     print(f"\n[!] Scan loop error: {e}")
-                    update_runtime_status(state='error', message=f"Scan loop error: {e}")
-                    
-                    # Log infrastructure event for scan errors
-                    try:
-                        data_collector.log_infrastructure_event('SCAN_ERROR', {
-                            'error': str(e),
-                        })
-                    except Exception:
-                        pass
+
     except KeyboardInterrupt:
         print("\n[!] Stopped by user")
         update_runtime_status(state='stopped', message='Stopped by user')
         if not args.once:
             telegram_active.clear()
+        sys.exit(0)  # Exit cleanly with code 0
     finally:
         # Save final data snapshot before shutdown
         try:
             data_collector = get_data_collector()
             snapshot_file = data_collector.save_json_snapshot()
             print(f"[✓] Final data snapshot saved: {snapshot_file}")
-            
-            # Print summary report
-            summary = data_collector.generate_summary_report()
-            print("\n" + summary)
         except Exception as e:
             print(f"[!] Failed to save final snapshot: {e}")
         

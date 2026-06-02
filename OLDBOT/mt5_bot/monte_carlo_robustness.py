@@ -32,7 +32,7 @@ STRATEGY_MAP = {
     'macd': lambda df_h1, df_m5, symbol, sym_info, params: __import__('macd_strategy').generate_macd_signal(df_h1, df_m5, symbol, sym_info, params),
     'bollinger': lambda df_h1, df_m5, symbol, sym_info, params: __import__('bollinger_strategy').generate_bollinger_signal(df_h1, df_m5, symbol, sym_info, params),
     'stochastic': lambda df_h1, df_m5, symbol, sym_info, params: __import__('stochastic_strategy').generate_stochastic_signal(df_h1, df_m5, symbol, sym_info, params),
-    'smart_money': lambda df_h1, df_m5, symbol, sym_info, params: __import__('smart_money_strategy').SmartMoneyStrategy(df_h1, df_m5, symbol).check_signal(),
+    'price_action': lambda df_h1, df_m5, symbol, sym_info, params: __import__('price_action_strategy').generate_price_action_signal(df_h1, df_m5, symbol, sym_info, params),
 }
 
 

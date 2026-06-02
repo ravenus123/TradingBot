@@ -51,6 +51,7 @@ def generate_macd_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame, symbol: str, 
         hist_current = float(histogram.iloc[-1])
         hist_prev = float(histogram.iloc[-2])
         
+        
         # Generate signals based on MACD crossovers
         # Bullish crossover: MACD crosses above signal line
         if macd_current > signal_current and macd_prev <= signal_prev:

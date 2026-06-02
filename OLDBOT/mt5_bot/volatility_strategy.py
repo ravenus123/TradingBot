@@ -53,6 +53,7 @@ def generate_volatility_signal(df_1h: pd.DataFrame, df_5m: pd.DataFrame, symbol:
         # Volatility expansion with price direction
         price_change = float(close.iloc[-1] - close.iloc[-5])
         
+        
         if vol_ratio > volatility_threshold:
             if price_change > 0:
                 direction = 'BUY'

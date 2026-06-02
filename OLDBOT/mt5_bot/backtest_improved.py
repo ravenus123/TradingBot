@@ -1,19 +1,3 @@
-# ===============================================================================
-# backtest_improved.py — ICT / SMC Backtest Engine  v2 (strict no-lookahead)
-# ===============================================================================
-#
-# Strategy: Institutional Concept Trading / Smart Money Concepts
-#   • Break of Structure (BOS) with impulsive candle confirmation
-#   • Order Block (OB) demand/supply zones after BOS
-#   • Fair Value Gap (FVG) imbalance entries in trending markets
-#   • Liquidity sweep (stop-hunt) rejection entries
-#   • Premium / Discount zone filter (only buy discount, sell premium)
-#   • EMA trend bias + ADX strength filter + session timing
-#
-# Signal on bar i-1  ->  entry on bar i open  ->  NO lookahead
-# ATR-based stop sizing for consistent risk  ->  RR-based take-profit
-# ===============================================================================
-
 import os, sys, argparse, json, time, warnings, random
 from pathlib import Path
 from itertools import product

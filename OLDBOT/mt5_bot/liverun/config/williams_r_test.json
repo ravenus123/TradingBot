@@ -1,0 +1,56 @@
+{
+  "strategies": [
+    {
+      "symbol": "BTCUSD",
+      "strategy": "williams_r",
+      "label": "williams_r:BTCUSD:1",
+      "params": {
+        "period": 14,
+        "overbought": -20,
+        "oversold": -80,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "williams_r",
+      "label": "williams_r:BTCUSD:2",
+      "params": {
+        "period": 9,
+        "overbought": -10,
+        "oversold": -90,
+        "stop_atr_mult": 1.0,
+        "tp_atr_mult": 2.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "williams_r",
+      "label": "williams_r:SP500:1",
+      "params": {
+        "period": 14,
+        "overbought": -20,
+        "oversold": -80,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "williams_r",
+      "label": "williams_r:XAUUSD:1",
+      "params": {
+        "period": 14,
+        "overbought": -20,
+        "oversold": -80,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    }
+  ]
+}

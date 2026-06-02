@@ -57,6 +57,11 @@ class PortfolioOrchestrator:
         self.risk_manager = risk_manager
 
     def generate_signal(self, symbol: str, context: dict) -> Optional[dict]:
+        """Generate signal for portfolio orchestrator.
+        
+        For multi-strategy portfolio, this returns the best signal from all strategies.
+        The scan loop will call this once per symbol.
+        """
         candidates: List[dict] = []
         for spec in self.registry.active():
             signal = spec.generator(symbol, context)
@@ -76,6 +81,26 @@ class PortfolioOrchestrator:
         best = candidates[0]
         best.pop('_portfolio_rank', None)
         return best
+
+    def generate_all_signals(self, symbol: str, context: dict) -> List[dict]:
+        """Generate ALL signals from all strategies (for multi-strategy portfolio).
+        
+        Returns a list of all valid signals from all strategies.
+        Each strategy can generate its own signal independently.
+        """
+        signals: List[dict] = []
+        for spec in self.registry.active():
+            signal = spec.generator(symbol, context)
+            if not signal:
+                continue
+            signal['strategy_name'] = spec.name
+            signal['strategy_style'] = spec.style
+            signal['strategy_weight'] = float(spec.weight)
+            score = float(signal.get('confluence_score', 0.0)) + float(spec.weight)
+            signal['_portfolio_rank'] = score
+            signals.append(signal)
+
+        return signals
 
 
 def build_trade_correlation_matrix(trades: pd.DataFrame) -> pd.DataFrame:
