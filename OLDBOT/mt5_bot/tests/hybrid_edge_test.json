@@ -1,0 +1,91 @@
+{
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "macd",
+      "label": "macd:XAUUSD:hybrid1",
+      "params": {
+        "fast_period": 10,
+        "slow_period": 22,
+        "signal_period": 7,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "mean_reversion",
+      "label": "mean_reversion:XAUUSD:hybrid1",
+      "params": {
+        "period": 12,
+        "std_dev": 1.8,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.6
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:XAUUSD:hybrid1",
+      "params": {
+        "period": 10,
+        "std_dev": 1.4,
+        "stop_atr_mult": 0.35,
+        "tp_atr_mult": 1.4
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "macd",
+      "label": "macd:BTCUSD:hybrid1",
+      "params": {
+        "fast_period": 10,
+        "slow_period": 22,
+        "signal_period": 7,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "mean_reversion",
+      "label": "mean_reversion:BTCUSD:hybrid1",
+      "params": {
+        "period": 12,
+        "std_dev": 1.8,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.6
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "macd",
+      "label": "macd:SP500:hybrid1",
+      "params": {
+        "fast_period": 10,
+        "slow_period": 22,
+        "signal_period": 7,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "mean_reversion",
+      "label": "mean_reversion:SP500:hybrid1",
+      "params": {
+        "period": 12,
+        "std_dev": 1.8,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.6
+      },
+      "enabled": true
+    }
+  ]
+}

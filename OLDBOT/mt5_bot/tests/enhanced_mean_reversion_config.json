@@ -1,0 +1,96 @@
+{
+  "source": "enhanced_mean_reversion_v1",
+  "mode": "multi_strategy_portfolio",
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "enhanced_mean_reversion",
+      "label": "enhanced_mean_reversion:XAUUSD:1",
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "rsi_overbought": 70.0,
+        "rsi_oversold": 30.0,
+        "max_adx": 30.0,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "enhanced_mean_reversion",
+      "label": "enhanced_mean_reversion:XAUUSD:2",
+      "params": {
+        "period": 18,
+        "std_dev": 1.8,
+        "rsi_overbought": 65.0,
+        "rsi_oversold": 35.0,
+        "max_adx": 25.0,
+        "stop_atr_mult": 0.7,
+        "tp_atr_mult": 1.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "enhanced_mean_reversion",
+      "label": "enhanced_mean_reversion:XAUUSD:3",
+      "params": {
+        "period": 22,
+        "std_dev": 2.2,
+        "rsi_overbought": 75.0,
+        "rsi_oversold": 25.0,
+        "max_adx": 35.0,
+        "stop_atr_mult": 0.9,
+        "tp_atr_mult": 2.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "enhanced_mean_reversion",
+      "label": "enhanced_mean_reversion:BTCUSD:1",
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "rsi_overbought": 70.0,
+        "rsi_oversold": 30.0,
+        "max_adx": 30.0,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "enhanced_mean_reversion",
+      "label": "enhanced_mean_reversion:BTCUSD:2",
+      "params": {
+        "period": 18,
+        "std_dev": 1.8,
+        "rsi_overbought": 65.0,
+        "rsi_oversold": 35.0,
+        "max_adx": 25.0,
+        "stop_atr_mult": 0.7,
+        "tp_atr_mult": 1.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "enhanced_mean_reversion",
+      "label": "enhanced_mean_reversion:SP500:1",
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "rsi_overbought": 70.0,
+        "rsi_oversold": 30.0,
+        "max_adx": 30.0,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    }
+  ]
+}

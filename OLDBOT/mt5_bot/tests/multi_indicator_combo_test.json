@@ -1,0 +1,91 @@
+{
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "macd",
+      "label": "macd:XAUUSD:combo1",
+      "params": {
+        "fast_period": 12,
+        "slow_period": 26,
+        "signal_period": 9,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "rsi",
+      "label": "rsi:XAUUSD:combo1",
+      "params": {
+        "rsi_period": 14,
+        "rsi_oversold": 25.0,
+        "rsi_overbought": 75.0,
+        "max_trend_strength": 0.005,
+        "max_adx": 25.0,
+        "stop_atr_mult": 1.0,
+        "tp_atr_mult": 2.0,
+        "min_confluence": 0.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "macd",
+      "label": "macd:BTCUSD:combo1",
+      "params": {
+        "fast_period": 12,
+        "slow_period": 26,
+        "signal_period": 9,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "rsi",
+      "label": "rsi:BTCUSD:combo1",
+      "params": {
+        "rsi_period": 14,
+        "rsi_oversold": 25.0,
+        "rsi_overbought": 75.0,
+        "max_trend_strength": 0.005,
+        "max_adx": 25.0,
+        "stop_atr_mult": 1.0,
+        "tp_atr_mult": 2.0,
+        "min_confluence": 0.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "macd",
+      "label": "macd:SP500:combo1",
+      "params": {
+        "fast_period": 12,
+        "slow_period": 26,
+        "signal_period": 9,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "rsi",
+      "label": "rsi:SP500:combo1",
+      "params": {
+        "rsi_period": 14,
+        "rsi_oversold": 25.0,
+        "rsi_overbought": 75.0,
+        "max_trend_strength": 0.005,
+        "max_adx": 25.0,
+        "stop_atr_mult": 1.0,
+        "tp_atr_mult": 2.0,
+        "min_confluence": 0.5
+      },
+      "enabled": true
+    }
+  ]
+}

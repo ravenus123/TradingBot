@@ -1,0 +1,79 @@
+{
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "macd",
+      "label": "macd:XAUUSD:combo",
+      "params": {
+        "fast_period": 12,
+        "slow_period": 26,
+        "signal_period": 9,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:XAUUSD:combo",
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "stop_atr_mult": 1.0,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "macd",
+      "label": "macd:BTCUSD:combo",
+      "params": {
+        "fast_period": 12,
+        "slow_period": 26,
+        "signal_period": 9,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:BTCUSD:combo",
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "stop_atr_mult": 1.0,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "macd",
+      "label": "macd:SP500:combo",
+      "params": {
+        "fast_period": 12,
+        "slow_period": 26,
+        "signal_period": 9,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "bollinger",
+      "label": "bollinger:SP500:combo",
+      "params": {
+        "period": 20,
+        "std_dev": 2.0,
+        "stop_atr_mult": 1.0,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    }
+  ]
+}

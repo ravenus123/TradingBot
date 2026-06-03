@@ -1,0 +1,165 @@
+{
+  "source": "new_edge_research_v1",
+  "mode": "multi_strategy_portfolio",
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "liquidity_sweep",
+      "label": "liquidity_sweep:XAUUSD:1",
+      "params": {
+        "lookback_bars": 24,
+        "sweep_threshold": 0.3,
+        "rejection_threshold": 0.5,
+        "volume_confirmation": true
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "liquidity_sweep",
+      "label": "liquidity_sweep:XAUUSD:2",
+      "params": {
+        "lookback_bars": 18,
+        "sweep_threshold": 0.4,
+        "rejection_threshold": 0.6,
+        "volume_confirmation": true
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "liquidity_sweep",
+      "label": "liquidity_sweep:XAUUSD:3",
+      "params": {
+        "lookback_bars": 30,
+        "sweep_threshold": 0.25,
+        "rejection_threshold": 0.4,
+        "volume_confirmation": true
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "liquidity_sweep",
+      "label": "liquidity_sweep:BTCUSD:1",
+      "params": {
+        "lookback_bars": 24,
+        "sweep_threshold": 0.3,
+        "rejection_threshold": 0.5,
+        "volume_confirmation": true
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "liquidity_sweep",
+      "label": "liquidity_sweep:BTCUSD:2",
+      "params": {
+        "lookback_bars": 18,
+        "sweep_threshold": 0.4,
+        "rejection_threshold": 0.6,
+        "volume_confirmation": true
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "liquidity_sweep",
+      "label": "liquidity_sweep:BTCUSD:3",
+      "params": {
+        "lookback_bars": 30,
+        "sweep_threshold": 0.25,
+        "rejection_threshold": 0.4,
+        "volume_confirmation": true
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "liquidity_sweep",
+      "label": "liquidity_sweep:SP500:1",
+      "params": {
+        "lookback_bars": 24,
+        "sweep_threshold": 0.3,
+        "rejection_threshold": 0.5,
+        "volume_confirmation": true
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "session",
+      "label": "session:XAUUSD:1",
+      "params": {
+        "preferred_sessions": ["london", "new_york", "overlap"],
+        "breakout_window": 24,
+        "breakout_threshold": 0.3,
+        "stop_atr_mult": 1.0,
+        "tp_atr_mult": 2.5,
+        "volume_confirmation": true,
+        "min_confluence": 0.6
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "session",
+      "label": "session:XAUUSD:2",
+      "params": {
+        "preferred_sessions": ["overlap"],
+        "breakout_window": 12,
+        "breakout_threshold": 0.5,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.0,
+        "volume_confirmation": true,
+        "min_confluence": 0.7
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "session",
+      "label": "session:BTCUSD:1",
+      "params": {
+        "preferred_sessions": ["london", "new_york", "overlap"],
+        "breakout_window": 24,
+        "breakout_threshold": 0.3,
+        "stop_atr_mult": 1.0,
+        "tp_atr_mult": 2.5,
+        "volume_confirmation": true,
+        "min_confluence": 0.6
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "session",
+      "label": "session:BTCUSD:2",
+      "params": {
+        "preferred_sessions": ["overlap"],
+        "breakout_window": 12,
+        "breakout_threshold": 0.5,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.0,
+        "volume_confirmation": true,
+        "min_confluence": 0.7
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "session",
+      "label": "session:SP500:1",
+      "params": {
+        "preferred_sessions": ["london", "new_york", "overlap"],
+        "breakout_window": 24,
+        "breakout_threshold": 0.3,
+        "stop_atr_mult": 1.0,
+        "tp_atr_mult": 2.5,
+        "volume_confirmation": true,
+        "min_confluence": 0.6
+      },
+      "enabled": true
+    }
+  ]
+}

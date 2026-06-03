@@ -1,0 +1,88 @@
+{
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:XAUUSD:agg1",
+      "params": {
+        "period": 6,
+        "std_dev": 1.0,
+        "stop_atr_mult": 0.3,
+        "tp_atr_mult": 1.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:XAUUSD:agg2",
+      "params": {
+        "period": 5,
+        "std_dev": 0.8,
+        "stop_atr_mult": 0.25,
+        "tp_atr_mult": 0.9
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "volatility",
+      "label": "volatility:XAUUSD:agg1",
+      "params": {
+        "volatility_window": 4,
+        "volatility_threshold": 0.4,
+        "stop_atr_mult": 0.25,
+        "tp_atr_mult": 0.9
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:BTCUSD:agg1",
+      "params": {
+        "period": 6,
+        "std_dev": 1.0,
+        "stop_atr_mult": 0.3,
+        "tp_atr_mult": 1.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "volatility",
+      "label": "volatility:BTCUSD:agg1",
+      "params": {
+        "volatility_window": 4,
+        "volatility_threshold": 0.4,
+        "stop_atr_mult": 0.25,
+        "tp_atr_mult": 0.9
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "bollinger",
+      "label": "bollinger:SP500:agg1",
+      "params": {
+        "period": 6,
+        "std_dev": 1.0,
+        "stop_atr_mult": 0.3,
+        "tp_atr_mult": 1.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "volatility",
+      "label": "volatility:SP500:agg1",
+      "params": {
+        "volatility_window": 4,
+        "volatility_threshold": 0.4,
+        "stop_atr_mult": 0.25,
+        "tp_atr_mult": 0.9
+      },
+      "enabled": true
+    }
+  ]
+}

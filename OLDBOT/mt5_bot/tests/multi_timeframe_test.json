@@ -1,0 +1,56 @@
+{
+  "strategies": [
+    {
+      "symbol": "BTCUSD",
+      "strategy": "multi_timeframe",
+      "label": "multi_timeframe:BTCUSD:1",
+      "params": {
+        "h1_ema_period": 50,
+        "m15_ema_period": 20,
+        "pullback_pct": 0.5,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "multi_timeframe",
+      "label": "multi_timeframe:BTCUSD:2",
+      "params": {
+        "h1_ema_period": 100,
+        "m15_ema_period": 20,
+        "pullback_pct": 0.3,
+        "stop_atr_mult": 1.0,
+        "tp_atr_mult": 2.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "multi_timeframe",
+      "label": "multi_timeframe:SP500:1",
+      "params": {
+        "h1_ema_period": 50,
+        "m15_ema_period": 20,
+        "pullback_pct": 0.5,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "multi_timeframe",
+      "label": "multi_timeframe:XAUUSD:1",
+      "params": {
+        "h1_ema_period": 50,
+        "m15_ema_period": 20,
+        "pullback_pct": 0.5,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    }
+  ]
+}

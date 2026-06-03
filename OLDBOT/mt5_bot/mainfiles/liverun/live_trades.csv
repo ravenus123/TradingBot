@@ -1,0 +1,2 @@
+timestamp,symbol,direction,entry_price,stop_loss,take_profit,lot_size,risk_percent,status,exit_time,exit_price,profit
+2026-06-03 20:30:03,XAUUSD,BUY,4440.23,4436.045857142856,4452.782428571429,0.01,0.2,CLOSED,2026-06-03 21:15:00,4445.96,0.00

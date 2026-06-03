@@ -1,0 +1,88 @@
+{
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:XAUUSD:balanced1",
+      "params": {
+        "period": 8,
+        "std_dev": 1.2,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:XAUUSD:balanced2",
+      "params": {
+        "period": 10,
+        "std_dev": 1.3,
+        "stop_atr_mult": 0.45,
+        "tp_atr_mult": 1.3
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "volatility",
+      "label": "volatility:XAUUSD:balanced1",
+      "params": {
+        "volatility_window": 5,
+        "volatility_threshold": 0.5,
+        "stop_atr_mult": 0.35,
+        "tp_atr_mult": 1.1
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:BTCUSD:balanced1",
+      "params": {
+        "period": 8,
+        "std_dev": 1.2,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "volatility",
+      "label": "volatility:BTCUSD:balanced1",
+      "params": {
+        "volatility_window": 5,
+        "volatility_threshold": 0.5,
+        "stop_atr_mult": 0.35,
+        "tp_atr_mult": 1.1
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "bollinger",
+      "label": "bollinger:SP500:balanced1",
+      "params": {
+        "period": 8,
+        "std_dev": 1.2,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "volatility",
+      "label": "volatility:SP500:balanced1",
+      "params": {
+        "volatility_window": 5,
+        "volatility_threshold": 0.5,
+        "stop_atr_mult": 0.35,
+        "tp_atr_mult": 1.1
+      },
+      "enabled": true
+    }
+  ]
+}

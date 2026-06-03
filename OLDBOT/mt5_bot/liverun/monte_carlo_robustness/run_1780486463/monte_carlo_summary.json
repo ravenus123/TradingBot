@@ -1,0 +1,85 @@
+{
+  "config": {
+    "simulations": 5,
+    "period_days": 10,
+    "risk_pct": 0.2,
+    "seed": null
+  },
+  "results": [
+    {
+      "final_balance": 10000.0,
+      "total_return_pct": 0.0,
+      "max_drawdown_pct": 0.0,
+      "trades": 0,
+      "win_rate": 0.0,
+      "simulation": 1,
+      "start_offset": 168,
+      "start_date": "2024-06-05 05:45:00",
+      "end_date": "2024-10-08 20:00:00"
+    },
+    {
+      "final_balance": 10000.0,
+      "total_return_pct": 0.0,
+      "max_drawdown_pct": 0.0,
+      "trades": 0,
+      "win_rate": 0.0,
+      "simulation": 2,
+      "start_offset": 879,
+      "start_date": "2024-06-12 15:30:00",
+      "end_date": "2024-11-20 18:00:00"
+    },
+    {
+      "final_balance": 10000.0,
+      "total_return_pct": 0.0,
+      "max_drawdown_pct": 0.0,
+      "trades": 0,
+      "win_rate": 0.0,
+      "simulation": 3,
+      "start_offset": 255,
+      "start_date": "2024-06-06 03:30:00",
+      "end_date": "2024-10-14 15:00:00"
+    },
+    {
+      "final_balance": 10000.0,
+      "total_return_pct": 0.0,
+      "max_drawdown_pct": 0.0,
+      "trades": 0,
+      "win_rate": 0.0,
+      "simulation": 4,
+      "start_offset": 1038,
+      "start_date": "2024-06-14 07:15:00",
+      "end_date": "2024-11-29 19:00:00"
+    },
+    {
+      "final_balance": 10000.0,
+      "total_return_pct": 0.0,
+      "max_drawdown_pct": 0.0,
+      "trades": 0,
+      "win_rate": 0.0,
+      "simulation": 5,
+      "start_offset": 300,
+      "start_date": "2024-06-06 14:45:00",
+      "end_date": "2024-10-16 14:00:00"
+    }
+  ],
+  "strategy_performance": {
+    "momentum_premium": {
+      "mean_return": 0.0,
+      "std_return": 0.0,
+      "positive_rate": 0.0,
+      "sample_size": 25
+    }
+  },
+  "statistics": {
+    "return_mean": 0.0,
+    "return_std": 0.0,
+    "return_min": 0.0,
+    "return_max": 0.0,
+    "drawdown_mean": 0.0,
+    "drawdown_std": 0.0,
+    "drawdown_max": 0.0,
+    "trades_mean": 0.0,
+    "positive_return_rate": 0.0,
+    "status": "FAIL"
+  }
+}

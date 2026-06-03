@@ -1,0 +1,366 @@
+{
+  "config": {
+    "simulations": 30,
+    "period_days": 30,
+    "risk_pct": 0.2,
+    "seed": null
+  },
+  "results": [
+    {
+      "final_balance": 10027.484728531144,
+      "total_return_pct": 0.27484728531144353,
+      "max_drawdown_pct": 0.0,
+      "trades": 109,
+      "win_rate": 0.3302752293577982,
+      "simulation": 1,
+      "start_offset": 7267,
+      "start_date": "2024-08-20 18:15:00",
+      "end_date": "2025-04-10 04:30:00"
+    },
+    {
+      "final_balance": 10065.592016973038,
+      "total_return_pct": 0.6559201697303797,
+      "max_drawdown_pct": 0.8354465869034539,
+      "trades": 62,
+      "win_rate": 0.24193548387096775,
+      "simulation": 2,
+      "start_offset": 44927,
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "final_balance": 10017.367662082816,
+      "total_return_pct": 0.17367662082815513,
+      "max_drawdown_pct": 0.0,
+      "trades": 100,
+      "win_rate": 0.3,
+      "simulation": 3,
+      "start_offset": 5200,
+      "start_date": "2024-07-30 05:30:00",
+      "end_date": "2025-03-10 16:45:00"
+    },
+    {
+      "final_balance": 9948.366755975872,
+      "total_return_pct": -0.5163324402412763,
+      "max_drawdown_pct": 0.5163324402412763,
+      "trades": 101,
+      "win_rate": 0.25742574257425743,
+      "simulation": 4,
+      "start_offset": 14389,
+      "start_date": "2024-11-03 02:30:00",
+      "end_date": "2025-07-29 22:15:00"
+    },
+    {
+      "final_balance": 9836.260094877785,
+      "total_return_pct": -1.6373990512221461,
+      "max_drawdown_pct": 1.8135846474420212,
+      "trades": 67,
+      "win_rate": 0.23880597014925373,
+      "simulation": 5,
+      "start_offset": 41873,
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "final_balance": 10593.335468967647,
+      "total_return_pct": 5.933354689676471,
+      "max_drawdown_pct": 0.0,
+      "trades": 107,
+      "win_rate": 0.40186915887850466,
+      "simulation": 6,
+      "start_offset": 950,
+      "start_date": "2024-06-13 12:00:00",
+      "end_date": "2025-01-03 07:45:00"
+    },
+    {
+      "final_balance": 9954.681268327504,
+      "total_return_pct": -0.4531873167249614,
+      "max_drawdown_pct": 0.5956578804094533,
+      "trades": 107,
+      "win_rate": 0.35514018691588783,
+      "simulation": 7,
+      "start_offset": 3909,
+      "start_date": "2024-07-16 17:00:00",
+      "end_date": "2025-02-18 16:00:00"
+    },
+    {
+      "final_balance": 10225.996793607197,
+      "total_return_pct": 2.259967936071971,
+      "max_drawdown_pct": 1.30536120871202,
+      "trades": 107,
+      "win_rate": 0.3364485981308411,
+      "simulation": 8,
+      "start_offset": 34324,
+      "start_date": "2025-06-07 23:45:00",
+      "end_date": "2026-06-03 08:30:00"
+    },
+    {
+      "final_balance": 9603.635084148558,
+      "total_return_pct": -3.963649158514418,
+      "max_drawdown_pct": 3.963649158514418,
+      "trades": 103,
+      "win_rate": 0.2524271844660194,
+      "simulation": 9,
+      "start_offset": 13144,
+      "start_date": "2024-10-21 03:30:00",
+      "end_date": "2025-07-10 10:00:00"
+    },
+    {
+      "final_balance": 9825.52091769125,
+      "total_return_pct": -1.7447908230874962,
+      "max_drawdown_pct": 1.7447908230874962,
+      "trades": 80,
+      "win_rate": 0.25,
+      "simulation": 10,
+      "start_offset": 28454,
+      "start_date": "2025-04-04 02:15:00",
+      "end_date": "2026-03-04 10:45:00"
+    },
+    {
+      "final_balance": 10069.302487690875,
+      "total_return_pct": 0.6930248769087484,
+      "max_drawdown_pct": 0.8463596518403756,
+      "trades": 56,
+      "win_rate": 0.26785714285714285,
+      "simulation": 11,
+      "start_offset": 39605,
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "final_balance": 10256.785466658208,
+      "total_return_pct": 2.5678546665820794,
+      "max_drawdown_pct": 1.3532512126629082,
+      "trades": 100,
+      "win_rate": 0.32,
+      "simulation": 12,
+      "start_offset": 14956,
+      "start_date": "2024-11-09 01:15:00",
+      "end_date": "2025-08-07 03:00:00"
+    },
+    {
+      "final_balance": 9970.286553212132,
+      "total_return_pct": -0.29713446787867726,
+      "max_drawdown_pct": 0.8385118463914478,
+      "trades": 59,
+      "win_rate": 0.3050847457627119,
+      "simulation": 13,
+      "start_offset": 40948,
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "final_balance": 10308.690387893696,
+      "total_return_pct": 3.086903878936955,
+      "max_drawdown_pct": 0.5769321600800322,
+      "trades": 116,
+      "win_rate": 0.3017241379310345,
+      "simulation": 14,
+      "start_offset": 18347,
+      "start_date": "2024-12-14 09:15:00",
+      "end_date": "2025-09-29 02:00:00"
+    },
+    {
+      "final_balance": 10416.663058052705,
+      "total_return_pct": 4.166630580527054,
+      "max_drawdown_pct": 0.03316237709505004,
+      "trades": 99,
+      "win_rate": 0.3838383838383838,
+      "simulation": 15,
+      "start_offset": 23845,
+      "start_date": "2025-02-12 09:00:00",
+      "end_date": "2025-12-22 01:00:00"
+    },
+    {
+      "final_balance": 10438.578399160391,
+      "total_return_pct": 4.385783991603912,
+      "max_drawdown_pct": 0.0,
+      "trades": 52,
+      "win_rate": 0.40384615384615385,
+      "simulation": 16,
+      "start_offset": 38118,
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "final_balance": 9883.401466637497,
+      "total_return_pct": -1.1659853336250308,
+      "max_drawdown_pct": 1.3244754902628484,
+      "trades": 69,
+      "win_rate": 0.2898550724637681,
+      "simulation": 17,
+      "start_offset": 36733,
+      "start_date": "2025-07-04 06:00:00",
+      "end_date": "2026-06-03 14:15:00"
+    },
+    {
+      "final_balance": 9957.465177842467,
+      "total_return_pct": -0.425348221575332,
+      "max_drawdown_pct": 0.5256309033316393,
+      "trades": 100,
+      "win_rate": 0.3,
+      "simulation": 18,
+      "start_offset": 17179,
+      "start_date": "2024-12-02 05:15:00",
+      "end_date": "2025-09-10 09:00:00"
+    },
+    {
+      "final_balance": 9740.072509331249,
+      "total_return_pct": -2.599274906687515,
+      "max_drawdown_pct": 2.599274906687515,
+      "trades": 97,
+      "win_rate": 0.23711340206185566,
+      "simulation": 19,
+      "start_offset": 21494,
+      "start_date": "2025-01-18 04:00:00",
+      "end_date": "2025-11-14 06:45:00"
+    },
+    {
+      "final_balance": 9932.417700448637,
+      "total_return_pct": -0.6758229955136266,
+      "max_drawdown_pct": 1.1337110944301823,
+      "trades": 102,
+      "win_rate": 0.24509803921568626,
+      "simulation": 20,
+      "start_offset": 6787,
+      "start_date": "2024-08-15 18:30:00",
+      "end_date": "2025-04-02 22:30:00"
+    },
+    {
+      "final_balance": 9996.305460947293,
+      "total_return_pct": -0.036945390527071145,
+      "max_drawdown_pct": 0.036945390527071145,
+      "trades": 71,
+      "win_rate": 0.28169014084507044,
+      "simulation": 21,
+      "start_offset": 43707,
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "final_balance": 10311.538745732281,
+      "total_return_pct": 3.115387457322813,
+      "max_drawdown_pct": 0.4834078743899591,
+      "trades": 95,
+      "win_rate": 0.3157894736842105,
+      "simulation": 22,
+      "start_offset": 28299,
+      "start_date": "2025-04-02 11:30:00",
+      "end_date": "2026-03-02 18:00:00"
+    },
+    {
+      "final_balance": 10177.301911227194,
+      "total_return_pct": 1.7730191122719408,
+      "max_drawdown_pct": 0.0,
+      "trades": 107,
+      "win_rate": 0.3925233644859813,
+      "simulation": 23,
+      "start_offset": 22248,
+      "start_date": "2025-01-26 01:45:00",
+      "end_date": "2025-11-26 11:15:00"
+    },
+    {
+      "final_balance": 10251.830162837225,
+      "total_return_pct": 2.5183016283722464,
+      "max_drawdown_pct": 0.0,
+      "trades": 90,
+      "win_rate": 0.37777777777777777,
+      "simulation": 24,
+      "start_offset": 25628,
+      "start_date": "2025-03-04 00:45:00",
+      "end_date": "2026-01-20 14:45:00"
+    },
+    {
+      "final_balance": 10525.920746939006,
+      "total_return_pct": 5.2592074693900575,
+      "max_drawdown_pct": 0.0,
+      "trades": 91,
+      "win_rate": 0.4065934065934066,
+      "simulation": 25,
+      "start_offset": 35574,
+      "start_date": "2025-06-21 10:15:00",
+      "end_date": "2026-06-03 14:15:00"
+    },
+    {
+      "final_balance": 9763.635684477147,
+      "total_return_pct": -2.3636431552285284,
+      "max_drawdown_pct": 3.1039864442559884,
+      "trades": 124,
+      "win_rate": 0.28225806451612906,
+      "simulation": 26,
+      "start_offset": 7551,
+      "start_date": "2024-08-23 17:30:00",
+      "end_date": "2025-04-15 06:30:00"
+    },
+    {
+      "final_balance": 9819.554782680938,
+      "total_return_pct": -1.8044521731906207,
+      "max_drawdown_pct": 1.8044521731906207,
+      "trades": 55,
+      "win_rate": 0.34545454545454546,
+      "simulation": 27,
+      "start_offset": 42990,
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "final_balance": 10093.009088045708,
+      "total_return_pct": 0.9300908804570827,
+      "max_drawdown_pct": 0.0,
+      "trades": 70,
+      "win_rate": 0.24285714285714285,
+      "simulation": 28,
+      "start_offset": 36804,
+      "start_date": "2025-07-04 23:45:00",
+      "end_date": "2026-06-03 14:15:00"
+    },
+    {
+      "final_balance": 10435.136471345033,
+      "total_return_pct": 4.35136471345033,
+      "max_drawdown_pct": 0.033597149032830204,
+      "trades": 56,
+      "win_rate": 0.42857142857142855,
+      "simulation": 29,
+      "start_offset": 37098,
+      "start_date": "2025-07-08 10:15:00",
+      "end_date": "2026-06-03 14:15:00"
+    },
+    {
+      "final_balance": 10467.926411800774,
+      "total_return_pct": 4.67926411800774,
+      "max_drawdown_pct": 0.0,
+      "trades": 109,
+      "win_rate": 0.3486238532110092,
+      "simulation": 30,
+      "start_offset": 31876,
+      "start_date": "2025-05-11 23:45:00",
+      "end_date": "2026-04-27 15:15:00"
+    }
+  ],
+  "strategy_performance": {
+    "macd": {
+      "mean_return": 1.1827870325872647,
+      "std_return": 2.190821970722989,
+      "positive_rate": 0.6444444444444445,
+      "sample_size": 90
+    },
+    "mean_reversion": {
+      "mean_return": 0.3997619856139911,
+      "std_return": 1.1766353585131708,
+      "positive_rate": 0.5,
+      "sample_size": 90
+    }
+  },
+  "statistics": {
+    "return_mean": 0.971354488047756,
+    "return_std": 2.542179726670606,
+    "return_min": -3.963649158514418,
+    "return_max": 5.933354689676471,
+    "drawdown_mean": 0.8489507139829535,
+    "drawdown_std": 1.0038160923242776,
+    "drawdown_max": 3.963649158514418,
+    "trades_mean": 88.7,
+    "positive_return_rate": 0.5666666666666667,
+    "status": "GOOD"
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "config": {
+    "simulations": 5,
+    "period_days": 10,
+    "risk_pct": 0.2,
+    "seed": null
+  },
+  "results": [
+    {
+      "final_balance": 9951.19773742753,
+      "total_return_pct": -0.4880226257246977,
+      "max_drawdown_pct": 0.4880226257246977,
+      "trades": 17,
+      "win_rate": 0.47058823529411764,
+      "simulation": 1,
+      "start_offset": 320,
+      "start_date": "2024-06-06 19:45:00",
+      "end_date": "2024-10-17 11:00:00"
+    },
+    {
+      "final_balance": 9943.6069472098,
+      "total_return_pct": -0.5639305279019936,
+      "max_drawdown_pct": 0.5639305279019936,
+      "trades": 41,
+      "win_rate": 0.43902439024390244,
+      "simulation": 2,
+      "start_offset": 448,
+      "start_date": "2024-06-08 03:45:00",
+      "end_date": "2024-10-25 01:00:00"
+    },
+    {
+      "final_balance": 9965.052290611067,
+      "total_return_pct": -0.3494770938893271,
+      "max_drawdown_pct": 0.3494770938893271,
+      "trades": 33,
+      "win_rate": 0.45454545454545453,
+      "simulation": 3,
+      "start_offset": 808,
+      "start_date": "2024-06-11 21:45:00",
+      "end_date": "2024-11-15 16:00:00"
+    },
+    {
+      "final_balance": 9980.317391255581,
+      "total_return_pct": -0.19682608744418761,
+      "max_drawdown_pct": 0.19682608744418761,
+      "trades": 35,
+      "win_rate": 0.37142857142857144,
+      "simulation": 4,
+      "start_offset": 85,
+      "start_date": "2024-06-04 09:00:00",
+      "end_date": "2024-10-03 06:00:00"
+    },
+    {
+      "final_balance": 10013.773322758916,
+      "total_return_pct": 0.13773322758916037,
+      "max_drawdown_pct": 0.0,
+      "trades": 41,
+      "win_rate": 0.5121951219512195,
+      "simulation": 5,
+      "start_offset": 931,
+      "start_date": "2024-06-13 04:30:00",
+      "end_date": "2024-11-25 01:00:00"
+    }
+  ],
+  "strategy_performance": {
+    "liquidity_sweep": {
+      "mean_return": -0.21163281732399158,
+      "std_return": 0.3258883049051352,
+      "positive_rate": 0.22857142857142856,
+      "sample_size": 35
+    },
+    "session": {
+      "mean_return": -0.04315687405170466,
+      "std_return": 0.20505950720470478,
+      "positive_rate": 0.04,
+      "sample_size": 25
+    }
+  },
+  "statistics": {
+    "return_mean": -0.2921046214742091,
+    "return_std": 0.24875826174024396,
+    "return_min": -0.5639305279019936,
+    "return_max": 0.13773322758916037,
+    "drawdown_mean": 0.31965126699204116,
+    "drawdown_std": 0.20306344275761704,
+    "drawdown_max": 0.5639305279019936,
+    "trades_mean": 33.4,
+    "positive_return_rate": 0.2,
+    "status": "FAIL"
+  }
+}

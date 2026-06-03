@@ -1,0 +1,100 @@
+{
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "rsi",
+      "label": "rsi:XAUUSD:agg1",
+      "params": {
+        "rsi_period": 14,
+        "rsi_oversold": 20.0,
+        "rsi_overbought": 80.0,
+        "max_trend_strength": 0.003,
+        "max_adx": 20.0,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.5,
+        "min_confluence": 0.6
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "rsi",
+      "label": "rsi:XAUUSD:agg2",
+      "params": {
+        "rsi_period": 10,
+        "rsi_oversold": 15.0,
+        "rsi_overbought": 85.0,
+        "max_trend_strength": 0.002,
+        "max_adx": 18.0,
+        "stop_atr_mult": 0.7,
+        "tp_atr_mult": 3.0,
+        "min_confluence": 0.7
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "rsi",
+      "label": "rsi:BTCUSD:agg1",
+      "params": {
+        "rsi_period": 14,
+        "rsi_oversold": 20.0,
+        "rsi_overbought": 80.0,
+        "max_trend_strength": 0.003,
+        "max_adx": 20.0,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.5,
+        "min_confluence": 0.6
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "rsi",
+      "label": "rsi:BTCUSD:agg2",
+      "params": {
+        "rsi_period": 10,
+        "rsi_oversold": 15.0,
+        "rsi_overbought": 85.0,
+        "max_trend_strength": 0.002,
+        "max_adx": 18.0,
+        "stop_atr_mult": 0.7,
+        "tp_atr_mult": 3.0,
+        "min_confluence": 0.7
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "rsi",
+      "label": "rsi:SP500:agg1",
+      "params": {
+        "rsi_period": 14,
+        "rsi_oversold": 20.0,
+        "rsi_overbought": 80.0,
+        "max_trend_strength": 0.003,
+        "max_adx": 20.0,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.5,
+        "min_confluence": 0.6
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "rsi",
+      "label": "rsi:SP500:agg2",
+      "params": {
+        "rsi_period": 10,
+        "rsi_oversold": 15.0,
+        "rsi_overbought": 85.0,
+        "max_trend_strength": 0.002,
+        "max_adx": 18.0,
+        "stop_atr_mult": 0.7,
+        "tp_atr_mult": 3.0,
+        "min_confluence": 0.7
+      },
+      "enabled": true
+    }
+  ]
+}

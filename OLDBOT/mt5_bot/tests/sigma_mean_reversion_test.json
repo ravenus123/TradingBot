@@ -1,0 +1,69 @@
+{
+  "strategies": [
+    {
+      "symbol": "SP500",
+      "strategy": "sigma_mean_reversion",
+      "label": "sigma_mean_reversion:SP500:1",
+      "params": {
+        "window": 100,
+        "sigma_threshold": 2.0,
+        "lookforward_period": 12,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "sigma_mean_reversion",
+      "label": "sigma_mean_reversion:SP500:2",
+      "params": {
+        "window": 80,
+        "sigma_threshold": 1.8,
+        "lookforward_period": 12,
+        "stop_atr_mult": 1.3,
+        "tp_atr_mult": 2.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "sigma_mean_reversion",
+      "label": "sigma_mean_reversion:SP500:3",
+      "params": {
+        "window": 120,
+        "sigma_threshold": 2.2,
+        "lookforward_period": 12,
+        "stop_atr_mult": 1.7,
+        "tp_atr_mult": 1.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "sigma_mean_reversion",
+      "label": "sigma_mean_reversion:XAUUSD:1",
+      "params": {
+        "window": 100,
+        "sigma_threshold": 2.0,
+        "lookforward_period": 12,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "sigma_mean_reversion",
+      "label": "sigma_mean_reversion:BTCUSD:1",
+      "params": {
+        "window": 100,
+        "sigma_threshold": 2.0,
+        "lookforward_period": 12,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    }
+  ]
+}

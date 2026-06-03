@@ -1,0 +1,88 @@
+{
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:XAUUSD:research1",
+      "params": {
+        "period": 10,
+        "std_dev": 1.5,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:XAUUSD:research2",
+      "params": {
+        "period": 8,
+        "std_dev": 1.3,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.3
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "volatility",
+      "label": "volatility:XAUUSD:research1",
+      "params": {
+        "volatility_window": 6,
+        "volatility_threshold": 0.6,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.3
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "bollinger",
+      "label": "bollinger:BTCUSD:research1",
+      "params": {
+        "period": 10,
+        "std_dev": 1.5,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "volatility",
+      "label": "volatility:BTCUSD:research1",
+      "params": {
+        "volatility_window": 6,
+        "volatility_threshold": 0.6,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.3
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "bollinger",
+      "label": "bollinger:SP500:research1",
+      "params": {
+        "period": 10,
+        "std_dev": 1.5,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "volatility",
+      "label": "volatility:SP500:research1",
+      "params": {
+        "volatility_window": 6,
+        "volatility_threshold": 0.6,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.3
+      },
+      "enabled": true
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "config": {
+    "simulations": 5,
+    "period_days": 10,
+    "risk_pct": 0.2,
+    "seed": null
+  },
+  "results": [
+    {
+      "final_balance": 9866.645032648772,
+      "total_return_pct": -1.3335496735122796,
+      "max_drawdown_pct": 1.3335496735122796,
+      "trades": 8,
+      "win_rate": 0.125,
+      "simulation": 1,
+      "start_offset": 221,
+      "start_date": "2024-06-05 19:00:00",
+      "end_date": "2024-10-11 04:00:00"
+    },
+    {
+      "final_balance": 10261.44953318426,
+      "total_return_pct": 2.6144953318426087,
+      "max_drawdown_pct": 0.0,
+      "trades": 12,
+      "win_rate": 0.5,
+      "simulation": 2,
+      "start_offset": 247,
+      "start_date": "2024-06-06 01:30:00",
+      "end_date": "2024-10-14 07:00:00"
+    },
+    {
+      "final_balance": 9866.645032648772,
+      "total_return_pct": -1.3335496735122796,
+      "max_drawdown_pct": 1.3335496735122796,
+      "trades": 8,
+      "win_rate": 0.125,
+      "simulation": 3,
+      "start_offset": 221,
+      "start_date": "2024-06-05 19:00:00",
+      "end_date": "2024-10-11 04:00:00"
+    },
+    {
+      "final_balance": 9709.336675752995,
+      "total_return_pct": -2.9066332424700523,
+      "max_drawdown_pct": 2.9066332424700523,
+      "trades": 13,
+      "win_rate": 0.0,
+      "simulation": 4,
+      "start_offset": 435,
+      "start_date": "2024-06-08 00:30:00",
+      "end_date": "2024-10-24 11:00:00"
+    },
+    {
+      "final_balance": 9914.568012739079,
+      "total_return_pct": -0.8543198726092124,
+      "max_drawdown_pct": 0.8543198726092124,
+      "trades": 6,
+      "win_rate": 0.0,
+      "simulation": 5,
+      "start_offset": 864,
+      "start_date": "2024-06-12 11:45:00",
+      "end_date": "2024-11-20 03:00:00"
+    }
+  ],
+  "strategy_performance": {
+    "enhanced_mean_reversion": {
+      "mean_return": 0.2676601973504045,
+      "std_return": 1.8050204680193795,
+      "positive_rate": 0.13333333333333333,
+      "sample_size": 30
+    }
+  },
+  "statistics": {
+    "return_mean": -0.762711426052243,
+    "return_std": 1.8254879324438147,
+    "return_min": -2.9066332424700523,
+    "return_max": 2.6144953318426087,
+    "drawdown_mean": 1.2856104924207647,
+    "drawdown_std": 0.9456338639562988,
+    "drawdown_max": 2.9066332424700523,
+    "trades_mean": 9.4,
+    "positive_return_rate": 0.2,
+    "status": "FAIL"
+  }
+}

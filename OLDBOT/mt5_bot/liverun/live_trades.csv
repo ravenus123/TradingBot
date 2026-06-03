@@ -1,0 +1,2 @@
+timestamp,symbol,direction,entry_price,stop_loss,take_profit,lot_size,risk_percent,status,exit_time,exit_price,profit
+2026-06-03 13:30:01,SP500,BUY,7606.78,7604.457142857143,7613.748571428571,0.13,0.2,CLOSED,2026-06-03 14:00:00,7598.5,0.00

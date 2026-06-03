@@ -1,0 +1,76 @@
+{
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "candle_reversal",
+      "label": "candle_reversal:XAUUSD:1",
+      "params": {
+        "body_multiplier": 2.0,
+        "lookforward_period": 4,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "candle_reversal",
+      "label": "candle_reversal:XAUUSD:2",
+      "params": {
+        "body_multiplier": 1.8,
+        "lookforward_period": 4,
+        "stop_atr_mult": 1.3,
+        "tp_atr_mult": 2.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "candle_reversal",
+      "label": "candle_reversal:XAUUSD:3",
+      "params": {
+        "body_multiplier": 2.2,
+        "lookforward_period": 4,
+        "stop_atr_mult": 1.7,
+        "tp_atr_mult": 1.8
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "candle_reversal",
+      "label": "candle_reversal:BTCUSD:1",
+      "params": {
+        "body_multiplier": 2.0,
+        "lookforward_period": 4,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "candle_reversal",
+      "label": "candle_reversal:BTCUSD:2",
+      "params": {
+        "body_multiplier": 1.8,
+        "lookforward_period": 4,
+        "stop_atr_mult": 1.3,
+        "tp_atr_mult": 2.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "candle_reversal",
+      "label": "candle_reversal:SP500:1",
+      "params": {
+        "body_multiplier": 2.0,
+        "lookforward_period": 4,
+        "stop_atr_mult": 1.5,
+        "tp_atr_mult": 2.0
+      },
+      "enabled": true
+    }
+  ]
+}

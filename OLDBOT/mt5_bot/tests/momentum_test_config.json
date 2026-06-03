@@ -1,0 +1,86 @@
+{
+  "source": "momentum_premium_research_v1",
+  "mode": "multi_strategy_portfolio",
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "momentum_premium",
+      "label": "momentum_premium:XAUUSD:1",
+      "params": {
+        "ema_fast": 50,
+        "ema_slow": 200,
+        "momentum_period": 10,
+        "momentum_threshold": 0.001,
+        "lookback": 24,
+        "stop_atr_mult": 2.5,
+        "tp_atr_mult": 6.0,
+        "min_confluence": 0.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "momentum_premium",
+      "label": "momentum_premium:XAUUSD:2",
+      "params": {
+        "ema_fast": 34,
+        "ema_slow": 144,
+        "momentum_period": 8,
+        "momentum_threshold": 0.0008,
+        "lookback": 18,
+        "stop_atr_mult": 2.0,
+        "tp_atr_mult": 5.0,
+        "min_confluence": 0.6
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "momentum_premium",
+      "label": "momentum_premium:BTCUSD:1",
+      "params": {
+        "ema_fast": 50,
+        "ema_slow": 200,
+        "momentum_period": 10,
+        "momentum_threshold": 0.001,
+        "lookback": 24,
+        "stop_atr_mult": 2.5,
+        "tp_atr_mult": 6.0,
+        "min_confluence": 0.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "momentum_premium",
+      "label": "momentum_premium:BTCUSD:2",
+      "params": {
+        "ema_fast": 34,
+        "ema_slow": 144,
+        "momentum_period": 8,
+        "momentum_threshold": 0.0008,
+        "lookback": 18,
+        "stop_atr_mult": 2.0,
+        "tp_atr_mult": 5.0,
+        "min_confluence": 0.6
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "momentum_premium",
+      "label": "momentum_premium:SP500:1",
+      "params": {
+        "ema_fast": 50,
+        "ema_slow": 200,
+        "momentum_period": 10,
+        "momentum_threshold": 0.001,
+        "lookback": 24,
+        "stop_atr_mult": 2.5,
+        "tp_atr_mult": 6.0,
+        "min_confluence": 0.5
+      },
+      "enabled": true
+    }
+  ]
+}

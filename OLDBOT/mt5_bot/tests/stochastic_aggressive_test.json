@@ -1,0 +1,88 @@
+{
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "stochastic",
+      "label": "stochastic:XAUUSD:agg1",
+      "params": {
+        "k_period": 14,
+        "d_period": 3,
+        "stoch_oversold": 15.0,
+        "stoch_overbought": 85.0,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "stochastic",
+      "label": "stochastic:XAUUSD:agg2",
+      "params": {
+        "k_period": 10,
+        "d_period": 3,
+        "stoch_oversold": 10.0,
+        "stoch_overbought": 90.0,
+        "stop_atr_mult": 0.7,
+        "tp_atr_mult": 2.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "stochastic",
+      "label": "stochastic:BTCUSD:agg1",
+      "params": {
+        "k_period": 14,
+        "d_period": 3,
+        "stoch_oversold": 15.0,
+        "stoch_overbought": 85.0,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "stochastic",
+      "label": "stochastic:BTCUSD:agg2",
+      "params": {
+        "k_period": 10,
+        "d_period": 3,
+        "stoch_oversold": 10.0,
+        "stoch_overbought": 90.0,
+        "stop_atr_mult": 0.7,
+        "tp_atr_mult": 2.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "stochastic",
+      "label": "stochastic:SP500:agg1",
+      "params": {
+        "k_period": 14,
+        "d_period": 3,
+        "stoch_oversold": 15.0,
+        "stoch_overbought": 85.0,
+        "stop_atr_mult": 0.8,
+        "tp_atr_mult": 2.2
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "stochastic",
+      "label": "stochastic:SP500:agg2",
+      "params": {
+        "k_period": 10,
+        "d_period": 3,
+        "stoch_oversold": 10.0,
+        "stoch_overbought": 90.0,
+        "stop_atr_mult": 0.7,
+        "tp_atr_mult": 2.5
+      },
+      "enabled": true
+    }
+  ]
+}

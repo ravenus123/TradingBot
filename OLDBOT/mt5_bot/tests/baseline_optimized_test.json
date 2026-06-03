@@ -1,0 +1,92 @@
+{
+  "strategies": [
+    {
+      "symbol": "XAUUSD",
+      "strategy": "macd",
+      "label": "macd:XAUUSD:optimized1",
+      "params": {
+        "fast_period": 10,
+        "slow_period": 22,
+        "signal_period": 7,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "mean_reversion",
+      "label": "mean_reversion:XAUUSD:optimized1",
+      "params": {
+        "period": 14,
+        "std_dev": 1.5,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.4
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "XAUUSD",
+      "strategy": "macd",
+      "label": "macd:XAUUSD:optimized2",
+      "params": {
+        "fast_period": 12,
+        "slow_period": 26,
+        "signal_period": 9,
+        "stop_atr_mult": 0.45,
+        "tp_atr_mult": 1.6
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "macd",
+      "label": "macd:BTCUSD:optimized1",
+      "params": {
+        "fast_period": 10,
+        "slow_period": 22,
+        "signal_period": 7,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "BTCUSD",
+      "strategy": "mean_reversion",
+      "label": "mean_reversion:BTCUSD:optimized1",
+      "params": {
+        "period": 14,
+        "std_dev": 1.5,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.4
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "macd",
+      "label": "macd:SP500:optimized1",
+      "params": {
+        "fast_period": 10,
+        "slow_period": 22,
+        "signal_period": 7,
+        "stop_atr_mult": 0.5,
+        "tp_atr_mult": 1.5
+      },
+      "enabled": true
+    },
+    {
+      "symbol": "SP500",
+      "strategy": "mean_reversion",
+      "label": "mean_reversion:SP500:optimized1",
+      "params": {
+        "period": 14,
+        "std_dev": 1.5,
+        "stop_atr_mult": 0.4,
+        "tp_atr_mult": 1.4
+      },
+      "enabled": true
+    }
+  ]
+}
